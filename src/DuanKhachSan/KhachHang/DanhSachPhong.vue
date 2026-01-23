@@ -1,3 +1,29 @@
+<script setup>
+import { ref, computed, onMounted } from 'vue'
+import axios from 'axios'
+const API = import.meta.env.VITE_API;
+const filter = ref('*')
+const dsPhong=ref([])
+const loading=ref(true)
+onMounted (async()=>{
+  try{
+    const res = await axios.get(`${API}/api/DanhSachPhong`)
+    dsPhong.value=res.data
+  }
+  catch(err){
+    console.error("Lỗi Load phòng: ",err)
+  } finally{
+    loading.value=false
+  }
+})
+// Logic lọc phòng
+const filteredRooms = computed(() => {
+  if (filter.value === '*') {
+    return dsPhong.value;
+  }
+  return dsPhong.value.filter(room => room.tenLoai === filter.value);
+})
+</script>
 <template>
   <div>
     <div class="page-heading header-text">
@@ -18,48 +44,96 @@
         
         <ul class="properties-filter">
           <li>
-            <a href="javascript:void(0)" :class="{ is_active: filter === '*' }" @click="filter = '*'">Tất cả</a>
+            <a
+              href="javascript:void(0)"
+              :class="{ is_active: filter === '*' }"
+              @click="filter = '*'"
+            >Tất cả</a>
           </li>
           <li>
-            <a href="javascript:void(0)" :class="{ is_active: filter === 'Phòng Deluxe' }" @click="filter = 'Phòng Deluxe'">Deluxe</a>
+            <a
+              href="javascript:void(0)"
+              :class="{ is_active: filter === 'Standard' }"
+              @click="filter = 'Standard'"
+            >Tiêu chuẩn</a>
           </li>
           <li>
-            <a href="javascript:void(0)" :class="{ is_active: filter === 'Biệt thự' }" @click="filter = 'Biệt thự'">Biệt thự</a>
-          </li>
-          <li>
-            <a href="javascript:void(0)" :class="{ is_active: filter === 'Penthouse' }" @click="filter = 'Penthouse'">Penthouse</a>
+            <a
+              href="javascript:void(0)"
+              :class="{ is_active: filter === 'Deluxe' }"
+              @click="filter = 'Deluxe'"
+            >Cao cấp</a>
           </li>
         </ul>
 
         <div class="row properties-box">
-          <div v-for="room in filteredRooms" :key="room.id" class="col-lg-4 col-md-6 align-self-center mb-30 properties-items">
+          <div
+            v-for="room in filteredRooms"
+            :key="room.maBienThePhong"
+            class="col-lg-4 col-md-6 align-self-center mb-30 properties-items"
+          >
             <div class="item">
               <div class="thumb">
-                <router-link :to="'/phong/' + room.id">
-                    <img :src="room.image" :alt="room.name" />
-                </router-link>
+              <span v-if="room.phanTramGiam > 0" class="sale-badge">
+                -{{ room.phanTramGiam }}%
+              </span>
+
+              <router-link :to="`/phong/${room.maBienThePhong}`">
+                <img :src="`${API}/images/${room.anhDaiDien}`" />
+              </router-link>
+            </div>
+
+              <div class="d-flex justify-content-between align-items-start">
+                <!-- Bên trái -->
+                <span class="category">{{ room.tenLoai }}</span>
+
+                <!-- Bên phải: Giá -->
+                <div class="text-end">
+                  <!-- GIÁ GỐC (giữ chỗ) -->
+                  <div
+                    class="text-muted text-decoration-line-through small"
+                    :style="{ visibility: room.phanTramGiam > 0 ? 'visible' : 'hidden' }"
+                  >
+                    {{ Number(room.giaGoc).toLocaleString('vi-VN') }} VNĐ
+                  </div>
+
+                  <!-- GIÁ SAU GIẢM / GIÁ THƯỜNG -->
+                  <div
+                    class="fw-bold"
+                    :class="room.phanTramGiam > 0 ? 'text-danger' : ''"
+                  >
+                    {{
+                      room.phanTramGiam > 0
+                        ? Number(room.giaGoc * (100 - room.phanTramGiam) / 100).toLocaleString('vi-VN')
+                        : Number(room.giaGoc).toLocaleString('vi-VN')
+                    }} VNĐ / đêm
+                  </div>
+                </div>
+
               </div>
-              
-              <span class="category">{{ room.type }}</span>
-              <h6>{{ room.price }} VNĐ</h6>
-              
+
               <h4>
-                <router-link :to="'/phong/' + room.id">{{ room.name }}</router-link>
+                <router-link :to="`/phong/${room.maBienThePhong}`">
+                  {{ room.tenBienThe }}
+                </router-link>
               </h4>
-              
+
               <ul>
-                <li>Số người: <span>{{ room.maxPeople }}</span></li>
-                <li>Phòng ngủ: <span>{{ room.bedrooms }}</span></li>
-                <li>Diện tích: <span>{{ room.area }}m2</span></li>
-                <li>Tầng: <span>{{ room.floor }}</span></li>
-                <li>Đậu xe: <span>{{ room.parking }}</span></li>
+                <li>Số người tối đa: <span>{{ room.soNguoiToiDa }}</span></li>
+                <li>Diện tích: <span>{{ room.dienTich }} m²</span></li>
+                <li>Phòng trống: <span>{{ room.soPhongCon }}</span></li>
+                <li v-if="room.phanTramGiam>0">Giảm giá: <span>{{ room.phanTramGiam }}%</span></li>
               </ul>
-              
+
               <div class="main-button">
-                 <router-link :to="'/phong/' + room.id">Đặt lịch xem</router-link>
+                <router-link :to="`/phong/${room.maBienThePhong}`">
+                  Đặt phòng
+                </router-link>
               </div>
             </div>
           </div>
+
+          <div v-if="loading">Đang tải dữ liệu...</div>
         </div>
         
         <div class="row">
@@ -77,103 +151,6 @@
     </div>
   </div>
 </template>
-
-<script setup>
-import { ref, computed } from 'vue'
-
-// State quản lý bộ lọc
-const filter = ref('*')
-
-// Dữ liệu giả lập (Sau này sẽ lấy từ API)
-const rooms = ref([
-  {
-    id: 1,
-    name: 'Phòng Deluxe – 202',
-    type: 'Phòng Deluxe',
-    price: '1.200.000',
-    maxPeople: 2,
-    image: '/assets/images/property-01.jpg',
-    area: 250,
-    bedrooms: 2,
-    bathrooms: 2,
-    floor: '2',
-    parking: '2 xe'
-  },
-  {
-    id: 2,
-    name: 'Biệt thự View Biển – 105',
-    type: 'Biệt thự',
-    price: '2.500.000',
-    maxPeople: 6,
-    image: '/assets/images/property-02.jpg',
-    area: 450,
-    bedrooms: 4,
-    bathrooms: 3,
-    floor: '1',
-    parking: '4 xe'
-  },
-  {
-    id: 3,
-    name: 'Penthouse Hoàng Gia',
-    type: 'Penthouse',
-    price: '5.000.000',
-    maxPeople: 8,
-    image: '/assets/images/property-03.jpg',
-    area: 320,
-    bedrooms: 5,
-    bathrooms: 5,
-    floor: '26',
-    parking: 'VIP'
-  },
-  {
-    id: 4,
-    name: 'Căn Hộ Cao Cấp – 404',
-    type: 'Phòng Deluxe',
-    price: '1.800.000',
-    maxPeople: 3,
-    image: '/assets/images/property-04.jpg',
-    area: 120,
-    bedrooms: 2,
-    bathrooms: 1,
-    floor: '4',
-    parking: '1 xe'
-  },
-  {
-    id: 5,
-    name: 'Biệt thự Vườn – 007',
-    type: 'Biệt thự',
-    price: '3.200.000',
-    maxPeople: 5,
-    image: '/assets/images/property-05.jpg',
-    area: 500,
-    bedrooms: 3,
-    bathrooms: 3,
-    floor: 'Trệt',
-    parking: '2 xe'
-  },
-  {
-    id: 6,
-    name: 'Penthouse Sky View',
-    type: 'Penthouse',
-    price: '6.500.000',
-    maxPeople: 10,
-    image: '/assets/images/property-06.jpg',
-    area: 400,
-    bedrooms: 6,
-    bathrooms: 6,
-    floor: '30',
-    parking: 'VIP'
-  }
-]);
-
-// Logic lọc phòng
-const filteredRooms = computed(() => {
-  if (filter.value === '*') {
-    return rooms.value;
-  }
-  return rooms.value.filter(room => room.type === filter.value);
-})
-</script>
 
 <style scoped>
 /* Fix kích thước ảnh cho đều nhau */
@@ -196,4 +173,54 @@ const filteredRooms = computed(() => {
     background-color: #f35525;
     color: #fff;
 }
+.properties .item {
+  background: #fff;
+  border-radius: 14px;
+  padding: 18px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.06);
+  transition: all 0.3s ease;
+  height: 100%;
+}
+
+.properties .item:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
+}
+.sale-badge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  background: #f35525;
+  color: #fff;
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 20px;
+  box-shadow: 0 6px 12px rgba(243, 85, 37, 0.4);
+  z-index: 2;
+}
+.price-old {
+  font-size: 13px;
+  color: #999;
+}
+
+.price-new {
+  font-size: 18px;
+  font-weight: 700;
+  color: #f35525;
+}
+.main-button a {
+  display: block;
+  text-align: center;
+  border-radius: 25px;
+  background: linear-gradient(135deg, #f35525, #ff7a4d);
+  color: #fff;
+  transition: all 0.3s ease;
+}
+
+.main-button a:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(243, 85, 37, 0.4);
+}
+
 </style>

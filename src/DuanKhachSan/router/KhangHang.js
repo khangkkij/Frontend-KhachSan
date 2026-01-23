@@ -19,6 +19,7 @@ import ChiTietDonHang from '@/DuanKhachSan/KhachHang/Profile/ChiTietDonHang.vue'
 import Voucher from '@/DuanKhachSan/KhachHang/Profile/Voucher.vue'
 import PhongDaLuu from '@/DuanKhachSan/KhachHang/Profile/PhongDaLuu.vue'
 import voucher from '@/DuanKhachSan/KhachHang/voucher.vue'
+import ProfileSidebar from '@/DuanKhachSan/KhachHang/Profile/ProfileSidebar.vue'
 // 3. Import Admin
 import LayoutAdmin from '@/DuanKhachSan/Admin/LayoutAdmin.vue'
 import Dashboard from '@/DuanKhachSan/Admin/Dashboard.vue'
@@ -45,10 +46,11 @@ const router = createRouter({
         { path: 'payment', name: 'payment', component: ThanhToan },
         { path: 'voucher', name: 'voucher', component: voucher },
         // Profile Routes
+        { path: 'ProfileSidebar', name: 'ProfileSidebar', component: ProfileSidebar },
         { path: 'profile', name: 'profile', component: HoSo },
         { path: 'history', name: 'order-history', component: DonHang },
         { path: 'order-detail/:id', name: 'order-detail', component: ChiTietDonHang },
-        { path: 'voucher', name: 'my-voucher', component: Voucher },
+        { path: 'my-voucher', name: 'my-voucher', component: Voucher },
         { path: 'saved', name: 'saved-rooms', component: PhongDaLuu }
       ]
     }, // <--- Dấu phẩy ngăn cách giữa object Khách Hàng và Admin

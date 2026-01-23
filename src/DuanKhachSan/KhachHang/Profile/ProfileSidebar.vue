@@ -13,7 +13,7 @@
                 <i class="fa fa-file-invoice"></i> Lịch sử đặt phòng
             </router-link>
 
-            <router-link to="/voucher" class="nav-link" :class="{ active: currentPage === 'voucher' }">
+            <router-link to="/my-voucher" class="nav-link" :class="{ active: currentPage === 'my-voucher' }">
                 <i class="fa fa-ticket-alt"></i> Kho voucher
             </router-link>
 

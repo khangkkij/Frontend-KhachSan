@@ -14,22 +14,23 @@
                             <div class="row">
                                 <div class="col-lg-12 mb-3">
                                     <fieldset>
-                                        <label class="form-label">Họ và Tên</label>
+                                        <label class="form-label">Họ và Tên (*)</label>
                                         <input type="text" v-model="fullName" class="form-control"
                                             placeholder="Nguyễn Văn A" required>
                                     </fieldset>
                                 </div>
 
-                                <div class="col-lg-6 mb-3">
+                                <div class="col-lg-12 mb-3">
                                     <fieldset>
-                                        <label class="form-label">Email</label>
+                                        <label class="form-label">Email (*)</label>
                                         <input type="email" v-model="email" class="form-control"
                                             placeholder="name@example.com" required>
                                     </fieldset>
                                 </div>
+
                                 <div class="col-lg-6 mb-3">
                                     <fieldset>
-                                        <label class="form-label">Số điện thoại</label>
+                                        <label class="form-label">Số điện thoại (*)</label>
                                         <input type="tel" v-model="phone" class="form-control" placeholder="09xxxxxxx"
                                             required>
                                     </fieldset>
@@ -37,14 +38,35 @@
 
                                 <div class="col-lg-6 mb-3">
                                     <fieldset>
-                                        <label class="form-label">Mật khẩu</label>
+                                        <label class="form-label">Giới tính (*)</label>
+                                        <select v-model="gender" class="form-control form-select" required>
+                                            <option value="" disabled selected>Chọn giới tính</option>
+                                            <option value="Nam">Nam</option>
+                                            <option value="Nữ">Nữ</option>
+                                            <option value="Khác">Khác</option>
+                                        </select>
+                                    </fieldset>
+                                </div>
+
+                                <div class="col-lg-12 mb-3">
+                                    <fieldset>
+                                        <label class="form-label">Căn cước công dân (*)</label>
+                                        <input type="text" v-model="cccd" class="form-control"
+                                            placeholder="Số CCCD/CMND" required>
+                                    </fieldset>
+                                </div>
+
+                                <div class="col-lg-6 mb-3">
+                                    <fieldset>
+                                        <label class="form-label">Mật khẩu (*)</label>
                                         <input type="password" v-model="password" class="form-control"
                                             placeholder="******" required>
                                     </fieldset>
                                 </div>
+
                                 <div class="col-lg-6 mb-3">
                                     <fieldset>
-                                        <label class="form-label">Nhập lại mật khẩu</label>
+                                        <label class="form-label">Nhập lại mật khẩu (*)</label>
                                         <input type="password" v-model="confirmPassword" class="form-control"
                                             placeholder="******" required>
                                     </fieldset>
@@ -79,12 +101,10 @@
                 <div class="col-lg-6 col-md-12 d-none d-lg-block">
                     <div id="carouselRegister" class="carousel slide carousel-fade h-100" data-bs-ride="carousel"
                         data-bs-interval="3500">
-
                         <div class="welcome-overlay">
                             <h3>Trở thành thành viên<br>Luxury Club</h3>
                             <p>Nhận ưu đãi độc quyền & trải nghiệm tuyệt vời</p>
                         </div>
-
                         <div class="carousel-inner h-100">
                             <div class="carousel-item active h-100">
                                 <img src="/assets/images/property-01.jpg" class="d-block w-100 h-100 fit-cover"
@@ -109,6 +129,8 @@
 
 <script>
 /* global $ */
+import axios from 'axios'; // Đừng quên import axios
+
 export default {
     name: 'DangKy',
     data() {
@@ -116,6 +138,8 @@ export default {
             fullName: '',
             email: '',
             phone: '',
+            gender: '', // Mới thêm
+            cccd: '',   // Mới thêm
             password: '',
             confirmPassword: '',
             agreeTerms: false
@@ -130,17 +154,57 @@ export default {
         }
     },
     methods: {
-        handleRegister() {
+        async handleRegister() {
+            // 1. Kiểm tra mật khẩu khớp
             if (this.password !== this.confirmPassword) {
                 alert("Mật khẩu nhập lại không khớp!");
                 return;
             }
+            // 2. Kiểm tra điều khoản
             if (!this.agreeTerms) {
                 alert("Bạn cần đồng ý với điều khoản!");
                 return;
             }
-            alert("Đăng ký thành công! (Mô phỏng)");
-            this.$router.push('/dang-nhap');
+            // 3. Kiểm tra độ dài mật khẩu (Frontend check nhanh)
+            if (this.password.length < 6) {
+                alert("Mật khẩu phải có ít nhất 6 ký tự!");
+                return;
+            }
+
+            try {
+                // 4. Chuẩn bị dữ liệu gửi đi
+                // Tên trường (Key) phải KHỚP CHÍNH XÁC với Class 'RegisterRequest' trong C#
+                const registerData = {
+                    HoVaTen: this.fullName,
+                    Email: this.email,
+                    MatKhau: this.password,
+                    Sdt: this.phone,
+                    GioiTinh: this.gender,
+                    Cccd: this.cccd
+                };
+
+                // 5. Gọi API
+                // Dùng biến môi trường hoặc link cứng nếu bạn chưa sửa file .env
+                // const apiUrl = `${import.meta.env.VITE_API_URL}/api/Login/register`;
+                const apiUrl = `${import.meta.env.VITE_API_URL}/api/Login/register`;
+
+                const response = await axios.post(apiUrl, registerData);
+
+                if (response.status === 200) {
+                    alert("Đăng ký thành công! Hãy đăng nhập ngay.");
+                    this.$router.push('/dang-nhap');
+                }
+
+            } catch (error) {
+                if (error.response) {
+                    // Lỗi từ Server trả về (ví dụ: Email trùng)
+                    const msg = error.response.data.message || JSON.stringify(error.response.data);
+                    alert("Đăng ký thất bại: " + msg);
+                } else {
+                    console.error(error);
+                    alert("Không thể kết nối đến Server!");
+                }
+            }
         }
     }
 }
@@ -190,6 +254,17 @@ export default {
     background-color: #fff;
     border: 1px solid #f35525;
     box-shadow: none;
+}
+
+/* Style cho thẻ select giống input */
+.form-select {
+    background-color: #f4f4f4;
+    border: none;
+    height: 45px;
+    padding-left: 15px;
+    font-size: 14px;
+    border-radius: 5px;
+    cursor: pointer;
 }
 
 .form-label {

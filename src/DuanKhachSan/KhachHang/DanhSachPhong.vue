@@ -1,28 +1,30 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import axios from 'axios'
-const API = import.meta.env.VITE_API;
-const filter = ref('*')
-const dsPhong=ref([])
-const loading=ref(true)
-onMounted (async()=>{
-  try{
-    const res = await axios.get(`${API}/api/DanhSachPhong`)
-    dsPhong.value=res.data
+import { ref, computed, onMounted } from "vue";
+import axios from "axios";
+const API = import.meta.env.VITE_API_URL;
+const filter = ref("*");
+const dsPhong = ref([]);
+const loading = ref(true);
+onMounted(async () => {
+  try {
+    const res = await axios.get(`${API}/api/DanhSachPhong`);
+    dsPhong.value = res.data;
+    console.log("ds type:", typeof res.data);
+    console.log("is array:", Array.isArray(res.data));
+    console.log("item đầu tiên:", res.data[0]);
+  } catch (err) {
+    console.error("Lỗi Load phòng: ", err);
+  } finally {
+    loading.value = false;
   }
-  catch(err){
-    console.error("Lỗi Load phòng: ",err)
-  } finally{
-    loading.value=false
-  }
-})
+});
 // Logic lọc phòng
 const filteredRooms = computed(() => {
-  if (filter.value === '*') {
+  if (filter.value === "*") {
     return dsPhong.value;
   }
-  return dsPhong.value.filter(room => room.tenLoai === filter.value);
-})
+  return dsPhong.value.filter((room) => room.tenLoai === filter.value);
+});
 </script>
 <template>
   <div>
@@ -41,28 +43,30 @@ const filteredRooms = computed(() => {
 
     <div class="section properties">
       <div class="container">
-        
         <ul class="properties-filter">
           <li>
             <a
               href="javascript:void(0)"
               :class="{ is_active: filter === '*' }"
               @click="filter = '*'"
-            >Tất cả</a>
+              >Tất cả</a
+            >
           </li>
           <li>
             <a
               href="javascript:void(0)"
               :class="{ is_active: filter === 'Standard' }"
               @click="filter = 'Standard'"
-            >Tiêu chuẩn</a>
+              >Tiêu chuẩn</a
+            >
           </li>
           <li>
             <a
               href="javascript:void(0)"
               :class="{ is_active: filter === 'Deluxe' }"
               @click="filter = 'Deluxe'"
-            >Cao cấp</a>
+              >Cao cấp</a
+            >
           </li>
         </ul>
 
@@ -74,14 +78,14 @@ const filteredRooms = computed(() => {
           >
             <div class="item">
               <div class="thumb">
-              <span v-if="room.phanTramGiam > 0" class="sale-badge">
-                -{{ room.phanTramGiam }}%
-              </span>
+                <span v-if="room.phanTramGiam > 0" class="sale-badge">
+                  -{{ room.phanTramGiam }}%
+                </span>
 
-              <router-link :to="`/phong/${room.maBienThePhong}`">
-                <img :src="`${API}/images/${room.anhDaiDien}`" />
-              </router-link>
-            </div>
+                <router-link :to="`/phong/${room.maBienThePhong}`">
+                  <img :src="`${API}/images/${room.anhDaiDien}`" />
+                </router-link>
+              </div>
 
               <div class="d-flex justify-content-between align-items-start">
                 <!-- Bên trái -->
@@ -92,9 +96,11 @@ const filteredRooms = computed(() => {
                   <!-- GIÁ GỐC (giữ chỗ) -->
                   <div
                     class="text-muted text-decoration-line-through small"
-                    :style="{ visibility: room.phanTramGiam > 0 ? 'visible' : 'hidden' }"
+                    :style="{
+                      visibility: room.phanTramGiam > 0 ? 'visible' : 'hidden',
+                    }"
                   >
-                    {{ Number(room.giaGoc).toLocaleString('vi-VN') }} VNĐ
+                    {{ Number(room.giaGoc).toLocaleString("vi-VN") }} VNĐ
                   </div>
 
                   <!-- GIÁ SAU GIẢM / GIÁ THƯỜNG -->
@@ -104,12 +110,14 @@ const filteredRooms = computed(() => {
                   >
                     {{
                       room.phanTramGiam > 0
-                        ? Number(room.giaGoc * (100 - room.phanTramGiam) / 100).toLocaleString('vi-VN')
-                        : Number(room.giaGoc).toLocaleString('vi-VN')
-                    }} VNĐ / đêm
+                        ? Number(
+                            (room.giaGoc * (100 - room.phanTramGiam)) / 100,
+                          ).toLocaleString("vi-VN")
+                        : Number(room.giaGoc).toLocaleString("vi-VN")
+                    }}
+                    VNĐ / đêm
                   </div>
                 </div>
-
               </div>
 
               <h4>
@@ -119,10 +127,18 @@ const filteredRooms = computed(() => {
               </h4>
 
               <ul>
-                <li>Số người tối đa: <span>{{ room.soNguoiToiDa }}</span></li>
-                <li>Diện tích: <span>{{ room.dienTich }} m²</span></li>
-                <li>Phòng trống: <span>{{ room.soPhongCon }}</span></li>
-                <li v-if="room.phanTramGiam>0">Giảm giá: <span>{{ room.phanTramGiam }}%</span></li>
+                <li>
+                  Số người tối đa: <span>{{ room.soNguoiToiDa }}</span>
+                </li>
+                <li>
+                  Diện tích: <span>{{ room.dienTich }} m²</span>
+                </li>
+                <li>
+                  Phòng trống: <span>{{ room.soPhongCon }}</span>
+                </li>
+                <li v-if="room.phanTramGiam > 0">
+                  Giảm giá: <span>{{ room.phanTramGiam }}%</span>
+                </li>
               </ul>
 
               <div class="main-button">
@@ -135,7 +151,7 @@ const filteredRooms = computed(() => {
 
           <div v-if="loading">Đang tải dữ liệu...</div>
         </div>
-        
+
         <div class="row">
           <div class="col-lg-12">
             <ul class="pagination">
@@ -146,7 +162,6 @@ const filteredRooms = computed(() => {
             </ul>
           </div>
         </div>
-
       </div>
     </div>
   </div>
@@ -155,23 +170,23 @@ const filteredRooms = computed(() => {
 <style scoped>
 /* Fix kích thước ảnh cho đều nhau */
 .properties .item .thumb {
-    overflow: hidden;
-    height: 260px; /* Chiều cao cố định */
+  overflow: hidden;
+  height: 260px; /* Chiều cao cố định */
 }
 .properties .item .thumb img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover; /* Cắt ảnh vừa khung mà không méo */
-    transition: all 0.3s;
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* Cắt ảnh vừa khung mà không méo */
+  transition: all 0.3s;
 }
 .properties .item:hover .thumb img {
-    transform: scale(1.1); /* Phóng to nhẹ khi hover */
+  transform: scale(1.1); /* Phóng to nhẹ khi hover */
 }
 
 /* Style cho nút active của bộ lọc */
 .properties-filter li a.is_active {
-    background-color: #f35525;
-    color: #fff;
+  background-color: #f35525;
+  color: #fff;
 }
 .properties .item {
   background: #fff;
@@ -222,5 +237,4 @@ const filteredRooms = computed(() => {
   transform: translateY(-2px);
   box-shadow: 0 10px 20px rgba(243, 85, 37, 0.4);
 }
-
 </style>

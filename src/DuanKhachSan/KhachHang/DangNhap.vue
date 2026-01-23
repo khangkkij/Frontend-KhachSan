@@ -98,6 +98,8 @@
 </template>
 
 <script>
+import axios from 'axios';
+
 export default {
     name: 'DangNhap',
     data() {
@@ -108,9 +110,67 @@ export default {
         }
     },
     methods: {
-        handleLogin() {
-            console.log("Đăng nhập thường:", this.email, this.password);
-            alert(`Đang đăng nhập với email: ${this.email}`);
+        async handleLogin() {
+            // 1. Kiểm tra dữ liệu nhập vào cơ bản
+            if (!this.email || !this.password) {
+                alert("Vui lòng nhập đầy đủ Email và Mật khẩu!");
+                return;
+            }
+
+            try {
+                // 2. Chuẩn bị dữ liệu khớp với C# LoginRequest
+                // Lưu ý: Tên trường (key) phải khớp với Class LoginRequest trong C#
+                const loginData = {
+                    Email: this.email,
+                    MatKhau: this.password
+                };
+
+                // 3. Gọi API
+                const response = await axios.post(
+                    `${import.meta.env.VITE_API_URL}/api/Login/login`, // Đảm bảo biến môi trường đúng
+                    loginData,
+                    {
+                        withCredentials: true // <--- BẮT BUỘC: Để nhận và gửi Cookie HttpOnly
+                    }
+                );
+
+                if (response.status === 200) {
+                    const result = response.data; // Cục { message, data: { user... } }
+                    const userInfo = result.data;
+
+                    // 4. Lưu thông tin hiển thị (KHÔNG LƯU TOKEN VÌ TOKEN ĐÃ Ở TRONG COOKIE)
+                    localStorage.setItem('user_info', JSON.stringify({
+                        id: userInfo.maKh,
+                        name: userInfo.hoVaTen,
+                        email: userInfo.email,
+                        avatar: userInfo.hinhAnh
+                    }));
+
+                    // Phát sự kiện để Header cập nhật lại tên người dùng (nếu bạn dùng EventBus hoặc Vuex/Pinia)
+                    // window.location.reload(); // Cách đơn giản nhất để refresh lại header
+
+                    alert(`Xin chào ${userInfo.hoVaTen}, đăng nhập thành công!`);
+
+                    // 5. Chuyển hướng về trang chủ
+                    this.$router.push('/');
+                }
+
+            } catch (error) {
+                // 6. Xử lý các loại lỗi
+                if (error.response) {
+                    const status = error.response.status;
+                    if (status === 401) {
+                        alert("Sai Email hoặc Mật khẩu. Vui lòng kiểm tra lại!");
+                    } else if (status === 403) {
+                        alert("Tài khoản của bạn đã bị khóa!");
+                    } else {
+                        alert(`Lỗi hệ thống (${status}): ${error.response.data.message || 'Thử lại sau'}`);
+                    }
+                } else {
+                    console.error("Lỗi kết nối:", error);
+                    alert("Không thể kết nối đến Server. Hãy kiểm tra đường truyền!");
+                }
+            }
         },
         loginGoogle() {
             alert("Tính năng Đăng nhập Google đang được phát triển!");

@@ -19,12 +19,18 @@ import ChiTietDonHang from '@/DuanKhachSan/KhachHang/Profile/ChiTietDonHang.vue'
 import Voucher from '@/DuanKhachSan/KhachHang/Profile/Voucher.vue'
 import PhongDaLuu from '@/DuanKhachSan/KhachHang/Profile/PhongDaLuu.vue'
 import voucher from '@/DuanKhachSan/KhachHang/voucher.vue'
+import ProfileSidebar from '@/DuanKhachSan/KhachHang/Profile/ProfileSidebar.vue'
 // 3. Import Admin
 import LayoutAdmin from '@/DuanKhachSan/Admin/LayoutAdmin.vue'
 import Dashboard from '@/DuanKhachSan/Admin/Dashboard.vue'
 import QuanLyDanhMuc from '@/DuanKhachSan/Admin/QuanLyDanhMuc.vue'
 import QuanLyPhong from '@/DuanKhachSan/Admin/QuanLyPhong.vue'
 import QuanLyVoucher from '@/DuanKhachSan/Admin/QuanLyVoucher.vue'
+//4. Import NhanVien
+import ReceptionLayout from '@/DuanKhachSan/NhanVien/Views/ReceptionLayout.vue'
+import RoomManager from '@/DuanKhachSan/NhanVien/Views/reception/RoomManager.vue'
+import ServiceManager from '@/DuanKhachSan/NhanVien/Views/reception/ServiceManager.vue'
+import DashboardHome from '@/DuanKhachSan/NhanVien/Views/reception/ReceptionDashboard.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -45,10 +51,11 @@ const router = createRouter({
         { path: 'payment', name: 'payment', component: ThanhToan },
         { path: 'voucher', name: 'voucher', component: voucher },
         // Profile Routes
+        { path: 'ProfileSidebar', name: 'ProfileSidebar', component: ProfileSidebar },
         { path: 'profile', name: 'profile', component: HoSo },
         { path: 'history', name: 'order-history', component: DonHang },
         { path: 'order-detail/:id', name: 'order-detail', component: ChiTietDonHang },
-        { path: 'voucher', name: 'my-voucher', component: Voucher },
+        { path: 'my-voucher', name: 'my-voucher', component: Voucher },
         { path: 'saved', name: 'saved-rooms', component: PhongDaLuu }
       ]
     }, // <--- Dấu phẩy ngăn cách giữa object Khách Hàng và Admin
@@ -79,8 +86,30 @@ const router = createRouter({
           component: QuanLyVoucher
         }
       ]
-    }
-  ] // <--- Dấu đóng mảng routes phải nằm TẬN CÙNG
+    },
+    // --- ROUTE NHÂN VIÊN (Phải nằm trong mảng routes) ---
+    {
+    path: '/NhanVien',
+    component: ReceptionLayout, // Load cái khung sườn riêng này
+    children: [
+      {
+        path: '', // Mặc định vào /reception sẽ hiện trang này
+        name: 'ReceptionDashboard',
+        component: DashboardHome 
+      },
+      {
+        path: 'rooms', // Đường dẫn: /reception/rooms
+        name: 'RoomManager',
+        component: RoomManager
+      },
+      {
+        path: 'services', // Đường dẫn: /reception/services
+        name: 'ServiceManager',
+        component: ServiceManager
+      }
+    ]
+  }
+  ]
 })
 
 export default router

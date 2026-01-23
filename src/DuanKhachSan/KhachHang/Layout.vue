@@ -5,20 +5,34 @@
             <div class="row">
                 <div class="col-12">
                     <nav class="main-nav">
-                        <router-link to="/" class="logo">
+                        <a href="/" class="logo">
                             <h1>Luxury</h1>
-                        </router-link>
+                        </a>
 
                         <ul class="nav">
                             <li><router-link to="/">Trang chủ</router-link></li>
-                            <li><router-link to="/danh-sach-phong">Phòng nghỉ</router-link></li>
+                            <li><router-link to="/danh-sach-phong">Danh sách phòng</router-link></li>
                             <li><router-link to="/voucher">Voucher</router-link></li>
 
-                            <li>
+                            <li v-if="!isLoggedIn">
                                 <router-link to="/dang-nhap">
-                                    <i class="fa fa-user"></i> Tài khoản
+                                    <i class="fa fa-user"></i> Đăng nhập
                                 </router-link>
                             </li>
+
+                            <template v-else>
+                                <li>
+                                    <router-link to="/ProfileSidebar" style="color: #f35525; font-weight: bold;">
+                                        <i class="fa fa-user-circle"></i> {{ user.name }}
+                                    </router-link>
+                                </li>
+                                <li>
+                                    <a href="javascript:void(0)" @click="handleLogout" class="logout-btn">
+                                        <i class="fa fa-sign-out-alt"></i> Đăng xuất
+                                    </a>
+                                </li>
+                            </template>
+
                         </ul>
 
                         <a class='menu-trigger'>
@@ -30,7 +44,8 @@
         </div>
     </header>
 
-    <div style="min-height: 600px;"> <router-view></router-view>
+    <div style="min-height: 600px;">
+        <router-view></router-view>
     </div>
 
     <footer class="footer-section">
@@ -43,7 +58,7 @@
                                 <h3 class="fw-bold text-white">LUXURY <span class="text-orange">HOTEL</span></h3>
                             </div>
                             <div class="footer-text">
-                                <p>Trải nghiệm kỳ nghỉ đẳng cấp quốc tế với hệ thống phòng ốc sang trọng và dịch vụ tận tâm. Chúng tôi mang đến cho bạn cảm giác như đang ở nhà.</p>
+                                <p>Trải nghiệm kỳ nghỉ đẳng cấp quốc tế với hệ thống phòng ốc sang trọng và dịch vụ tận tâm.</p>
                             </div>
                             <div class="footer-social-icon">
                                 <span>Theo dõi ngay</span>
@@ -64,8 +79,6 @@
                                 <li><router-link to="/about">Về chúng tôi</router-link></li>
                                 <li><router-link to="/rooms">Danh sách phòng</router-link></li>
                                 <li><router-link to="/services">Dịch vụ</router-link></li>
-                                <li><router-link to="/contact">Liên hệ</router-link></li>
-                                <li><router-link to="/policy">Chính sách</router-link></li>
                             </ul>
                         </div>
                     </div>
@@ -74,9 +87,6 @@
                         <div class="footer-widget">
                             <div class="footer-widget-heading">
                                 <h3>Đăng Ký Nhận Tin</h3>
-                            </div>
-                            <div class="footer-text mb-25">
-                                <p>Đừng bỏ lỡ những ưu đãi mới nhất của chúng tôi, hãy nhập email ngay bên dưới.</p>
                             </div>
                             <div class="subscribe-form">
                                 <form action="#">
@@ -94,27 +104,83 @@
 
 <script>
 /* global $ */
+import axios from 'axios'; 
+
 export default {
     name: 'KhachHangLayout',
+    data() {
+        return {
+            isLoggedIn: false,
+            user: {}
+        }
+    },
     mounted() {
+        this.checkLoginStatus();
+
         // Logic JS cho Menu Mobile
         if ($('.menu-trigger').length) {
             $(".menu-trigger").off('click');
-
             $(".menu-trigger").on('click', function () {
                 $(this).toggleClass('active');
                 $('.header-area .nav').slideToggle(200);
             });
         }
+    },
+    methods: {
+        checkLoginStatus() {
+            const userStr = localStorage.getItem('user_info');
+            if (userStr) {
+                this.isLoggedIn = true;
+                this.user = JSON.parse(userStr);
+            } else {
+                this.isLoggedIn = false;
+                this.user = {};
+            }
+        },
+        async handleLogout() {
+            if (confirm("Bạn có chắc chắn muốn đăng xuất không?")) {
+                try {
+                    // --- SỬA LỖI URL ---
+                    // Nếu import.meta.env.VITE_API_URL bị undefined thì dùng luôn link cứng
+                    const baseUrl = import.meta.env.VITE_API_URL || 'https://localhost:7023';
+                    
+                    await axios.post(
+                        `${baseUrl}/api/Login/logout`,
+                        {}, 
+                        { withCredentials: true } 
+                    );
+                } catch (error) {
+                    console.error("Lỗi đăng xuất server:", error);
+                    // Dù lỗi server vẫn cho client đăng xuất
+                }
+
+                // Xóa dữ liệu Client
+                localStorage.removeItem('user_info');
+                
+                alert("Đã đăng xuất thành công!");
+                
+                // --- QUAN TRỌNG: Dùng cái này để Header cập nhật lại ngay lập tức ---
+                window.location.href = '/dang-nhap';
+            }
+        }
     }
 }
 </script>
-
 <style scoped>
 /* Màu chủ đạo */
 .text-orange { color: #f35525 !important; }
 
-/* Footer Main */
+/* Thêm style cho nút đăng xuất */
+.logout-btn {
+    cursor: pointer;
+    color: #333;
+    font-weight: 500;
+}
+.logout-btn:hover {
+    color: #f35525 !important; 
+}
+
+/* Các CSS Footer của bạn giữ nguyên bên dưới... */
 .footer-section {
     background: #151414;
     position: relative;
@@ -125,7 +191,7 @@ export default {
     position: relative;
     z-index: 2;
 }
-
+/* ... (Copy nốt phần CSS cũ của bạn vào đây) ... */
 .footer-text p {
     margin-bottom: 14px;
     font-size: 14px;
@@ -155,14 +221,12 @@ export default {
     transition: 0.3s;
 }
 
-/* Màu Social Icon */
 .facebook-bg { background: #3B5998; }
 .twitter-bg { background: #55ACEE; }
 .google-bg { background: #DD4B39; }
 
 .footer-social-icon a:hover { transform: translateY(-5px); }
 
-/* Widget Heading */
 .footer-widget-heading h3 {
     color: #fff;
     font-size: 20px;
@@ -181,15 +245,11 @@ export default {
     background: #f35525;
 }
 
-/* Danh sách link */
-.footer-widget ul {
-    margin: 0px;
-    padding: 0px;
-}
+.footer-widget ul { margin: 0px; padding: 0px; }
 
 .footer-widget ul li {
     display: inline-block;
-    width: 50%; /* Chia thành 2 cột */
+    width: 50%;
     margin-bottom: 12px;
 }
 
@@ -205,11 +265,7 @@ export default {
     padding-left: 5px;
 }
 
-/* Form đăng ký */
-.subscribe-form {
-    position: relative;
-    overflow: hidden;
-}
+.subscribe-form { position: relative; overflow: hidden; }
 
 .subscribe-form input {
     width: 100%;
@@ -234,49 +290,9 @@ export default {
     transition: 0.3s;
 }
 .subscribe-form button:hover { background: #d14015; }
-
 .subscribe-form button i {
     color: #fff;
     font-size: 22px;
     transform: rotate(-6deg);
 }
-
-/* Copyright Area */
-.copyright-area {
-    background: #202020;
-    padding: 25px 0;
-}
-
-.copyright-text p {
-    margin: 0;
-    font-size: 14px;
-    color: #878787;
-}
-
-.copyright-text p a {
-    color: #f35525;
-    text-decoration: none;
-    font-weight: 600;
-}
-
-.footer-menu ul {
-    margin: 0;
-    padding: 0;
-}
-
-.footer-menu ul li {
-    display: inline-block;
-    margin-left: 20px;
-}
-
-.footer-menu ul li a {
-    font-size: 14px;
-    color: #878787;
-    text-decoration: none;
-    transition: .3s;
-}
-
-.footer-menu ul li a:hover { color: #f35525; }
-
-.contact-info p { color: #878787; font-size: 14px; margin-bottom: 8px; }
 </style>

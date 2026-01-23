@@ -4,14 +4,15 @@ import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 const route = useRoute();
 const roomId = route.params.id;
-const API = import.meta.env.VITE_API
-const room = ref([])
+const API = import.meta.env.VITE_API_URL
+const room = ref(null)
+const loading = ref(true)
 const imageOpacity = ref(1)
 const bienThePhong = ref([])
 const currentImage = ref('')
 const selectedVariantId = ref(null)
 const selectedVariant = computed(() => {
-  return bienThePhong.value.find(
+  return bienThePhong.value?.find(
     bt => bt.maBienThePhong === selectedVariantId.value
   )
 })
@@ -25,8 +26,8 @@ const changeImage = (img) => {
 onMounted(async() => {
   const res=await axios.get(`${API}/api/ChiTietPhong/${roomId}`)
   room.value=res.data.chiTiet
-  bienThePhong.value = res.data.bienTheKhac
-  if (room.value.danhSachAnh?.length > 0) {
+  bienThePhong.value = res.data?.bienTheKhac ?? []
+  if (room.value?.danhSachAnh?.length > 0) {
     currentImage.value = `${API}/images/${room.value.danhSachAnh[0]}`
   }
   const exist = bienThePhong.value.find(
@@ -40,7 +41,7 @@ onMounted(async() => {
 })
 </script>
 <template>
-  <div class="room-detail-wrapper">
+  <div class="room-detail-wrapper" v-if="room">
     <div class="page-heading header-text">
       <div class="container">
         <div class="row">

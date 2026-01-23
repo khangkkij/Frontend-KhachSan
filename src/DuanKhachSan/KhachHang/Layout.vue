@@ -5,13 +5,13 @@
             <div class="row">
                 <div class="col-12">
                     <nav class="main-nav">
-                        <router-link to="/" class="logo">
+                        <a href="/" class="logo">
                             <h1>Luxury</h1>
-                        </router-link>
+                        </a>
 
                         <ul class="nav">
                             <li><router-link to="/">Trang chủ</router-link></li>
-                            <li><router-link to="/danh-sach-phong">Phòng nghỉ</router-link></li>
+                            <li><router-link to="/danh-sach-phong">Danh sách phòng</router-link></li>
                             <li><router-link to="/voucher">Voucher</router-link></li>
 
                             <li>

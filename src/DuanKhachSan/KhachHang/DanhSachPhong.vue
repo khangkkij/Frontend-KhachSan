@@ -24,10 +24,10 @@
             <a href="javascript:void(0)" :class="{ is_active: filter === 'Phòng Deluxe' }" @click="filter = 'Phòng Deluxe'">Deluxe</a>
           </li>
           <li>
-            <a href="javascript:void(0)" :class="{ is_active: filter === 'Biệt thự' }" @click="filter = 'Biệt thự'">Biệt thự</a>
+            <a href="javascript:void(0)" :class="{ is_active: filter === 'VIP' }" @click="filter = 'VIP'">VIP</a>
           </li>
           <li>
-            <a href="javascript:void(0)" :class="{ is_active: filter === 'Penthouse' }" @click="filter = 'Penthouse'">Penthouse</a>
+            <a href="javascript:void(0)" :class="{ is_active: filter === 'Standard' }" @click="filter = 'Standard'">Standard</a>
           </li>
         </ul>
 

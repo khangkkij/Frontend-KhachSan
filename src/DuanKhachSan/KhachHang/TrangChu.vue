@@ -15,20 +15,20 @@
       <div class="owl-carousel owl-banner">
         <div class="item item-1">
           <div class="header-text">
-            <span class="category">Toronto, <em>Canada</em></span>
-            <h2>Nhanh tay!<br>Sở hữu căn biệt thự tốt nhất</h2>
+            <span class="category">Deluxe</span>
+            <h2>Đặt phòng view đẹp, phong phú, tiện nghi</h2>
           </div>
         </div>
         <div class="item item-2">
           <div class="header-text">
-            <span class="category">Melbourne, <em>Úc</em></span>
-            <h2>Đừng bỏ lỡ!<br>Biệt thự đẹp nhất phố</h2>
+            <span class="category">VIP</span>
+            <h2>Đừng bỏ lỡ!<br>Phòng VIP hạng sang</h2>
           </div>
         </div>
         <div class="item item-3">
           <div class="header-text">
-            <span class="category">Miami, <em>Nam Florida</em></span>
-            <h2>Hành động ngay!<br>Sở hữu Penthouse đẳng cấp</h2>
+            <span class="category">Standard</span>
+            <h2>Phòng tiêu chuẩn<br>Dành cho công việc ngắn hạn</h2>
           </div>
         </div>
       </div>
@@ -46,42 +46,42 @@
           <div class="col-lg-5">
             <div class="section-heading">
               <h6>| Nổi bật</h6>
-              <h2>Căn hộ tốt nhất & View biển</h2>
+              <h2>Phòng Deluxe độc nhất & View biển</h2>
             </div>
             <div class="accordion" id="accordionExample">
               <div class="accordion-item">
                 <h2 class="accordion-header" id="headingOne">
                   <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
-                    Liên kết hữu ích nhất?
+                    Có gì đặc biệt?
                   </button>
                 </h2>
                 <div id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="headingOne" data-bs-parent="#accordionExample">
                   <div class="accordion-body">
-                    Nhận <strong>website biệt thự tốt nhất</strong> bằng HTML CSS và Bootstrap.
+                    Có view biển, ban công rộng rãi, tiện nghi đầy đủ.
                   </div>
                 </div>
               </div>
               <div class="accordion-item">
                 <h2 class="accordion-header" id="headingTwo">
                   <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
-                    Cách thức hoạt động?
+                    Chi phí như thế nào?
                   </button>
                 </h2>
                 <div id="collapseTwo" class="accordion-collapse collapse" aria-labelledby="headingTwo" data-bs-parent="#accordionExample">
                   <div class="accordion-body">
-                    Quy trình làm việc chuyên nghiệp và minh bạch.
+                    Với chỉ từ 1.200.000 VNĐ/ngày, bạn đã có thể trải nghiệm.
                   </div>
                 </div>
               </div>
               <div class="accordion-item">
                 <h2 class="accordion-header" id="headingThree">
                   <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
-                    Tại sao Villa Agency là tốt nhất?
+                    Chất lượng dịch vụ?
                   </button>
                 </h2>
                 <div id="collapseThree" class="accordion-collapse collapse" aria-labelledby="headingThree" data-bs-parent="#accordionExample">
                   <div class="accordion-body">
-                    Chúng tôi cung cấp dịch vụ uy tín hàng đầu.
+                    Đa dạng dịch vụ đi kèm, phục vụ 24/7.
                   </div>
                 </div>
               </div>
@@ -96,7 +96,7 @@
                 </li>
                 <li>
                   <img src="/assets/images/info-icon-02.png" alt="" style="max-width: 52px;">
-                  <h4>Hợp đồng<br><span>Sẵn sàng ký</span></h4>
+                  <h4>Thủ tục<br><span>Nhanh gọn</span></h4>
                 </li>
                 <li>
                   <img src="/assets/images/info-icon-03.png" alt="" style="max-width: 52px;">
@@ -147,20 +147,20 @@
               <div class="row">
                 <div class="col-lg-4">
                   <div class="counter">
-                    <h2 class="timer count-title count-number" data-to="34" data-speed="1000">34</h2>
-                    <p class="count-text ">Công trình<br>Đã hoàn thành</p>
+                    <h2 class="timer count-title count-number" data-to="34" data-speed="1000">70</h2>
+                    <p class="count-text ">Lượt khách<br>Đã trải nghiệm</p>
                   </div>
                 </div>
                 <div class="col-lg-4">
                   <div class="counter">
-                    <h2 class="timer count-title count-number" data-to="12" data-speed="1000">12</h2>
-                    <p class="count-text ">Năm<br>Kinh nghiệm</p>
+                    <h2 class="timer count-title count-number" data-to="12" data-speed="1000">6</h2>
+                    <p class="count-text ">Năm<br>Vận hành</p>
                   </div>
                 </div>
                 <div class="col-lg-4">
                   <div class="counter">
-                    <h2 class="timer count-title count-number" data-to="24" data-speed="1000">24</h2>
-                    <p class="count-text ">Giải thưởng<br>Đạt được 2023</p>
+                    <h2 class="timer count-title count-number" data-to="24" data-speed="1000">100%</h2>
+                    <p class="count-text ">Khách hàng<br>Hài lòng</p>
                   </div>
                 </div>
               </div>
@@ -176,7 +176,7 @@
           <div class="col-lg-4">
             <div class="section-heading">
               <h6>| Ưu đãi tốt nhất</h6>
-              <h2>Tìm căn hộ ưng ý ngay hôm nay!</h2>
+              <h2>Tìm phòng ưng ý ngay hôm nay!</h2>
             </div>
           </div>
           <div class="col-lg-12">
@@ -185,13 +185,13 @@
                 <div class="nav-wrapper ">
                   <ul class="nav nav-tabs" role="tablist">
                     <li class="nav-item" role="presentation">
-                      <button class="nav-link active" id="appartment-tab" data-bs-toggle="tab" data-bs-target="#appartment" type="button" role="tab" aria-controls="appartment" aria-selected="true">Căn hộ</button>
+                      <button class="nav-link active" id="appartment-tab" data-bs-toggle="tab" data-bs-target="#appartment" type="button" role="tab" aria-controls="appartment" aria-selected="true">Deluxe</button>
                     </li>
                     <li class="nav-item" role="presentation">
-                      <button class="nav-link" id="villa-tab" data-bs-toggle="tab" data-bs-target="#villa" type="button" role="tab" aria-controls="villa" aria-selected="false">Biệt thự</button>
+                      <button class="nav-link" id="villa-tab" data-bs-toggle="tab" data-bs-target="#villa" type="button" role="tab" aria-controls="villa" aria-selected="false">VIP</button>
                     </li>
                     <li class="nav-item" role="presentation">
-                      <button class="nav-link" id="penthouse-tab" data-bs-toggle="tab" data-bs-target="#penthouse" type="button" role="tab" aria-controls="penthouse" aria-selected="false">Penthouse</button>
+                      <button class="nav-link" id="penthouse-tab" data-bs-toggle="tab" data-bs-target="#penthouse" type="button" role="tab" aria-controls="penthouse" aria-selected="false">Standard</button>
                     </li>
                   </ul>
                 </div>              
@@ -213,8 +213,8 @@
                         <img src="/assets/images/deal-01.jpg" alt="">
                       </div>
                       <div class="col-lg-3">
-                        <h4>Thông tin thêm về Căn hộ</h4>
-                        <p>Nội dung mô tả chi tiết về căn hộ này. Vị trí thuận lợi, tiện ích đầy đủ.</p>
+                        <h4>Thông tin thêm về phòng</h4>
+                        <p>Nội dung mô tả chi tiết về phòng này. Vị trí thuận lợi, tiện ích đầy đủ.</p>
                         <div class="icon-button">
                           <a href="#"><i class="fa fa-calendar"></i> Đặt lịch xem</a>
                         </div>
@@ -223,13 +223,53 @@
                   </div>
                   <div class="tab-pane fade" id="villa" role="tabpanel" aria-labelledby="villa-tab">
                       <div class="row">
-                          <div class="col-lg-3"><h4>Thông tin Biệt thự</h4></div>
+                      <div class="col-lg-3">
+                        <div class="info-table">
+                          <ul>
+                            <li>Tổng diện tích <span>120 m2</span></li>
+                            <li>Tầng số <span>15</span></li>
+                            <li>Số phòng <span>3</span></li>
+                            <li>Bãi đậu xe <span>Có</span></li>
+                            <li>Thanh toán <span>Ngân hàng</span></li>
+                          </ul>
+                        </div>
                       </div>
+                      <div class="col-lg-6">
+                        <img src="/assets/images/deal-01.jpg" alt="">
+                      </div>
+                      <div class="col-lg-3">
+                        <h4>Thông tin thêm về phòng</h4>
+                        <p>Nội dung mô tả chi tiết về phòng này. Vị trí thuận lợi, tiện ích đầy đủ.</p>
+                        <div class="icon-button">
+                          <a href="#"><i class="fa fa-calendar"></i> Đặt lịch xem</a>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                   <div class="tab-pane fade" id="penthouse" role="tabpanel" aria-labelledby="penthouse-tab">
                       <div class="row">
-                          <div class="col-lg-3"><h4>Thông tin Penthouse</h4></div>
+                      <div class="col-lg-3">
+                        <div class="info-table">
+                          <ul>
+                            <li>Tổng diện tích <span>100 m2</span></li>
+                            <li>Tầng số <span>8</span></li>
+                            <li>Số phòng <span>2</span></li>
+                            <li>Bãi đậu xe <span>Có</span></li>
+                            <li>Thanh toán <span>Ngân hàng</span></li>
+                          </ul>
+                        </div>
                       </div>
+                      <div class="col-lg-6">
+                        <img src="/assets/images/deal-01.jpg" alt="">
+                      </div>
+                      <div class="col-lg-3">
+                        <h4>Thông tin thêm về phòng</h4>
+                        <p>Nội dung mô tả chi tiết về phòng này. Vị trí thuận lợi, tiện ích đầy đủ.</p>
+                        <div class="icon-button">
+                          <a href="#"><i class="fa fa-calendar"></i> Đặt lịch xem</a>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -404,6 +444,14 @@ const rooms = ref([
     parking: 'VIP'
   }
 ]);
+// const rooms = ref([]);
+
+// const loadData = async () => {
+//   const response = await fetch('/api/rooms'); // Giả sử có API trả về danh sách phòng
+//   rooms.value = await response.json();
+
+// }
+
 
 // HÀM QUAN TRỌNG: Load lại file JS để chạy hiệu ứng Slider, Counter...
 onMounted(() => {

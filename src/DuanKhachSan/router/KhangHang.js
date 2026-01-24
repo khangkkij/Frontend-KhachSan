@@ -26,6 +26,8 @@ import Dashboard from '@/DuanKhachSan/Admin/Dashboard.vue'
 import QuanLyDanhMuc from '@/DuanKhachSan/Admin/QuanLyDanhMuc.vue'
 import QuanLyPhong from '@/DuanKhachSan/Admin/QuanLyPhong.vue'
 import QuanLyVoucher from '@/DuanKhachSan/Admin/QuanLyVoucher.vue'
+import QuanLyNhanSu from '@/DuanKhachSan/Admin/QuanLyNhanSu.vue'
+import QuanLyDichVu from '@/DuanKhachSan/Admin/QuanLyDichVu.vue'
 //4. Import NhanVien
 import LayoutNhanVien from '@/DuanKhachSan/NhanVien/LayoutNhanVien.vue';
 import DashboardNhanVien from '@/DuanKhachSan/NhanVien/Views/Dashboard.vue';
@@ -84,6 +86,16 @@ const router = createRouter({
           path: 'voucher',
           name: 'admin-voucher',
           component: QuanLyVoucher
+        },
+        {
+          path: 'nhan-su',
+          name: 'admin-nhan-su',
+          component: QuanLyNhanSu
+        },
+        {
+          path: 'dich-vu',
+          name: 'admin-dich-vu',
+          component: QuanLyDichVu
         }
       ]
     },

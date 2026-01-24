@@ -58,7 +58,9 @@
                                 <h3 class="fw-bold text-white">LUXURY <span class="text-orange">HOTEL</span></h3>
                             </div>
                             <div class="footer-text">
-                                <p>Trải nghiệm kỳ nghỉ đẳng cấp quốc tế với hệ thống phòng ốc sang trọng và dịch vụ tận tâm.</p>
+                                <p>Trải nghiệm kỳ nghỉ đẳng cấp quốc tế với hệ thống phòng ốc sang trọng và dịch vụ tận
+                                    tâm.
+                                </p>
                             </div>
                             <div class="footer-social-icon">
                                 <span>Theo dõi ngay</span>
@@ -104,7 +106,7 @@
 
 <script>
 /* global $ */
-import axios from 'axios'; 
+import axios from 'axios';
 
 export default {
     name: 'KhachHangLayout',
@@ -115,15 +117,34 @@ export default {
         }
     },
     mounted() {
-        this.checkLoginStatus();
+        // 1. "Đón" dữ liệu từ URL do Backend gửi về
+        const urlParams = new URLSearchParams(window.location.search);
+        const isLoginSuccess = urlParams.get('login_success');
+        const nameFromFB = urlParams.get('name');
+        const emailFromFB = urlParams.get('email');
 
-        // Logic JS cho Menu Mobile
-        if ($('.menu-trigger').length) {
-            $(".menu-trigger").off('click');
-            $(".menu-trigger").on('click', function () {
-                $(this).toggleClass('active');
-                $('.header-area .nav').slideToggle(200);
-            });
+        if (isLoginSuccess === 'true' && nameFromFB) {
+            // 2. Tạo object đúng định dạng mà hàm checkLoginStatus() yêu cầu
+            const userInfo = {
+                name: nameFromFB,
+                email: emailFromFB
+            };
+
+            // 3. Lưu vào localStorage
+            localStorage.setItem('user_info', JSON.stringify(userInfo));
+            localStorage.setItem('isLoggedIn', 'true');
+
+            // 4. Xóa tham số trên URL cho sạch đẹp
+            window.history.replaceState({}, document.title, "/");
+
+            // 5. Cập nhật trạng thái hiển thị ngay lập tức
+            this.isLoggedIn = true;
+            this.user.name = nameFromFB;
+
+            alert("Đăng nhập Facebook thành công!");
+        } else {
+            // Nếu không phải từ FB về thì kiểm tra dữ liệu cũ đã lưu
+            this.checkLoginStatus();
         }
     },
     methods: {
@@ -143,11 +164,11 @@ export default {
                     // --- SỬA LỖI URL ---
                     // Nếu import.meta.env.VITE_API_URL bị undefined thì dùng luôn link cứng
                     const baseUrl = import.meta.env.VITE_API_URL || 'https://localhost:7023';
-                    
+
                     await axios.post(
                         `${baseUrl}/api/Login/logout`,
-                        {}, 
-                        { withCredentials: true } 
+                        {},
+                        { withCredentials: true }
                     );
                 } catch (error) {
                     console.error("Lỗi đăng xuất server:", error);
@@ -156,9 +177,9 @@ export default {
 
                 // Xóa dữ liệu Client
                 localStorage.removeItem('user_info');
-                
+
                 alert("Đã đăng xuất thành công!");
-                
+
                 // --- QUAN TRỌNG: Dùng cái này để Header cập nhật lại ngay lập tức ---
                 window.location.href = '/dang-nhap';
             }
@@ -168,7 +189,9 @@ export default {
 </script>
 <style scoped>
 /* Màu chủ đạo */
-.text-orange { color: #f35525 !important; }
+.text-orange {
+    color: #f35525 !important;
+}
 
 /* Thêm style cho nút đăng xuất */
 .logout-btn {
@@ -176,8 +199,9 @@ export default {
     color: #333;
     font-weight: 500;
 }
+
 .logout-btn:hover {
-    color: #f35525 !important; 
+    color: #f35525 !important;
 }
 
 /* Các CSS Footer của bạn giữ nguyên bên dưới... */
@@ -191,6 +215,7 @@ export default {
     position: relative;
     z-index: 2;
 }
+
 /* ... (Copy nốt phần CSS cũ của bạn vào đây) ... */
 .footer-text p {
     margin-bottom: 14px;
@@ -221,11 +246,21 @@ export default {
     transition: 0.3s;
 }
 
-.facebook-bg { background: #3B5998; }
-.twitter-bg { background: #55ACEE; }
-.google-bg { background: #DD4B39; }
+.facebook-bg {
+    background: #3B5998;
+}
 
-.footer-social-icon a:hover { transform: translateY(-5px); }
+.twitter-bg {
+    background: #55ACEE;
+}
+
+.google-bg {
+    background: #DD4B39;
+}
+
+.footer-social-icon a:hover {
+    transform: translateY(-5px);
+}
 
 .footer-widget-heading h3 {
     color: #fff;
@@ -245,7 +280,10 @@ export default {
     background: #f35525;
 }
 
-.footer-widget ul { margin: 0px; padding: 0px; }
+.footer-widget ul {
+    margin: 0px;
+    padding: 0px;
+}
 
 .footer-widget ul li {
     display: inline-block;
@@ -265,7 +303,10 @@ export default {
     padding-left: 5px;
 }
 
-.subscribe-form { position: relative; overflow: hidden; }
+.subscribe-form {
+    position: relative;
+    overflow: hidden;
+}
 
 .subscribe-form input {
     width: 100%;
@@ -275,7 +316,11 @@ export default {
     color: #fff;
     border-radius: 30px;
 }
-.subscribe-form input:focus { outline: none; border-color: #f35525; }
+
+.subscribe-form input:focus {
+    outline: none;
+    border-color: #f35525;
+}
 
 .subscribe-form button {
     position: absolute;
@@ -285,11 +330,15 @@ export default {
     border: 1px solid #f35525;
     top: 0;
     color: #fff;
-    border-radius: 0 30px 30px 0; 
+    border-radius: 0 30px 30px 0;
     cursor: pointer;
     transition: 0.3s;
 }
-.subscribe-form button:hover { background: #d14015; }
+
+.subscribe-form button:hover {
+    background: #d14015;
+}
+
 .subscribe-form button i {
     color: #fff;
     font-size: 22px;

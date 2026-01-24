@@ -176,7 +176,7 @@ export default {
             alert("Tính năng Đăng nhập Google đang được phát triển!");
         },
         loginFacebook() {
-            alert("Tính năng Đăng nhập Facebook đang được phát triển!");
+            window.location.href = "https://localhost:7023/api/Login/facebook-login";
         }
     }
 }

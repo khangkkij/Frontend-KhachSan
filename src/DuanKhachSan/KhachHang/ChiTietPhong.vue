@@ -27,8 +27,8 @@ onMounted(async() => {
   const res=await axios.get(`${API}/api/ChiTietPhong/${roomId}`)
   room.value=res.data.chiTiet
   bienThePhong.value = res.data?.bienTheKhac ?? []
-  if (room.value?.danhSachAnh?.length > 0) {
-    currentImage.value = `${API}/images/${room.value.danhSachAnh[0]}`
+  if (bienThePhong.value.length > 0) {
+    selectedVariantId.value = bienThePhong.value[0].maBienThePhong
   }
   const exist = bienThePhong.value.find(
     bt => bt.maBienThePhong == roomId
@@ -37,6 +37,11 @@ onMounted(async() => {
     selectedVariantId.value = exist.maBienThePhong
   } else if (bienThePhong.value.length > 0) {
     selectedVariantId.value = bienThePhong.value[0].maBienThePhong
+  }
+})
+watch(selectedVariantId, () => {
+  if (selectedVariant.value?.danhSachAnh?.length > 0) {
+    currentImage.value = `${API}/images/${selectedVariant.value.danhSachAnh[0]}`
   }
 })
 </script>
@@ -69,9 +74,9 @@ onMounted(async() => {
                 :style="{ opacity: imageOpacity }"
               />
             </div>
-            <div class="thumbnail-list mt-3" v-if="room.danhSachAnh?.length">
+            <div class="thumbnail-list mt-3" v-if="selectedVariant?.danhSachAnh?.length">
               <img
-                v-for="(img, index) in room.danhSachAnh"
+                v-for="(img, index) in selectedVariant.danhSachAnh"
                 :key="index"
                 :src="`${API}/images/${img}`"
                 class="thumbnail-img"
@@ -79,6 +84,7 @@ onMounted(async() => {
                 @click="changeImage(img)"
               />
             </div>
+
             <span v-if="selectedVariant">Số lượng phòng trống: {{ selectedVariant.soPhongCon }}</span>
             <div class="main-content">
               <span class="category">{{ room.tenLoai }}</span>
@@ -138,7 +144,7 @@ onMounted(async() => {
                     :key="bt.maBienThePhong"
                     :value="bt.maBienThePhong"
                   >
-                    {{ bt.tenBienThe }} – {{ bt.gia.toLocaleString('vi-VN') }} ₫ / đêm
+                    {{ bt.tenBienThe }} – {{ bt.gia?.toLocaleString('vi-VN') }} ₫ / đêm
                   </option>
                 </select>
               </div>

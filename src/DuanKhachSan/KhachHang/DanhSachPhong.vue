@@ -5,6 +5,53 @@ const API = import.meta.env.VITE_API_URL;
 const filter = ref("*");
 const dsPhong = ref([]);
 const loading = ref(true);
+const currentPage = ref(1)
+const pageSize = 9
+
+const totalPages = computed(() => {
+  if (!Array.isArray(filteredRooms.value)) return 1
+  return Math.ceil(filteredRooms.value.length / pageSize)
+})
+
+// dữ liệu hiển thị theo trang
+const pagedRooms = computed(() => {
+  const start = (currentPage.value - 1) * pageSize
+  return filteredRooms.value.slice(start, start + pageSize)
+})
+
+// danh sách trang có dấu ...
+const visiblePages = computed(() => {
+  const pages = []
+  const total = totalPages.value
+  const current = currentPage.value
+
+  if (total <= 7) {
+    // ít trang → hiện hết
+    for (let i = 1; i <= total; i++) pages.push(i)
+  } else {
+    pages.push(1)
+
+    if (current > 4) pages.push('...')
+
+    const start = Math.max(2, current - 1)
+    const end = Math.min(total - 1, current + 1)
+
+    for (let i = start; i <= end; i++) {
+      pages.push(i)
+    }
+
+    if (current < total - 3) pages.push('...')
+
+    pages.push(total)
+  }
+
+  return pages
+})
+
+const goPage = (page) => {
+  if (page === '...' || page < 1 || page > totalPages.value) return
+  currentPage.value = page
+}
 onMounted(async () => {
   try {
     const res = await axios.get(`${API}/api/DanhSachPhong`);
@@ -72,7 +119,7 @@ const filteredRooms = computed(() => {
 
         <div class="row properties-box">
           <div
-            v-for="room in filteredRooms"
+            v-for="room in pagedRooms"
             :key="room.maBienThePhong"
             class="col-lg-4 col-md-6 align-self-center mb-30 properties-items"
           >
@@ -154,14 +201,42 @@ const filteredRooms = computed(() => {
 
         <div class="row">
           <div class="col-lg-12">
-            <ul class="pagination">
-              <li><a href="#">1</a></li>
-              <li><a class="is_active" href="#">2</a></li>
-              <li><a href="#">3</a></li>
-              <li><a href="#">>></a></li>
+            <ul class="pagination justify-content-center">
+
+              <!-- Previous -->
+              <li :class="['page-item', { disabled: currentPage === 1 }]">
+                <a class="page-link" href="#" @click.prevent="goPage(currentPage - 1)">
+                  &laquo;
+                </a>
+              </li>
+
+              <!-- Page numbers -->
+              <li
+                v-for="(page, index) in visiblePages"
+                :key="index"
+                :class="['page-item', { active: page === currentPage, disabled: page === '...' }]"
+              >
+                <a
+                  class="page-link"
+                  href="#"
+                  @click.prevent="goPage(page)"
+                  
+                >
+                  {{ page }}
+                </a>
+              </li>
+
+              <!-- Next -->
+              <li :class="['page-item', { disabled: currentPage === totalPages }]">
+                <a class="page-link" href="#" @click.prevent="goPage(currentPage + 1)">
+                  &raquo;
+                </a>
+              </li>
+
             </ul>
           </div>
         </div>
+
       </div>
     </div>
   </div>
@@ -237,4 +312,33 @@ const filteredRooms = computed(() => {
   transform: translateY(-2px);
   box-shadow: 0 10px 20px rgba(243, 85, 37, 0.4);
 }
+.pagination .page-link {
+  display: flex;
+  align-items: center;        /* căn giữa dọc */
+  justify-content: center;    /* căn giữa ngang */
+
+  width: 40px;
+  height: 40px;               /* QUAN TRỌNG */
+  padding: 0;
+
+  color: #f35525;
+  border-radius: 50%;
+  border: none;
+  font-weight: 500;
+  line-height: 1;
+}
+
+
+.pagination .page-item.active .page-link {
+  background: linear-gradient(135deg, #f35525, #ff7a4d);
+  color: #fff;
+  box-shadow: 0 5px 12px rgba(243, 85, 37, 0.4);
+}
+
+.pagination .page-item.disabled .page-link {
+  color: #ccc;
+  pointer-events: none;
+  background: none;
+}
+
 </style>

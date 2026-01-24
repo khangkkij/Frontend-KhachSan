@@ -152,7 +152,7 @@ export default {
                     alert(`Xin chào ${userInfo.hoVaTen}, đăng nhập thành công!`);
 
                     // 5. Chuyển hướng về trang chủ
-                    this.$router.push('/');
+                    window.location.href = '/';
                 }
 
             } catch (error) {

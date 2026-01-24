@@ -12,6 +12,12 @@ import router from './DuanKhachSan/router/KhangHang.js';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import "bootstrap-icons/font/bootstrap-icons.css";
 
+// Font chữ & Icon (Quan trọng để hiện hình, sửa lỗi ô vuông)
+import 'boxicons/css/boxicons.css'
+
+// Scrollbar đẹp (Tùy chọn)
+import 'perfect-scrollbar/css/perfect-scrollbar.css'
+
 const app = createApp(App);
 app.use(router);
 app.mount('#app')

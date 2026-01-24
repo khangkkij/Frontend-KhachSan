@@ -27,10 +27,10 @@ import QuanLyDanhMuc from '@/DuanKhachSan/Admin/QuanLyDanhMuc.vue'
 import QuanLyPhong from '@/DuanKhachSan/Admin/QuanLyPhong.vue'
 import QuanLyVoucher from '@/DuanKhachSan/Admin/QuanLyVoucher.vue'
 //4. Import NhanVien
-import ReceptionLayout from '@/DuanKhachSan/NhanVien/Views/ReceptionLayout.vue'
-import RoomManager from '@/DuanKhachSan/NhanVien/Views/reception/RoomManager.vue'
-import ServiceManager from '@/DuanKhachSan/NhanVien/Views/reception/ServiceManager.vue'
-import DashboardHome from '@/DuanKhachSan/NhanVien/Views/reception/ReceptionDashboard.vue'
+import LayoutNhanVien from '@/DuanKhachSan/NhanVien/LayoutNhanVien.vue';
+import DashboardNhanVien from '@/DuanKhachSan/NhanVien/Views/Dashboard.vue';
+import RoomManager from '@/DuanKhachSan/NhanVien/Views/RoomManager.vue';
+import ServiceManager from '@/DuanKhachSan/NhanVien/Views/ServiceManager.vue';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -90,23 +90,11 @@ const router = createRouter({
     // --- ROUTE NHÂN VIÊN (Phải nằm trong mảng routes) ---
     {
     path: '/NhanVien',
-    component: ReceptionLayout, // Load cái khung sườn riêng này
+    component: LayoutNhanVien, // Sử dụng layout riêng cho nhân viên
     children: [
-      {
-        path: '', // Mặc định vào /reception sẽ hiện trang này
-        name: 'ReceptionDashboard',
-        component: DashboardHome 
-      },
-      {
-        path: 'rooms', // Đường dẫn: /reception/rooms
-        name: 'RoomManager',
-        component: RoomManager
-      },
-      {
-        path: 'services', // Đường dẫn: /reception/services
-        name: 'ServiceManager',
-        component: ServiceManager
-      }
+      { path: 'dashboard', component: DashboardNhanVien },
+      { path: 'room-manager', component: RoomManager },
+      { path: 'service-manager', component: ServiceManager },
     ]
   }
   ]

@@ -116,6 +116,7 @@ export default {
             user: {}
         }
     },
+    // Layout.vue - Sửa lại đoạn mounted
     mounted() {
         // 1. "Đón" dữ liệu từ URL do Backend gửi về
         const urlParams = new URLSearchParams(window.location.search);

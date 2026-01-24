@@ -306,7 +306,7 @@
               <router-link :to="`/phong/${room.maBienThePhong}`"><img :src="room.anhDaiDien" :alt="room.tenBienThe"></router-link>
               <span class="category">{{ room.TenLoai }}</span>
               <h6>{{ room.giaGoc }} VNĐ</h6>
-              <h4><a href="#">{{ room.tenBienThe }}</a></h4>
+              <h4><router-link :to="`/phong/${room.maBienThePhong}`">{{ room.tenBienThe }}</router-link></h4>
               <ul>
                 <li>Số người: <span>{{ room.soNguoiToiDa }}</span></li>
                 <li>Phòng ngủ: <span>{{ room.soPhongCon }}</span></li>

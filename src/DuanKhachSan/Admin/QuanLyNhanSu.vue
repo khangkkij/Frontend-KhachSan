@@ -17,7 +17,7 @@
             </div>
 
             <button class="btn btn-primary btn-add-new shadow-sm" @click="openModal('add')">
-              <i class="bx bx-plus me-1"></i> Thêm nhân viên
+              <i class="bx bx-plus me-1"></i> Thêm nhân sự
             </button>
           </div>
         </div>
@@ -35,7 +35,7 @@
         <table v-else class="table table-hover align-middle">
           <thead class="table-light">
             <tr>
-              <th class="ps-4">Nhân viên</th>
+              <th class="ps-4">Nhân sự</th>
               <th>Tài khoản</th>
               <th>Chức vụ</th>
               <th>Ngày vào làm</th>
@@ -49,7 +49,8 @@
               <td class="ps-4">
                 <div class="d-flex align-items-center">
                   <div class="avatar-wrapper me-3">
-                    <img v-if="staff.hinhAnh" :src="getFullImageUrl(staff.hinhAnh)" alt="Avatar" class="avatar-img" />
+                    <img v-if="staff.hinhAnh" :src="getFullImageUrl(staff.hinhAnh)" @error="handleImageError"
+                      alt="Avatar" class="avatar-img" />
                     <img v-else :src="getDefaultImageUrl()" alt="Avatar" class="avatar-img" />
                     <!-- <div v-else class="avatar-initial" :class="getRoleColorClass(staff.maChucVu)">
                       {{ getInitials(staff.hoTenNv) }}
@@ -92,8 +93,13 @@
                   <i class="bx bx-edit-alt"></i>
                 </button>
 
-                <button class="btn-icon btn-lock me-2" @click="toggleLock(staff)" title="Khóa/Mở khóa">
+
+                <button v-if="staff.trangThai == `Hoạt động`" class="btn-icon btn-lock me-2" @click="toggleLock(staff)"
+                  title="Khóa/Mở khóa">
                   <i class="bx bx-lock-alt"></i>
+                </button>
+                <button v-else class="btn-icon btn-lock me-2" @click="toggleLock(staff)" title="Khóa/Mở khóa">
+                  <i class="bx bx-lock-open-alt"></i>
                 </button>
 
                 <button class="btn-icon btn-delete" @click="confirmDelete(staff)" title="Xóa">
@@ -112,7 +118,7 @@
           <div class="modal-header">
             <h5 class="modal-title fw-bold">
               <i class='bx' :class="isEditMode ? 'bx-edit' : 'bx-user-plus'"></i>
-              {{ isEditMode ? 'Cập nhật hồ sơ' : 'Thêm nhân viên mới' }}
+              {{ isEditMode ? 'Cập nhật hồ sơ' : 'Thêm nhân sự mới' }}
             </h5>
             <button type="button" class="btn-close-custom" @click="closeModal"><i class='bx bx-x'></i></button>
           </div>
@@ -122,10 +128,9 @@
 
               <div class="text-center mb-4">
                 <div class="position-relative d-inline-block">
-                  <img
-                    :src="previewImage || (formData.hinhAnh ? IMG_URL + formData.hinhAnh : getDefaultImageUrl())"
-                    class="rounded-circle border shadow-sm object-fit-cover" style="width: 120px; height: 120px;"
-                    alt="Avatar" />
+                  <img :src="previewImage || (formData.hinhAnh ? IMG_URL + formData.hinhAnh : getDefaultImageUrl())"
+                    @error="handleImageError" class="rounded-circle border shadow-sm object-fit-cover"
+                    style="width: 120px; height: 120px;" alt="Avatar" />
                   <label for="fileInput" class="btn btn-sm btn-primary rounded-circle position-absolute bottom-0 end-0"
                     style="width: 32px; height: 32px; padding: 0; display: flex; align-items: center; justify-content: center;">
                     <i class='bx bx-camera'></i>
@@ -138,55 +143,65 @@
 
                 <div class="col-12">
                   <label class="form-label">Họ và tên <span class="text-danger">*</span></label>
-                  <input v-model="formData.hoTenNv" type="text" class="form-control" required
-                    placeholder="Nhập họ tên nhân viên">
+                  <input v-model="formData.hoTenNv" type="text" class="form-control"
+                    :class="{ 'is-invalid': errors.hoTenNv }" required placeholder="Nhập họ tên nhân sự">
+                  <div v-if="errors.hoTenNv" class="invalid-feedback">{{ errors.hoTenNv }}</div>
                 </div>
 
                 <div class="col-md-6">
                   <label class="form-label">Tên đăng nhập <span class="text-danger">*</span></label>
-                  <input v-model="formData.tenDangNhap" type="text" class="form-control" required
-                    :disabled="isEditMode">
+                  <input v-model="formData.tenDangNhap" type="text" class="form-control"
+                    :class="{ 'is-invalid': errors.tenDangNhap }" required :disabled="isEditMode">
+                  <div v-if="errors.tenDangNhap" class="invalid-feedback">{{ errors.tenDangNhap }}</div>
                 </div>
+
                 <div class="col-md-6">
                   <label class="form-label">Mật khẩu</label>
                   <input v-model="formData.matKhau" type="password" class="form-control"
+                    :class="{ 'is-invalid': errors.matKhau }"
                     :placeholder="isEditMode ? 'Để trống nếu không đổi' : 'Nhập mật khẩu'">
+                  <div v-if="errors.matKhau" class="invalid-feedback">{{ errors.matKhau }}</div>
                 </div>
 
                 <div class="col-md-6">
                   <label class="form-label">Email</label>
                   <input v-model="formData.email" type="email" class="form-control" placeholder="example@mail.com">
                 </div>
+
                 <div class="col-md-6">
                   <label class="form-label">Năm sinh</label>
-                  <input v-model="formData.namSinh" type="number" class="form-control" placeholder="VD: 2000">
+                  <input v-model="formData.namSinh" type="number" class="form-control"
+                    :class="{ 'is-invalid': errors.namSinh }" placeholder="VD: 2000">
+                  <div v-if="errors.namSinh" class="invalid-feedback">{{ errors.namSinh }}</div>
                 </div>
 
                 <div class="col-md-6">
                   <label class="form-label">Giới tính</label>
-                  <select v-model="formData.gioiTinh" class="form-select">
+                  <select v-model="formData.gioiTinh" class="form-select" :class="{ 'is-invalid': errors.gioiTinh }">
                     <option disabled :value="null">-- Chọn --</option>
                     <option value="Nam">Nam</option>
                     <option value="Nữ">Nữ</option>
                     <option value="Khác">Khác</option>
                   </select>
+                  <div v-if="errors.gioiTinh" class="invalid-feedback">{{ errors.gioiTinh }}</div>
                 </div>
+
                 <div class="col-md-6">
                   <label class="form-label">Chức vụ</label>
-                  <select v-model="formData.maChucVu" class="form-select">
+                  <select v-model="formData.maChucVu" class="form-select" :class="{ 'is-invalid': errors.maChucVu }">
                     <option :value="null" disabled>-- Chọn chức vụ --</option>
                     <option v-for="role in RoleList" :key="role.maChucVu" :value="role.maChucVu">
                       {{ role.tenChucVu }}
                     </option>
                   </select>
+                  <div v-if="errors.maChucVu" class="invalid-feedback">{{ errors.maChucVu }}</div>
                 </div>
 
                 <div class="col-md-12">
                   <label class="form-label">Trạng thái</label>
                   <select v-model="formData.trangThai" class="form-select">
-                    <option value="Đang làm việc">Đang làm việc</option>
-                    <option value="Đã nghỉ việc">Đã nghỉ việc</option>
-                    <option value="Tạm khóa">Tạm khóa</option>
+                    <option value="Hoạt động">Hoạt động</option>
+                    <option value="Bị khoá">Bị khoá</option>
                   </select>
                 </div>
 
@@ -233,19 +248,21 @@ const searchQuery = ref('');
 const showModal = ref(false);
 const isEditMode = ref(false);
 
+const selectedFile = ref(null);
+const previewImage = ref(null);
+
+
 const formData = reactive({
   maNv: 0,
   hoTenNv: '',
   tenDangNhap: '',
   matKhau: '',
   maChucVu: null,
-  trangThai: 'Đang làm việc',
+  trangThai: 'Hoạt động',
   hinhAnh: '',
-  
-  // --- CÁC TRƯỜNG MỚI THÊM ---
   email: '',
-  namSinh: '', // Hoặc null
-  gioiTinh: 'Nam', // Default
+  namSinh: '',
+  gioiTinh: 'Nam',
   diaChi: ''
 });
 
@@ -270,51 +287,49 @@ const filteredStaff = computed(() => {
 });
 
 const handleSave = async () => {
-    isSubmitting.value = true;
-    try {
-        const formPayload = new FormData();
+  if (!validateForm()) {
+    console.log("Validation Failed:", errors);
+    return;
+  }
+  isSubmitting.value = true;
+  try {
+    const formPayload = new FormData();
 
-        // Append các trường cũ
-        formPayload.append('HoTenNv', formData.hoTenNv);
-        formPayload.append('TenDangNhap', formData.tenDangNhap);
-        formPayload.append('MaChucVu', formData.maChucVu || ''); // Handle null
-        formPayload.append('TrangThai', formData.trangThai);
-        
-        // --- APPEND CÁC TRƯỜNG MỚI ---
-        formPayload.append('Email', formData.email || '');
-        formPayload.append('DiaChi', formData.diaChi || '');
-        if (formData.gioiTinh) formPayload.append('GioiTinh', formData.gioiTinh);
-        if (formData.namSinh) formPayload.append('NamSinh', formData.namSinh);
-        
-        // Append Mật khẩu (chỉ nếu có nhập)
-        if (formData.matKhau) formPayload.append('MatKhau', formData.matKhau);
+    formPayload.append('HoTenNv', formData.hoTenNv);
+    formPayload.append('TenDangNhap', formData.tenDangNhap);
+    formPayload.append('MaChucVu', formData.maChucVu || ''); // Handle null
+    formPayload.append('TrangThai', formData.trangThai);
+    formPayload.append('Email', formData.email || '');
+    formPayload.append('DiaChi', formData.diaChi || '');
+    if (formData.gioiTinh) formPayload.append('GioiTinh', formData.gioiTinh);
+    if (formData.namSinh) formPayload.append('NamSinh', formData.namSinh);
 
-        // Append File ảnh
-        if (selectedFile.value) {
-            formPayload.append('HinhAnh', selectedFile.value);
-        } else {
-             // Logic giữ ảnh cũ (tùy backend của bạn xử lý thế nào, thường ko gửi field này cũng đc)
-             // formPayload.append('HinhAnhString', formData.hinhAnh); 
-        }
+    // Append Mật khẩu (chỉ nếu có nhập)
+    if (formData.matKhau) formPayload.append('MatKhau', formData.matKhau);
 
-        // Gửi request (Code cũ giữ nguyên)
-        const config = { headers: { 'Content-Type': 'multipart/form-data' } };
-        if (isEditMode.value) {
-            await axios.put(`${API_URL}/NhanVien/${formData.maNv}`, formPayload, config);
-        } else {
-            await axios.post(`${API_URL}/NhanVien`, formPayload, config);
-        }
-
-        alert("Thành công!");
-        closeModal();
-        await fetchStaff(); // Nhớ gọi hàm load lại danh sách
-
-    } catch (e) {
-        console.error(e);
-        alert("Lỗi: " + (e.response?.data?.message || e.message));
-    } finally {
-        isSubmitting.value = false;
+    // Append File ảnh
+    if (selectedFile.value) {
+      formPayload.append('HinhAnh', selectedFile.value);
     }
+
+    // Gửi request (Code cũ giữ nguyên)
+    const config = { headers: { 'Content-Type': 'multipart/form-data' } };
+    if (isEditMode.value) {
+      await axios.put(`${API_URL}/NhanVien/${formData.maNv}`, formPayload, config);
+    } else {
+      await axios.post(`${API_URL}/NhanVien`, formPayload, config);
+    }
+
+    alert("Thành công!");
+    closeModal();
+    await fetchStaff(); // Nhớ gọi hàm load lại danh sách
+
+  } catch (e) {
+    console.error(e);
+    alert("Lỗi: " + (e.response?.data?.message || e.message));
+  } finally {
+    isSubmitting.value = false;
+  }
 };
 
 const openModal = (mode, staff) => {
@@ -323,15 +338,17 @@ const openModal = (mode, staff) => {
   // Reset file tạm
   selectedFile.value = null;
   previewImage.value = null;
+  Object.keys(errors).forEach(key => errors[key] = '');
+
 
   if (mode === 'edit' && staff) {
     Object.assign(formData, staff);
-    // formData.hinhAnh lúc này là string tên file (VD: "avatar_123.jpg")
     formData.matKhau = '';
   } else {
     // Reset form
+
     Object.keys(formData).forEach(k => formData[k] = null);
-    formData.trangThai = 'Đang làm việc';
+    formData.trangThai = 'Hoạt động';
   }
   showModal.value = true;
 };
@@ -342,10 +359,8 @@ const getInitials = (name) => name ? name.split(' ').pop()[0].toUpperCase() : '?
 const formatDate = (date) => date ? new Date(date).toLocaleDateString('vi-VN') : '---';
 const getRoleName = (id) => {
   const role = RoleList.value.find(r => r.maChucVu === id);
-  return role ? role.tenChucVu : 'NV';
+  return role ? role.tenChucVu : 'Không rõ';
 };
-//const getRoleName = (id) => ({1:'Quản lý',2:'Lễ tân',3:'Buồng phòng',4:'Bảo vệ'}[id] || 'NV');
-
 // Class màu cho Chức vụ & Avatar
 const getRoleColorClass = (id) => {
   const map = { 1: 'role-manager', 2: 'role-reception', 3: 'role-housekeeping', 4: 'role-security' };
@@ -354,25 +369,16 @@ const getRoleColorClass = (id) => {
 
 // Class màu cho Trạng thái
 const getStatusClass = (status) => {
-  if (status === 'Đang làm việc') return 'status-active';
+  if (status === 'Hoạt động') return 'status-active';
   return 'status-inactive';
 };
 
-// --- 1. THÊM BIẾN MỚI ---
-const selectedFile = ref(null); // Lưu file người dùng chọn
-const previewImage = ref(null); // Lưu link ảnh để xem trước
 
 // Hàm xử lý đường dẫn ảnh (giữ nguyên logic cũ của bạn hoặc dùng cái này)
 const getFullImageUrl = (imgName) => {
   if (!imgName) return '';
   if (imgName.startsWith('http')) return imgName;
   return `${import.meta.env.VITE_API_URL}/images/NhanVien/${imgName}`; // Sửa đường dẫn theo server bạn
-};
-
-const toggleLock = async (staff) => {
-  // Logic khóa/mở khóa nhân viên
-  alert(`Chức năng khóa/mở khóa cho NV: ${staff.hoTenNv} chưa được triển khai.`);
-  fetchStaff();
 };
 
 const getDefaultImageUrl = () => {
@@ -389,15 +395,119 @@ const handleFileChange = (event) => {
   }
 };
 
-const confirmDelete = (staff) => {
-  if (confirm(`Bạn có chắc muốn xóa nhân viên: ${staff.hoTenNv} không?`)) {
-    // Gọi API xóa nhân viên ở đây
-    alert(`Chức năng xóa NV: ${staff.hoTenNv} chưa được triển khai.`);
+const confirmDelete = async (staff) => {
+  if (confirm(`Bạn có chắc muốn xóa nhân sự: ${staff.hoTenNv} không?`)) {
+    try {
+      await axios.delete(`${API_URL}/NhanVien/${staff.maNv}`);
+      alert("Đã xóa nhân sự thành công!");
+    } catch (e) {
+      console.error(e);
+      alert("Lỗi: " + (e.response?.data?.message || e.message));
+    }
+    fetchStaff();
+  };
+};
+
+const toggleLock = async (staff) => {
+  try {
+    const newStatus = staff.trangThai === 'Hoạt động' ? 'Bị khoá' : 'Hoạt động';
+    await axios.put(`${API_URL}/NhanVien/toggle-status/${staff.maNv}`, { trangThai: newStatus });
+    alert(`Đã ${newStatus === 'Hoạt động' ? 'mở khóa' : 'khóa'} nhân sự: ${staff.hoTenNv}`);
+  } catch (e) {
+    console.error(e);
+    alert("Lỗi: " + (e.response?.data?.message || e.message));
   }
   fetchStaff();
 };
 
+const handleImageError = (event) => {
+  // Ngăn vòng lặp vô tận (nếu ảnh mặc định cũng lỗi nốt)
+  event.target.onerror = null;
 
+  // Gán lại src thành ảnh mặc định
+  event.target.src = getDefaultImageUrl();
+};
+
+// --- STATE VALIDATION (MỚI) ---
+const errors = reactive({
+  hoTenNv: '',
+  tenDangNhap: '',
+  namSinh: '',
+  gioiTinh: '',
+  maChucVu: '',
+  matKhau: ''
+});
+
+// --- HÀM VALIDATE LOGIC (MỚI) ---
+const validateForm = () => {
+  let isValid = true;
+  const currentYear = new Date().getFullYear();
+
+  // 1. Reset lỗi cũ
+  Object.keys(errors).forEach(key => errors[key] = '');
+
+  // 2. Validate Họ tên (Chấp nhận Tiếng Việt, Ký tự trắng. KHÔNG số, KHÔNG ký tự đặc biệt)
+  const nameRegex = /^[a-zA-ZÀ-ỹ\s]+$/;
+  if (!formData.hoTenNv) {
+    errors.hoTenNv = 'Vui lòng nhập họ và tên';
+    isValid = false;
+  } else if (!nameRegex.test(formData.hoTenNv)) {
+    errors.hoTenNv = 'Họ tên không được chứa số hoặc ký tự đặc biệt';
+    isValid = false;
+  }
+
+  // 3. Validate Username (Chữ + Số, KHÔNG ký tự đặc biệt, KHÔNG dấu)
+  const userRegex = /^[a-zA-Z0-9]+$/;
+  if (!formData.tenDangNhap) {
+    errors.tenDangNhap = 'Vui lòng nhập tên đăng nhập';
+    isValid = false;
+  } else if (!userRegex.test(formData.tenDangNhap)) {
+    errors.tenDangNhap = 'Tên đăng nhập không được chứa dấu hoặc ký tự đặc biệt';
+    isValid = false;
+  }
+
+  const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d).{6,}$/;
+
+  if (!isEditMode.value) {
+    // TRƯỜNG HỢP 1: THÊM MỚI (Bắt buộc nhập)
+    if (!formData.matKhau) {
+      errors.matKhau = 'Vui lòng nhập mật khẩu';
+      isValid = false;
+    } else if (!passwordRegex.test(formData.matKhau)) {
+      errors.matKhau = 'Mật khẩu phải từ 6 ký tự, bao gồm cả chữ và số';
+      isValid = false;
+    }
+  } else {
+    // TRƯỜNG HỢP 2: CẬP NHẬT (Chỉ check nếu người dùng có nhập vào ô đổi mật khẩu)
+    if (formData.matKhau && !passwordRegex.test(formData.matKhau)) {
+      errors.matKhau = 'Mật khẩu mới phải từ 6 ký tự, bao gồm cả chữ và số';
+      isValid = false;
+    }
+  }
+
+  // 4. Validate Năm sinh (>= 16 tuổi)
+  if (formData.namSinh) {
+    if (formData.namSinh < 1900 || formData.namSinh > currentYear) {
+      errors.namSinh = 'Năm sinh không hợp lệ';
+      isValid = false;
+    } else if (currentYear - formData.namSinh < 16) {
+      errors.namSinh = `Nhân sự này chưa đủ 16 tuổi (Phải sinh trước năm ${currentYear - 16})`;
+      isValid = false;
+    }
+  }
+
+  // 5. Validate Bắt buộc chọn
+  if (!formData.gioiTinh) {
+    errors.gioiTinh = 'Vui lòng chọn giới tính';
+    isValid = false;
+  }
+  if (!formData.maChucVu) {
+    errors.maChucVu = 'Vui lòng chọn chức vụ';
+    isValid = false;
+  }
+
+  return isValid;
+};
 
 
 </script>

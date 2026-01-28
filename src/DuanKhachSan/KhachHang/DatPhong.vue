@@ -48,6 +48,14 @@
                                     <input type="tel" class="form-control" v-model="formData.phone"
                                         placeholder="Nhập số điện thoại...">
                                 </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">Ngày nhận phòng</label>
+                                    <input type="date" class="form-control" v-model="bookingRoom.checkIn">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">Ngày trả phòng</label>
+                                    <input type="date" class="form-control" v-model="bookingRoom.checkOut">
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -111,18 +119,19 @@
                     <div class="card mb-3 shadow-sm">
                         <div class="row g-0">
                             <div class="col-4">
-                                <img src="/assets/images/property-01.jpg"
+                                <img :src="bookingRoom.image || fallbackImage"
                                     class="img-fluid rounded-start h-100 object-fit-cover" alt="Hotel">
                             </div>
                             <div class="col-8">
                                 <div class="card-body p-2">
-                                    <h6 class="fw-bold mb-1">Luxury Hotel & Resort</h6>
-                                    <div class="text-warning small mb-1">
-                                        <i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i><i
-                                            class="fa fa-star"></i><i class="fa fa-star"></i>
+                                    <h6 class="fw-bold mb-1">{{ bookingRoom.name || '---' }}</h6>
+                                    <div class="small text-muted" v-if="bookingRoom.variantName">
+                                        {{ bookingRoom.variantName }}
                                     </div>
-                                    <div class="small"><span class="badge bg-orange">9.8 Tuyệt vời</span> <span
-                                            class="text-muted">588 đánh giá</span></div>
+                                    <div class="small mt-1" v-if="bookingRoom.pricePerNight">
+                                        <span class="text-muted">Giá / đêm:</span>
+                                        <span class="fw-bold text-orange">{{ formatCurrency(bookingRoom.pricePerNight) }}</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -132,15 +141,15 @@
                         <div class="d-flex justify-content-between align-items-center text-center">
                             <div>
                                 <small class="text-muted">Nhận phòng</small>
-                                <div class="fw-bold text-orange">10 Th12</div>
+                                <div class="fw-bold text-orange">{{ bookingRoom.checkIn || '---' }}</div>
                             </div>
                             <i class="fa fa-arrow-right text-muted"></i>
                             <div>
                                 <small class="text-muted">Trả phòng</small>
-                                <div class="fw-bold text-orange">12 Th12</div>
+                                <div class="fw-bold text-orange">{{ bookingRoom.checkOut || '---' }}</div>
                             </div>
                             <div class="border-start ps-3">
-                                <div class="fw-bold">2</div>
+                                <div class="fw-bold">{{ bookingRoom.nights ?? '---' }}</div>
                                 <small class="text-muted">đêm</small>
                             </div>
                         </div>
@@ -148,24 +157,15 @@
 
                     <div class="card shadow-sm">
                         <div class="card-body">
-                            <div class="d-flex justify-content-between mb-2">
-                                <span>Giá gốc</span>
-                                <span class="strike-price text-danger">5.000.000 ₫</span>
-                            </div>
-                            <div class="d-flex justify-content-between mb-2">
-                                <span>Giá giảm</span>
-                                <span>4.200.000 ₫</span>
-                            </div>
-                            <div class="d-flex justify-content-between mb-2">
-                                <span>Thuế và phí</span>
-                                <span>300.000 ₫</span>
-                            </div>
-                            <hr>
                             <div class="d-flex justify-content-between align-items-center">
                                 <span class="h5 fw-bold">Tổng cộng</span>
-                                <span class="price-final">4.500.000 ₫</span>
+                                <span class="price-final">
+                                    {{ totalAmount ? formatCurrency(totalAmount) : '---' }}
+                                </span>
                             </div>
-                            <div class="text-end small text-muted mt-1">Đã bao gồm: Phí dịch vụ, Thuế VAT</div>
+                            <div class="text-end small text-muted mt-1" v-if="totalAmount">
+                                Dựa trên {{ bookingRoom.nights }} đêm
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -175,11 +175,48 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router'; // <--- BƯỚC 1: Thêm dòng này
+import axios from 'axios';
 
 // <--- BƯỚC 2: Khai báo router để dùng
 const router = useRouter(); 
+const API = import.meta.env.VITE_API_URL;
+
+const bookingRoom = ref({
+    name: '',
+    variantName: '',
+    image: '',
+    maBienThePhong: null,
+    pricePerNight: null,
+    checkIn: '',
+    checkOut: '',
+    nights: null
+});
+const fallbackImage = '/assets/images/property-01.jpg';
+
+const formatCurrency = (amount) => {
+    return amount.toLocaleString('vi-VN') + ' ₫';
+};
+
+const totalAmount = computed(() => {
+    if (!bookingRoom.value.pricePerNight || !bookingRoom.value.nights) return null;
+    return Number(bookingRoom.value.pricePerNight) * Number(bookingRoom.value.nights);
+});
+
+const calculateNights = (checkIn, checkOut) => {
+    if (!checkIn || !checkOut) return null;
+    const start = new Date(checkIn);
+    const end = new Date(checkOut);
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return null;
+    const diffMs = end - start;
+    const nights = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+    return nights > 0 ? nights : null;
+};
+
+const persistBookingRoom = () => {
+    localStorage.setItem('booking_room', JSON.stringify(bookingRoom.value));
+};
 
 // Dữ liệu form
 const formData = ref({
@@ -207,21 +244,76 @@ const startTimer = () => {
 };
 
 // Xử lý đặt phòng (ĐÂY LÀ ĐOẠN BẠN CẦN SỬA)
-const handleBooking = () => {
+const handleBooking = async () => {
     // 1. Kiểm tra xem đã nhập tên và sđt chưa
     if(!formData.value.name || !formData.value.phone) {
         alert("Vui lòng nhập đầy đủ họ tên và số điện thoại!");
         return;
     }
     
-    // 2. Chuyển hướng sang trang Thanh Toán
-    // <--- BƯỚC 3: Dùng lệnh này để chuyển trang
+    if (!bookingRoom.value.checkIn || !bookingRoom.value.checkOut || !bookingRoom.value.nights) {
+        alert("Vui lòng chọn ngày nhận phòng và trả phòng hợp lệ!");
+        return;
+    }
+    if (!bookingRoom.value.maBienThePhong || !bookingRoom.value.pricePerNight) {
+        alert("Thiếu thông tin phòng, vui lòng chọn lại phòng!");
+        return;
+    }
+
+    // 2. Lưu thông tin khách hàng để hiển thị hóa đơn
+    localStorage.setItem('booking_customer', JSON.stringify({
+        name: formData.value.name,
+        email: formData.value.email,
+        phone: formData.value.phone
+    }));
+
+    // 3. Gọi API tạo đặt phòng (lưu DB + trừ phòng)
+    try {
+        const userInfo = JSON.parse(localStorage.getItem('user_info') || '{}');
+        const payload = {
+            MaKh: userInfo.id ?? null,
+            MaBienThePhong: bookingRoom.value.maBienThePhong,
+            NgayNhan: bookingRoom.value.checkIn,
+            NgayTra: bookingRoom.value.checkOut,
+            GiaDat: Number(bookingRoom.value.pricePerNight)
+        };
+        const res = await axios.post(`${API}/api/DatPhong/tao`, payload);
+        if (res?.data?.maDatPhong) {
+            localStorage.setItem('maDatPhong', String(res.data.maDatPhong));
+        }
+        if (res?.data?.soDem) {
+            bookingRoom.value.nights = res.data.soDem;
+            persistBookingRoom();
+        }
+    } catch (error) {
+        const message = error?.response?.data || 'Đặt phòng thất bại!';
+        alert(message);
+        return;
+    }
+
+    // 4. Chuyển hướng sang trang Thanh Toán
     router.push('/payment'); 
 };
 
 onMounted(() => {
+    const raw = localStorage.getItem('booking_room');
+    if (raw) {
+        try {
+            Object.assign(bookingRoom.value, JSON.parse(raw));
+        } catch (error) {
+            console.warn('Không đọc được dữ liệu đặt phòng:', error);
+        }
+    }
     startTimer();
 });
+
+watch(
+    () => [bookingRoom.value.checkIn, bookingRoom.value.checkOut],
+    () => {
+        bookingRoom.value.nights = calculateNights(bookingRoom.value.checkIn, bookingRoom.value.checkOut);
+        persistBookingRoom();
+    }
+);
 
 onUnmounted(() => {
     if(interval) clearInterval(interval);

@@ -214,13 +214,15 @@ const cardInfo = ref({
 
 const bookingRoom = ref({
     pricePerNight: null,
-    nights: null
+    nights: null,
+    quantity: 1
 });
 
 const totalAmount = computed(() => {
     const price = Number(bookingRoom.value.pricePerNight || 0);
     const nights = Number(bookingRoom.value.nights || 0);
-    return price * nights;
+    const qty = Number(bookingRoom.value.quantity || 1);
+    return price * nights * qty;
 });
 const depositAmount = computed(() => Math.round(totalAmount.value * 0.3));
 const remainingAmount = computed(() => totalAmount.value - depositAmount.value);
@@ -284,6 +286,7 @@ onMounted(() => {
             const data = JSON.parse(raw);
             bookingRoom.value.pricePerNight = data.pricePerNight ?? null;
             bookingRoom.value.nights = data.nights ?? null;
+            bookingRoom.value.quantity = data.quantity ?? 1;
         } catch (error) {
             console.warn('Không đọc được dữ liệu phòng:', error);
         }

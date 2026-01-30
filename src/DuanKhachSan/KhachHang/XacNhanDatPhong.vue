@@ -126,10 +126,12 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
+import axios from 'axios';
 
 const router = useRouter();
+const API = import.meta.env.VITE_API_URL;
 const fallbackImage = '/assets/images/property-01.jpg';
-const invoiceCode = ref(`HD${Date.now().toString().slice(-8)}`);
+const invoiceCode = ref('---');
 
 const room = ref({
   name: '',
@@ -184,10 +186,34 @@ const handleConfirm = () => {
   router.push('/');
 };
 
+const fetchInvoice = async (maDatPhong) => {
+  try {
+    const res = await axios.get(`${API}/api/DatPhong/hoa-don/${maDatPhong}`, {
+      withCredentials: true
+    });
+    const data = res?.data || {};
+    if (data.maHd != null) {
+      invoiceCode.value = `HD${data.maHd}`;
+    }
+    if (data.ngayTao) {
+      payment.value.createdAt = data.ngayTao;
+    }
+    if (!payment.value.totalAmount && data.tongTienPhaiTra != null) {
+      payment.value.totalAmount = Number(data.tongTienPhaiTra);
+    }
+    if (!room.value.nights && data.soDem != null) {
+      room.value.nights = data.soDem;
+    }
+  } catch (error) {
+    console.warn('Không tải được hóa đơn:', error);
+  }
+};
+
 onMounted(() => {
   const rawRoom = localStorage.getItem('booking_room');
   const rawCustomer = localStorage.getItem('booking_customer');
   const rawPayment = localStorage.getItem('booking_payment');
+  const maDatPhong = localStorage.getItem('maDatPhong');
 
   if (rawRoom) {
     try {
@@ -209,6 +235,9 @@ onMounted(() => {
     } catch (error) {
       console.warn('Không đọc được dữ liệu thanh toán:', error);
     }
+  }
+  if (maDatPhong) {
+    fetchInvoice(maDatPhong);
   }
 });
 </script>

@@ -307,6 +307,16 @@
               HinhThucThanhToan: paymentMethod.value,
               MaCode: appliedVoucher.value?.maCode || null // Gửi kèm mã Voucher về Backend
           });
+          const paymentSnapshot = {
+              option: paymentOption.value,
+              method: paymentMethod.value,
+              totalAmount: Number(totalAmount.value || 0),
+              depositAmount: Number(depositAmount.value || 0),
+              remainingAmount: Number(remainingAmount.value || 0),
+              paidAmount: Number(currentPayAmount.value || 0),
+              createdAt: new Date().toISOString()
+          };
+          localStorage.setItem('booking_payment', JSON.stringify(paymentSnapshot));
           router.push('/xac-nhan-dat-phong');
       } catch (error) { alert("Thanh toán thất bại"); }
   };

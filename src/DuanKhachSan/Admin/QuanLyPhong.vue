@@ -88,7 +88,7 @@ const validateForm = () => {
   if (!form.huongNhin) errors.huongNhin = 'Vui lòng chọn hướng nhìn'
 
   if (!form.soNguoiToiDa || form.soNguoiToiDa < 1)
-    errors.soNguoiToiDa = 'Số người tối đa phải ≥ 1'
+    errors.soNguoiToiDa = 'Số người lớn phải ≥ 1'
 
   if (!form.dienTich || form.dienTich < 10)
     errors.dienTich = 'Diện tích tối thiểu 10m²'
@@ -211,14 +211,6 @@ onMounted(async () => {
   await loadVariants()
   fetchData()
 })
-/* ====== STATE QUẢN LÝ ====== */
-const activeTab = ref('Tất cả')
-const stats = [
-  { label: 'Biến thể', value: 5, icon: 'grid-alt', color: '#f59e0b' },
-  { label: 'Tổng phòng', value: 8, icon: 'bed', color: '#64748b' },
-  { label: 'Sẵn sàng', value: 4, icon: 'check-circle', color: '#10b981' },
-  { label: 'Đang có khách', value: 2, icon: 'user', color: '#f59e0b' }
-]
 
 const selectedVariant = ref({})
 const isEditMode = ref(false)
@@ -430,7 +422,15 @@ watch([keyword, selectedLoaiPhong, activeLoaiPhong], () => {
 })
 
 const collapsedVariants = ref([])
+const toggleRooms = (id) => {
+  const index = collapsedVariants.value.indexOf(id)
 
+  if (index > -1) {
+    collapsedVariants.value.splice(index, 1)
+  } else {
+    collapsedVariants.value.push(id)
+  }
+}
 const isCollapsed = (id) => collapsedVariants.value.includes(id)
 const formatPrice = (val) => val?.toLocaleString('vi-VN')
 </script>
@@ -639,7 +639,7 @@ const formatPrice = (val) => val?.toLocaleString('vi-VN')
                   Danh sách phòng 
                   <span class="badge bg-light text-dark border ms-1">{{ v.SoPhongCon }}</span>
                 </strong>
-                <i :class="['bx bx-chevron-down toggle-icon', { 'is-flipped': isCollapsed(v.id) }]"></i>
+                <i :class="['bx bx-chevron-down toggle-icon', { 'is-flipped': isCollapsed(v.maBienThePhong) }]"></i>
               </div>
 
               <div v-show="!isCollapsed(v.maBienThePhong)" class="rooms-container-animate">

@@ -17,7 +17,6 @@ import 'boxicons/css/boxicons.css'
 
 // Scrollbar đẹp (Tùy chọn)
 import 'perfect-scrollbar/css/perfect-scrollbar.css'
-
 const app = createApp(App);
 app.use(router);
 app.mount('#app')

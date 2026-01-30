@@ -18,40 +18,61 @@
                     
                     <div 
                         class="payment-box p-3 mb-2 border" 
-                        :class="{ active: paymentOption === 'later' }"
-                        @click="paymentOption = 'later'"
+                        :class="{ active: paymentOption === 'deposit' }"
+                        @click="paymentOption = 'deposit'"
                     >
                         <div class="form-check">
-                            <input class="form-check-input" type="radio" value="later" v-model="paymentOption">
-                            <label class="form-check-label fw-bold">Thanh toán sau (Vào ngày nhận phòng)</label>
+                            <input class="form-check-input" type="radio" value="deposit" v-model="paymentOption">
+                            <label class="form-check-label fw-bold">Đặt cọc 30% (Giữ phòng)</label>
                             <p class="small mb-0 text-orange">
-                                <i class="fa fa-check"></i> KHÔNG SỢ RỦI RO! Bạn chưa cần trả tiền hôm nay.
+                                <i class="fa fa-check"></i> Thanh toán trước {{ formatCurrency(depositAmount) }} để giữ phòng.
                             </p>
                         </div>
                     </div>
 
                     <div 
                         class="payment-box p-3 border"
-                        :class="{ active: paymentOption === 'now' }"
-                        @click="paymentOption = 'now'"
+                        :class="{ active: paymentOption === 'full' }"
+                        @click="paymentOption = 'full'"
                     >
                         <div class="form-check">
-                            <input class="form-check-input" type="radio" value="now" v-model="paymentOption">
-                            <label class="form-check-label fw-bold">Thanh toán ngay (Visa/MasterCard/Paypal)</label>
-                            <div class="mt-2">
-                                <i class="fab fa-cc-visa fa-lg me-2 text-primary"></i>
-                                <i class="fab fa-cc-mastercard fa-lg me-2 text-danger"></i>
-                                <i class="fab fa-cc-paypal fa-lg text-info"></i>
-                            </div>
+                            <input class="form-check-input" type="radio" value="full" v-model="paymentOption">
+                            <label class="form-check-label fw-bold">Thanh toán ngay 100%</label>
+                            <p class="small mb-0 text-orange">
+                                <i class="fa fa-check"></i> Thanh toán toàn bộ {{ formatCurrency(totalAmount) }} ngay bây giờ.
+                            </p>
                         </div>
                     </div>
                 </div>
 
                 <div class="card p-4 mb-3 shadow-sm border-0">
-                    <h5 class="fw-bold mb-3">Thông tin thẻ tín dụng</h5>
-                    <p class="small text-muted"><i class="fa fa-lock text-orange"></i> Mọi dữ liệu được mã hóa bảo mật 100%.</p>
+                    <h5 class="fw-bold mb-3">Phương thức thanh toán</h5>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-4">
+                            <div class="payment-method" :class="{ active: paymentMethod === 'vnpay' }" @click="paymentMethod = 'vnpay'">
+                                <input class="form-check-input me-2" type="radio" value="vnpay" v-model="paymentMethod">
+                                <span>VNPay</span>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="payment-method" :class="{ active: paymentMethod === 'momo' }" @click="paymentMethod = 'momo'">
+                                <input class="form-check-input me-2" type="radio" value="momo" v-model="paymentMethod">
+                                <span>Momo</span>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="payment-method" :class="{ active: paymentMethod === 'visa' }" @click="paymentMethod = 'visa'">
+                                <input class="form-check-input me-2" type="radio" value="visa" v-model="paymentMethod">
+                                <span>Visa / MasterCard</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div v-if="paymentMethod === 'visa'">
+                        <h6 class="fw-bold mb-3">Thông tin thẻ</h6>
+                        <p class="small text-muted"><i class="fa fa-lock text-orange"></i> Mọi dữ liệu được mã hóa bảo mật 100%.</p>
                     
-                    <div class="row g-4">
+                        <div class="row g-4">
                         <div class="col-md-7">
                             <div class="mb-3">
                                 <label class="form-label small fw-bold">Tên trên thẻ *</label>
@@ -89,6 +110,7 @@
                                 </div>
                             </div>
                         </div>
+                        </div>
                     </div>
                 </div>
 
@@ -111,7 +133,7 @@
                 <div class="mb-4">
                     <button @click="confirmPayment" class="btn-pay w-100 shadow d-block text-center text-decoration-none">
                         <i class="fa fa-lock me-2"></i> 
-                        {{ paymentOption === 'later' ? 'ĐẶT TRƯỚC & TRẢ SAU' : 'THANH TOÁN NGAY' }}
+                        {{ paymentOption === 'deposit' ? 'THANH TOÁN ĐẶT CỌC 30%' : 'THANH TOÁN 100% NGAY' }}
                     </button>
                     <p class="text-center mt-2 small text-orange">
                         <i class="fa fa-shield-alt"></i> KHÔNG SỢ RỦI RO - Hủy phòng miễn phí trước 24h
@@ -150,7 +172,19 @@
                     <hr>
                     <div class="d-flex justify-content-between align-items-center">
                         <span class="h5 fw-bold">Tổng tiền</span>
-                        <span class="h4 fw-bold mb-0 text-orange">951.480 ₫</span>
+                        <span class="h4 fw-bold mb-0 text-orange">{{ formatCurrency(totalAmount) }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between mt-2" v-if="paymentOption === 'deposit'">
+                        <span class="small text-muted">Đặt cọc 30%</span>
+                        <span class="small fw-bold text-orange">{{ formatCurrency(depositAmount) }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between" v-if="paymentOption === 'deposit'">
+                        <span class="small text-muted">Còn lại thanh toán khi nhận phòng</span>
+                        <span class="small fw-bold">{{ formatCurrency(remainingAmount) }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between mt-2" v-if="paymentOption === 'full'">
+                        <span class="small text-muted">Thanh toán ngay</span>
+                        <span class="small fw-bold text-orange">{{ formatCurrency(totalAmount) }}</span>
                     </div>
                     <p class="text-end small text-muted mt-2">Đã bao gồm VAT & Phí dịch vụ</p>
                 </div>
@@ -161,10 +195,16 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, computed, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
+import axios from 'axios';
+
+const router = useRouter();
+const API = import.meta.env.VITE_API_URL;
 
 // State quản lý
-const paymentOption = ref('later'); // Mặc định là trả sau
+const paymentOption = ref('deposit'); // Mặc định là đặt cọc 30%
+const paymentMethod = ref('vnpay');
 const cardInfo = ref({
     name: 'PHAM VAN A',
     number: '',
@@ -172,24 +212,83 @@ const cardInfo = ref({
     cvc: ''
 });
 
+const bookingRoom = ref({
+    pricePerNight: null,
+    nights: null
+});
+
+const totalAmount = computed(() => {
+    const price = Number(bookingRoom.value.pricePerNight || 0);
+    const nights = Number(bookingRoom.value.nights || 0);
+    return price * nights;
+});
+const depositAmount = computed(() => Math.round(totalAmount.value * 0.3));
+const remainingAmount = computed(() => totalAmount.value - depositAmount.value);
+
+const formatCurrency = (amount) => {
+    return Number(amount || 0).toLocaleString('vi-VN') + ' ₫';
+};
+
 // Hàm xử lý thanh toán
-const confirmPayment = () => {
+const confirmPayment = async () => {
     // 1. Validate đơn giản
-    if (!cardInfo.value.name || !cardInfo.value.number) {
-        alert("Vui lòng nhập thông tin thẻ để đảm bảo giữ phòng!");
+    if (paymentMethod.value === 'visa' && (!cardInfo.value.name || !cardInfo.value.number)) {
+        alert("Vui lòng nhập thông tin thẻ để thanh toán!");
+        return;
+    }
+    const maDatPhong = localStorage.getItem('maDatPhong');
+    if (!maDatPhong) {
+        alert("Chưa có mã đặt phòng. Vui lòng đặt phòng lại!");
         return;
     }
 
-    // 2. Xử lý logic
-    if (paymentOption.value === 'later') {
-        alert("Đặt phòng thành công! Bạn sẽ thanh toán tại khách sạn.");
-    } else {
-        alert("Thanh toán thành công! Vé điện tử đã gửi về email.");
+    // 2. Lưu thông tin thanh toán để hiển thị hóa đơn
+    localStorage.setItem('booking_payment', JSON.stringify({
+        option: paymentOption.value,
+        method: paymentMethod.value,
+        totalAmount: totalAmount.value,
+        depositAmount: depositAmount.value,
+        remainingAmount: remainingAmount.value,
+        paidAmount: paymentOption.value === 'deposit' ? depositAmount.value : totalAmount.value,
+        createdAt: new Date().toISOString()
+    }));
+
+    // 3. Gọi API thanh toán để lưu DB
+    try {
+        const endpoint = paymentOption.value === 'deposit' ? 'dat-coc' : 'thanh-toan';
+        const payAmount = paymentOption.value === 'deposit' ? depositAmount.value : totalAmount.value;
+        const res = await axios.post(`${API}/api/ThanhToan/${endpoint}`, {
+            MaDatPhong: Number(maDatPhong),
+            SoTien: Number(payAmount),
+            HinhThucThanhToan: paymentMethod.value
+        });
+        if (res?.data?.maTt) {
+            const tt = JSON.parse(localStorage.getItem('booking_payment') || '{}');
+            tt.maTt = res.data.maTt;
+            localStorage.setItem('booking_payment', JSON.stringify(tt));
+        }
+    } catch (error) {
+        const message = error?.response?.data || 'Thanh toán thất bại!';
+        alert(message);
+        return;
     }
 
-    // 3. Chuyển hướng sang trang Xác nhận (Sẽ làm sau)
-    // router.push('/booking-success');
+    // 4. Chuyển hướng sang trang Xác nhận
+    router.push('/xac-nhan-dat-phong');
 };
+
+onMounted(() => {
+    const raw = localStorage.getItem('booking_room');
+    if (raw) {
+        try {
+            const data = JSON.parse(raw);
+            bookingRoom.value.pricePerNight = data.pricePerNight ?? null;
+            bookingRoom.value.nights = data.nights ?? null;
+        } catch (error) {
+            console.warn('Không đọc được dữ liệu phòng:', error);
+        }
+    }
+});
 </script>
 
 <style scoped>
@@ -217,6 +316,23 @@ const confirmPayment = () => {
 }
 .payment-box:hover { border-color: #f35525 !important; }
 .payment-box.active { 
+    border-color: #f35525 !important; 
+    background-color: #fff4e6; 
+}
+
+/* Phương thức thanh toán */
+.payment-method {
+    display: flex;
+    align-items: center;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    padding: 10px 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: #fff;
+}
+.payment-method:hover { border-color: #f35525 !important; }
+.payment-method.active { 
     border-color: #f35525 !important; 
     background-color: #fff4e6; 
 }

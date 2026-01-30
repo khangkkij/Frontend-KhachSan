@@ -13,6 +13,7 @@ import DanhSachPhong from '@/DuanKhachSan/KhachHang/DanhSachPhong.vue'
 import ChiTietPhong from '@/DuanKhachSan/KhachHang/ChiTietPhong.vue'
 import DatPhong from '@/DuanKhachSan/KhachHang/DatPhong.vue'
 import ThanhToan from '@/DuanKhachSan/KhachHang/ThanhToan.vue'
+import XacNhanDatPhong from '@/DuanKhachSan/KhachHang/XacNhanDatPhong.vue'
 import HoSo from '@/DuanKhachSan/KhachHang/Profile/HoSo.vue'
 import DonHang from '@/DuanKhachSan/KhachHang/Profile/DonHang.vue'
 import ChiTietDonHang from '@/DuanKhachSan/KhachHang/Profile/ChiTietDonHang.vue'
@@ -52,6 +53,7 @@ const router = createRouter({
         { path: 'phong/:id', name: 'room-detail', component: ChiTietPhong },
         { path: 'booking', name: 'booking', component: DatPhong },
         { path: 'payment', name: 'payment', component: ThanhToan },
+        { path: 'xac-nhan-dat-phong', name: 'confirm-booking', component: XacNhanDatPhong },
         { path: 'voucher', name: 'voucher', component: voucher },
         // Profile Routes
         { path: 'ProfileSidebar', name: 'ProfileSidebar', component: ProfileSidebar },

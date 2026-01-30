@@ -9,6 +9,7 @@
             <div class="step-item"><span class="step-num">3</span> Xác nhận</div>
         </div>
     </div>
+<<<<<<< Updated upstream
 
     <div class="container mb-5">
         <div class="row">
@@ -374,3 +375,149 @@ onMounted(() => {
     box-shadow: 0 5px 15px rgba(243, 85, 37, 0.4);
 }
 </style>
+=======
+  </template>
+  
+  <script setup>
+  import { ref, computed, onMounted } from 'vue';
+  import { useRouter } from 'vue-router';
+  import axios from 'axios';
+  
+  const router = useRouter();
+  const API = import.meta.env.VITE_API_URL;
+  
+  // State quản lý
+  const paymentOption = ref('deposit'); 
+  const paymentMethod = ref('vnpay');
+  const cardInfo = ref({ name: 'PHAM VAN A', number: '', expiry: '', cvc: '' });
+  const bookingRoom = ref({ pricePerNight: null, nights: null, quantity: 1 });
+  
+  // State Voucher
+  const voucherInput = ref('');
+  const appliedVoucher = ref(null);
+  const voucherMessage = ref('');
+  const myVouchers = ref([]);
+  const showVoucherModal = ref(false);
+  
+  // Logic tiền phòng
+  const baseAmount = computed(() => {
+      const price = Number(bookingRoom.value.pricePerNight || 0);
+      const nights = Number(bookingRoom.value.nights || 0);
+      const qty = Number(bookingRoom.value.quantity || 1);
+      return price * nights * qty;
+  });
+  
+  const discountValue = computed(() => {
+      if (!appliedVoucher.value) return 0;
+      const v = appliedVoucher.value;
+      let discount = v.phanTramGiam ? (baseAmount.value * v.phanTramGiam / 100) : v.soTienGiam;
+      return Math.min(discount, baseAmount.value);
+  });
+  
+  const totalAmount = computed(() => Math.max(0, baseAmount.value - discountValue.value));
+  const currentPayAmount = computed(() => paymentOption.value === 'deposit' ? Math.round(totalAmount.value * 0.3) : totalAmount.value);
+  const depositAmount = computed(() => Math.round(totalAmount.value * 0.3));
+  const remainingAmount = computed(() => totalAmount.value - currentPayAmount.value);
+  
+  const formatCurrency = (amount) => Number(amount || 0).toLocaleString('vi-VN') + ' ₫';
+  const formatK = (v) => v >= 1000 ? (v / 1000) + 'K' : v;
+  
+  // API Kho Voucher
+  const fetchMyVouchers = async () => {
+      try {
+          const res = await axios.get(`${API}/api/Voucher/my-vouchers`, { withCredentials: true });
+          myVouchers.value = res.data.items;
+      } catch (error) { console.error("Lỗi tải kho voucher"); }
+  };
+  
+  const openVoucherModal = () => { fetchMyVouchers(); showVoucherModal.value = true; };
+  
+  const selectVoucher = (v) => {
+      if (v.isExpired || (v.giaToiThieu && baseAmount.value < v.giaToiThieu)) return;
+      appliedVoucher.value = v;
+      voucherInput.value = v.maCode;
+      voucherMessage.value = "Áp dụng thành công từ kho!";
+      showVoucherModal.value = false;
+  };
+  
+  const applyVoucher = async () => {
+      if (!voucherInput.value) return;
+      try {
+          const res = await axios.get(`${API}/api/Voucher/check/${voucherInput.value}`);
+          if (res.data.giaToiThieu && baseAmount.value < res.data.giaToiThieu) {
+              voucherMessage.value = "Chưa đạt đơn hàng tối thiểu";
+              return;
+          }
+          appliedVoucher.value = res.data;
+          voucherMessage.value = "Áp dụng thành công!";
+      } catch (error) { voucherMessage.value = "Mã không hợp lệ"; }
+  };
+  
+  const removeVoucher = () => { appliedVoucher.value = null; voucherInput.value = ''; voucherMessage.value = ''; };
+  
+  const confirmPayment = async () => {
+      const maDatPhong = localStorage.getItem('maDatPhong');
+      if (!maDatPhong) return alert("Thiếu thông tin đặt phòng");
+      
+      try {
+          const endpoint = paymentOption.value === 'deposit' ? 'dat-coc' : 'thanh-toan';
+          await axios.post(`${API}/api/ThanhToan/${endpoint}`, {
+              MaDatPhong: Number(maDatPhong),
+              SoTien: Number(currentPayAmount.value),
+              HinhThucThanhToan: paymentMethod.value,
+              MaCode: appliedVoucher.value?.maCode || null // Gửi kèm mã Voucher về Backend
+          });
+          const paymentSnapshot = {
+              option: paymentOption.value,
+              method: paymentMethod.value,
+              totalAmount: Number(totalAmount.value || 0),
+              depositAmount: Number(depositAmount.value || 0),
+              remainingAmount: Number(remainingAmount.value || 0),
+              paidAmount: Number(currentPayAmount.value || 0),
+              createdAt: new Date().toISOString()
+          };
+          localStorage.setItem('booking_payment', JSON.stringify(paymentSnapshot));
+          router.push('/xac-nhan-dat-phong');
+      } catch (error) { alert("Thanh toán thất bại"); }
+  };
+  
+  onMounted(() => {
+      const raw = localStorage.getItem('booking_room');
+      if (raw) {
+          const data = JSON.parse(raw);
+          bookingRoom.value = { pricePerNight: data.pricePerNight, nights: data.nights, quantity: data.quantity || 1 };
+      }
+  });
+  </script>
+  
+  <style scoped>
+  .text-orange { color: #f35525 !important; }
+  .bg-orange { background-color: #f35525 !important; }
+  .payment-page { background-color: #f8f7f9; min-height: 100vh; }
+  .step-item { display: flex; align-items: center; color: #999; font-weight: 600; font-size: 14px; }
+  .step-item.active { color: #f35525; }
+  .step-num { background: #eee; border-radius: 50%; width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; margin-right: 8px; }
+  .step-item.active .step-num { background: #f35525; color: white; }
+  .progress-line { flex-grow: 1; height: 2px; background: #ddd; max-width: 50px; margin: 0 10px; }
+  .payment-box { cursor: pointer; border-radius: 8px; transition: 0.2s; }
+  .payment-box.active { border-color: #f35525 !important; background-color: #fff4e6; }
+  .payment-method { display: flex; align-items: center; border: 1px solid #eee; border-radius: 8px; padding: 12px; cursor: pointer; background: #fff; }
+  .payment-method.active { border-color: #f35525 !important; background-color: #fff4e6; }
+  .card-visual { background: linear-gradient(135deg, #1e1e1e 0%, #444 100%); border-radius: 15px; height: 180px; padding: 25px; box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
+  .chip { width: 45px; height: 35px; border-radius: 5px; background: linear-gradient(135deg, #d4af37 0%, #f0e68c 100%); }
+  .btn-pay { background-color: #f35525; color: white; padding: 16px; font-weight: bold; font-size: 1.1rem; border-radius: 8px; cursor: pointer; width: 100%; transition: 0.3s; }
+  .btn-pay:hover { background-color: #d14013; transform: translateY(-2px); }
+  .btn-outline-orange { border-color: #f35525; color: #f35525; }
+  .btn-outline-orange:hover { background-color: #f35525; color: white; }
+  
+  /* Voucher Modal */
+  .voucher-modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; display: flex; align-items: flex-end; justify-content: center; }
+  .voucher-modal-content { background: white; width: 100%; max-width: 500px; border-radius: 20px 20px 0 0; padding: 20px; max-height: 80vh; overflow-y: auto; }
+  .voucher-item-select { cursor: pointer; transition: 0.2s; }
+  .voucher-item-select:hover:not(.disabled-voucher) { border-color: #f35525; transform: scale(1.02); }
+  .v-select-left { width: 100px; position: relative; }
+  .disabled-voucher { opacity: 0.5; cursor: not-allowed; }
+  .billing-card { position: sticky; top: 20px; }
+  .text-truncate-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  </style>
+>>>>>>> Stashed changes

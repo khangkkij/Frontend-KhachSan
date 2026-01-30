@@ -90,6 +90,10 @@
                     <span class="text-muted">Giá / đêm:</span>
                     <span class="fw-bold text-orange">{{ formatCurrency(room.pricePerNight) }}</span>
                   </div>
+                  <div class="small mt-1" v-if="room.quantity">
+                    <span class="text-muted">Số lượng:</span>
+                    <span class="fw-bold">{{ room.quantity }}</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -101,7 +105,7 @@
               <span class="fw-bold text-orange">{{ formatCurrency(payment.totalAmount) }}</span>
             </div>
             <div class="text-muted small mt-1" v-if="room.nights">
-              Dựa trên {{ room.nights }} đêm
+              Dựa trên {{ room.nights }} đêm · {{ room.quantity || 1 }} phòng
             </div>
           </div>
         </div>
@@ -132,7 +136,8 @@ const room = ref({
   variantName: '',
   image: '',
   pricePerNight: null,
-  nights: null
+  nights: null,
+  quantity: 1
 });
 
 const customer = ref({

@@ -1,181 +1,105 @@
 <template>
-  <div class="container-xxl container-p-y">
-
-    <!-- HEADER -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-      <h4 class="fw-bold mb-0">Quản lý danh mục phòng</h4>
-      <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalAdd">
-        + Thêm loại phòng
+  <div class="container-xxl container-p-y admin-layout">
+    <div class="d-flex justify-content-between align-items-center mb-5 header-section">
+      <div>
+        <h4 class="fw-bold mb-1 text-dark">Quản lý danh mục phòng</h4>
+        <p class="text-muted small mb-0">Thiết lập và tùy chỉnh các hạng phòng trong hệ thống</p>
+      </div>
+      <button class="btn btn-add-new shadow-sm px-4 py-2" data-bs-toggle="modal" data-bs-target="#modalAdd">
+        <i class="bi bi-plus-lg me-2"></i> Thêm loại phòng
       </button>
     </div>
 
-    <!-- SEARCH -->
-    <div class="card mb-4">
-      <div class="card-body">
+    <div class="search-box mb-5">
+      <div class="input-group shadow-sm">
+        <span class="input-group-text bg-white border-end-0 ps-4">
+          <i class="bi bi-search text-muted"></i>
+        </span>
         <input
           type="text"
-          class="form-control"
-          placeholder="Tìm theo tên loại phòng..."
+          class="form-control border-start-0 py-3 ps-2"
+          placeholder="Tìm theo tên loại phòng hoặc giá tiền..."
         />
       </div>
     </div>
 
-    <!-- LIST -->
     <div class="row g-4">
+      <div class="col-lg-4 col-md-6">
+        <div class="card loai-phong-card border-0 h-100">
+          <div class="card-body p-4">
+            <div class="d-flex justify-content-between align-items-start mb-3">
+              <div class="category-icon bg-soft-primary">
+                <i class="bi bi-house-door text-primary"></i>
+              </div>
+              <div class="badge bg-soft-success text-success rounded-pill px-3">Đang kinh doanh</div>
+            </div>
 
-      <!-- CARD ITEM -->
-      <div class="col-md-4">
-        <div class="card loai-phong-card h-100">
-          <div class="card-body">
-            <h5 class="fw-semibold mb-2">Standard</h5>
-
-            <p class="text-muted mb-3">
-              Phòng tiêu chuẩn, phù hợp cho 2 người
+            <h5 class="fw-bold mb-2 title-room">Standard Room</h5>
+            <p class="text-muted small mb-4 line-clamp">
+              Phòng tiêu chuẩn với đầy đủ tiện nghi cơ bản, phù hợp cho cặp đôi hoặc đi công tác.
             </p>
 
-            <ul class="list-unstyled mb-3">
-              <li>💰 <strong>400.000đ</strong> / đêm</li>
-              <li>👤 Tối đa 2 người</li>
-            </ul>
+            <div class="info-grid mb-4">
+              <div class="info-item">
+                <span class="label">Giá mỗi đêm</span>
+                <span class="value text-primary fw-bold">400.000đ</span>
+              </div>
+              <div class="info-item">
+                <span class="label">Sức chứa</span>
+                <span class="value">02 người lớn</span>
+              </div>
+            </div>
 
-            <div class="d-flex justify-content-end gap-2">
-              <button class="btn btn-sm btn-outline-warning" data-bs-toggle="modal" data-bs-target="#modalEdit">
-                Sửa
+            <div class="d-flex gap-2 border-top pt-4">
+              <button class="btn btn-light-warning flex-grow-1 py-2" data-bs-toggle="modal" data-bs-target="#modalEdit">
+                <i class="bi bi-pencil-square me-2"></i>Sửa
               </button>
-              <button class="btn btn-sm btn-outline-danger">
-                Xoá
+              <button class="btn btn-light-danger flex-grow-1 py-2">
+                <i class="bi bi-trash3 me-2"></i>Xoá
               </button>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- CARD ITEM -->
-      <div class="col-md-4">
-        <div class="card loai-phong-card h-100">
-          <div class="card-body">
-            <h5 class="fw-semibold mb-2">Deluxe</h5>
+      <div class="col-lg-4 col-md-6">
+        <div class="card loai-phong-card border-0 h-100 highlight-card">
+          <div class="card-body p-4">
+            <div class="d-flex justify-content-between align-items-start mb-3">
+              <div class="category-icon bg-soft-warning">
+                <i class="bi bi-stars text-warning"></i>
+              </div>
+              <div class="badge bg-soft-success text-success rounded-pill px-3">Đang kinh doanh</div>
+            </div>
 
-            <p class="text-muted mb-3">
-              Phòng cao cấp, view đẹp, rộng rãi
+            <h5 class="fw-bold mb-2 title-room">Deluxe Suite</h5>
+            <p class="text-muted small mb-4 line-clamp">
+              Hạng phòng cao cấp với tầm nhìn toàn cảnh thành phố, nội thất gỗ tự nhiên sang trọng.
             </p>
 
-            <ul class="list-unstyled mb-3">
-              <li>💰 <strong>650.000đ</strong> / đêm</li>
-              <li>👤 Tối đa 3 người</li>
-            </ul>
+            <div class="info-grid mb-4">
+              <div class="info-item">
+                <span class="label">Giá mỗi đêm</span>
+                <span class="value text-primary fw-bold">1.250.000đ</span>
+              </div>
+              <div class="info-item">
+                <span class="label">Sức chứa</span>
+                <span class="value">04 người lớn</span>
+              </div>
+            </div>
 
-            <div class="d-flex justify-content-end gap-2">
-              <button class="btn btn-sm btn-outline-warning" data-bs-toggle="modal" data-bs-target="#modalEdit">
-                Sửa
+            <div class="d-flex gap-2 border-top pt-4">
+              <button class="btn btn-light-warning flex-grow-1 py-2" data-bs-toggle="modal" data-bs-target="#modalEdit">
+                <i class="bi bi-pencil-square me-2"></i>Sửa
               </button>
-              <button class="btn btn-sm btn-outline-danger">
-                Xoá
+              <button class="btn btn-light-danger flex-grow-1 py-2">
+                <i class="bi bi-trash3 me-2"></i>Xoá
               </button>
             </div>
           </div>
         </div>
       </div>
-
     </div>
 
-    <!-- MODAL ADD -->
-    <div class="modal fade" id="modalAdd" tabindex="-1">
-      <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content">
-
-          <div class="modal-header">
-            <h5 class="modal-title">Thêm loại phòng</h5>
-            <button class="btn-close" data-bs-dismiss="modal"></button>
-          </div>
-
-          <div class="modal-body">
-            <div class="row g-3">
-              <div class="col-md-6">
-                <label class="form-label">Tên loại phòng</label>
-                <input class="form-control" placeholder="VD: Deluxe" />
-              </div>
-
-              <div class="col-md-6">
-                <label class="form-label">Giá phòng</label>
-                <input type="number" class="form-control" placeholder="VD: 500000" />
-              </div>
-
-              <div class="col-md-6">
-                <label class="form-label">Số người tối đa</label>
-                <input type="number" class="form-control" placeholder="VD: 2" />
-              </div>
-
-              <div class="col-md-6">
-                <label class="form-label">Mô tả</label>
-                <input class="form-control" placeholder="Mô tả ngắn..." />
-              </div>
-            </div>
-          </div>
-
-          <div class="modal-footer">
-            <button class="btn btn-secondary" data-bs-dismiss="modal">Huỷ</button>
-            <button class="btn btn-success">Lưu</button>
-          </div>
-
-        </div>
-      </div>
     </div>
-
-    <!-- MODAL EDIT -->
-    <div class="modal fade" id="modalEdit" tabindex="-1">
-      <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content">
-
-          <div class="modal-header">
-            <h5 class="modal-title">Sửa loại phòng</h5>
-            <button class="btn-close" data-bs-dismiss="modal"></button>
-          </div>
-
-          <div class="modal-body">
-            <div class="row g-3">
-              <div class="col-md-6">
-                <label class="form-label">Tên loại phòng</label>
-                <input class="form-control" value="Standard" />
-              </div>
-
-              <div class="col-md-6">
-                <label class="form-label">Giá phòng</label>
-                <input type="number" class="form-control" value="400000" />
-              </div>
-
-              <div class="col-md-6">
-                <label class="form-label">Số người tối đa</label>
-                <input type="number" class="form-control" value="2" />
-              </div>
-
-              <div class="col-md-6">
-                <label class="form-label">Mô tả</label>
-                <input class="form-control" value="Phòng tiêu chuẩn" />
-              </div>
-            </div>
-          </div>
-
-          <div class="modal-footer">
-            <button class="btn btn-secondary" data-bs-dismiss="modal">Huỷ</button>
-            <button class="btn btn-primary">Lưu thay đổi</button>
-          </div>
-
-        </div>
-      </div>
-    </div>
-
-  </div>
 </template>
-
-<style scoped>
-.loai-phong-card {
-  border-radius: 14px;
-  transition: all 0.25s ease;
-}
-
-.loai-phong-card:hover {
-  transform: translateY(-6px);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-}
-</style>

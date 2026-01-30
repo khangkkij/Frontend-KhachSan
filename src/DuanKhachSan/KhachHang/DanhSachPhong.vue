@@ -1,5 +1,6 @@
 <script setup>
 import { ref, computed, onMounted } from "vue";
+import { watch } from "vue"
 import axios from "axios";
 const API = import.meta.env.VITE_API_URL;
 const filter = ref("*");
@@ -7,6 +8,16 @@ const dsPhong = ref([]);
 const loading = ref(true);
 const currentPage = ref(1)
 const pageSize = 9
+const keyword = ref("")
+const minPrice = ref(null)
+const maxPrice = ref(null)
+const onlyAvailable = ref(false)
+const sale=ref(null)
+const bedType = ref("*")
+const guests = ref(null)
+const kid = ref(null)
+const minArea = ref(null)
+
 
 const totalPages = computed(() => {
   if (!Array.isArray(filteredRooms.value)) return 1
@@ -47,7 +58,6 @@ const visiblePages = computed(() => {
 
   return pages
 })
-
 const goPage = (page) => {
   if (page === '...' || page < 1 || page > totalPages.value) return
   currentPage.value = page
@@ -65,13 +75,51 @@ onMounted(async () => {
     loading.value = false;
   }
 });
-// Logic lọc phòng
-const filteredRooms = computed(() => {
-  if (filter.value === "*") {
-    return dsPhong.value;
+const getFinalPrice = (room) => {
+  if (room.phanTramGiam > 0) {
+    return room.giaGoc * (100 - room.phanTramGiam) / 100
   }
-  return dsPhong.value.filter((room) => room.tenLoai === filter.value);
-});
+  return room.giaGoc
+}
+const filteredRooms = computed(() => {
+  let result = [...dsPhong.value]
+  if (filter.value !== "*") {
+    result = result.filter(r => r.tenLoai === filter.value)
+  }
+  if (keyword.value.trim()) {
+    const key = keyword.value.toLowerCase()
+    result = result.filter(r =>
+      r.tenBienThe?.toLowerCase().includes(key) ||
+      r.tenLoai?.toLowerCase().includes(key)
+    )
+  }
+  if (minPrice.value !== null) {
+  result = result.filter(r => getFinalPrice(r) >= minPrice.value)
+  }
+
+  if (maxPrice.value !== null) {
+    result = result.filter(r => getFinalPrice(r) <= maxPrice.value)
+  }
+
+  if (onlyAvailable.value) {
+    result = result.filter(r => r.soPhongCon > 0)
+  }
+  if (guests.value !== null) {
+    result = result.filter(r => r.soNguoiLon >= guests.value)
+  }
+  if (kid.value !== null) {
+    result = result.filter(r => r.soTreEm >= guests.value)
+  }
+  if (minArea.value !== null) {
+    result = result.filter(r => r.dienTich >= minArea.value)
+  }
+
+  return result
+})
+watch(
+  [filter, keyword, minPrice, maxPrice, onlyAvailable, bedType, guests, minArea],
+  () => currentPage.value = 1
+)
 </script>
 <template>
   <div>
@@ -90,6 +138,81 @@ const filteredRooms = computed(() => {
 
     <div class="section properties">
       <div class="container">
+        <div class="filter-wrapper p-4 bg-white shadow-sm rounded-4 mb-4">
+          <div class="row g-3 align-items-end">
+            <div class="col-lg-5 col-md-12">
+              <label class="form-label fw-bold small text-muted">TÌM KIẾM PHÒNG</label>
+              <div class="input-group">
+                <span class="input-group-text bg-light border-end-0"><i class="bi bi-search"></i></span>
+                <input 
+                  v-model="keyword" 
+                  type="text" 
+                  class="form-control bg-light border-start-0 ps-0" 
+                  placeholder="Nhập tên phòng hoặc loại phòng..."
+                />
+              </div>
+            </div>
+
+            <div class="col-lg-4 col-md-8">
+              <label class="form-label fw-bold small text-muted">KHOẢNG GIÁ (VNĐ)</label>
+              <div class="input-group">
+                <input v-model.number="minPrice" type="number" class="form-control bg-light" placeholder="Từ">
+                <span class="input-group-text bg-light border-start-0 border-end-0">→</span>
+                <input v-model.number="maxPrice" type="number" class="form-control bg-light" placeholder="Đến">
+              </div>
+            </div>
+
+            <div class="col-lg-3 col-md-4 d-flex align-items-center justify-content-lg-end">
+              <div class="form-check form-switch custom-switch">
+                <input v-model="onlyAvailable" class="form-check-input" type="checkbox" id="available">
+                <label class="form-check-label fw-medium" for="available">Phòng còn trống</label>
+              </div>
+            </div>
+          </div>
+
+          <hr class="my-4 text-muted opacity-25">
+
+          <div class="row g-3">
+            <div class="col-md-4">
+              <div class="input-group">
+                <span class="input-group-text bg-transparent border-0 ps-0"><i class="bi bi-people"></i></span>
+                <input 
+                  v-model.number="kid" 
+                  type="number" 
+                  min="1" 
+                  class="form-control border-0 border-bottom rounded-0 shadow-none" 
+                  placeholder="Số lượng trẻ em tối đa"
+                />
+              </div>
+            </div>
+
+            <div class="col-md-4">
+              <div class="input-group">
+                <span class="input-group-text bg-transparent border-0 ps-0"><i class="bi bi-people"></i></span>
+                <input 
+                  v-model.number="guests" 
+                  type="number" 
+                  min="1" 
+                  class="form-control border-0 border-bottom rounded-0 shadow-none" 
+                  placeholder="Số lượng người lớn tối đa"
+                />
+              </div>
+            </div>
+
+            <div class="col-md-4">
+              <div class="input-group">
+                <span class="input-group-text bg-transparent border-0 ps-0"><i class="bi bi-layers"></i></span>
+                <input 
+                  v-model.number="minArea" 
+                  type="number" 
+                  class="form-control border-0 border-bottom rounded-0 shadow-none" 
+                  placeholder="Diện tích từ (m²)"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
         <ul class="properties-filter">
           <li>
             <a
@@ -130,7 +253,7 @@ const filteredRooms = computed(() => {
                 </span>
 
                 <router-link :to="`/phong/${room.maBienThePhong}`">
-                  <img :src="`${API}/images/${room.anhDaiDien}`" />
+                  <img :src="`${API}/${room.anhDaiDien}`" />
                 </router-link>
               </div>
 
@@ -169,7 +292,7 @@ const filteredRooms = computed(() => {
 
               <h4>
                 <router-link :to="`/phong/${room.maBienThePhong}`">
-                  {{ room.tenBienThe }}
+                  {{ room.tenBienThe }}, Hướng {{ room.huongNhin }}
                 </router-link>
               </h4>
 
@@ -189,10 +312,17 @@ const filteredRooms = computed(() => {
               </ul>
 
               <div class="main-button">
-                <router-link :to="`/phong/${room.maBienThePhong}`">
-                  Đặt phòng
+                <router-link
+                  :to="room.soPhongCon > 0 ? `/phong/${room.maBienThePhong}` : ''"
+                  class="btn-book"
+                  :class="{ disabled: room.soPhongCon === 0 }"
+                  :aria-disabled="room.soPhongCon === 0"
+                  @click.prevent="room.soPhongCon === 0"
+                >
+                  {{ room.soPhongCon > 0 ? 'Đặt phòng' : 'Hết phòng' }}
                 </router-link>
               </div>
+
             </div>
           </div>
 
@@ -243,6 +373,40 @@ const filteredRooms = computed(() => {
 </template>
 
 <style scoped>
+/* Custom styling to make it pop */
+.filter-wrapper {
+  border: 1px solid #eee;
+  transition: all 0.3s ease;
+}
+
+.form-control, .form-select {
+  padding: 0.6rem 0.75rem;
+  border-radius: 8px;
+}
+
+.form-control:focus, .form-select:focus {
+  border-color: #0d6efd;
+  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.1);
+  background-color: #fff !important;
+}
+
+/* Biến đổi Switch thành dạng hiện đại hơn */
+.custom-switch .form-check-input {
+  width: 2.5em;
+  height: 1.25em;
+  cursor: pointer;
+}
+
+/* Loại bỏ mũi tên tăng giảm của input number để UI sạch hơn */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.input-group-text {
+  color: #6c757d;
+}
 /* Fix kích thước ảnh cho đều nhau */
 .properties .item .thumb {
   overflow: hidden;

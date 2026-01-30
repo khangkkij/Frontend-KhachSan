@@ -1,8 +1,9 @@
 <script setup>
 import axios from 'axios';
 import { ref, computed, watch, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 const route = useRoute();
+const router = useRouter();
 const roomId = route.params.id;
 const API = import.meta.env.VITE_API_URL
 const room = ref(null)
@@ -30,6 +31,13 @@ function chonBienThe(bt) {
   if (bt.soPhongCon === 0) return
   selectedVariantId.value = bt.maBienThePhong
 }
+const getDiscountedPrice = (variant) => {
+  if (!variant) return null;
+  if (variant.phanTramGiam > 0) {
+    return Number(variant.gia * (100 - variant.phanTramGiam) / 100);
+  }
+  return Number(variant.gia);
+};
 const changeImage = (img) => {
   imageOpacity.value = 0
   setTimeout(() => {
@@ -97,6 +105,23 @@ watch(selectedVariant, (val) => {
     currentImage.value = '' // optional fallback
   }
 })
+
+const goBooking = () => {
+  if (!room.value || !selectedVariant.value) {
+    return;
+  }
+  const imageName = selectedVariant.value.danhSachAnh?.[0];
+  const payload = {
+    name: room.value.tenLoai,
+    variantName: selectedVariant.value.tenBienThe,
+    maBienThePhong: selectedVariant.value.maBienThePhong,
+    image: imageName ? `${API}/images/${imageName}` : '',
+    pricePerNight: getDiscountedPrice(selectedVariant.value),
+    discountPercent: selectedVariant.value.phanTramGiam || 0
+  };
+  localStorage.setItem('booking_room', JSON.stringify(payload));
+  router.push('/booking');
+};
 </script>
 <template>
   <div class="room-detail-wrapper" v-if="room">
@@ -319,6 +344,7 @@ watch(selectedVariant, (val) => {
                     : ''"
                   class="btn btn-lg w-100 fw-bold btn-orange-gradient py-3 rounded-3"
                   :class="{ 'disabled opacity-50 pointer-events-none': !canBook }"
+                  @click.prevent="goBooking"
                 >
                   <span v-if="canBook">XÁC NHẬN ĐẶT PHÒNG</span>
                   <span v-else>HẾT PHÒNG</span>

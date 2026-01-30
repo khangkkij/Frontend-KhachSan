@@ -30,8 +30,11 @@
                                 <div class="col-md-12 mb-3">
                                     <div class="p-3 bg-light border rounded d-flex align-items-center">
                                         <i class="fa fa-user-circle fa-2x me-3 text-orange"></i>
-                                        <div>Xin chào <strong>{{ formData.name }}</strong>! (Không phải bạn? <a href="#"
-                                                class="text-orange">Thoát</a>)</div>
+                                        <div>
+                                            Xin chào <strong>{{ formData.name || 'Quý khách' }}</strong>!
+                                            (Không phải bạn?
+                                            <a href="#" class="text-orange" @click.prevent="handleSwitchUser">Thoát</a>)
+                                        </div>
                                     </div>
                                 </div>
                                 <div class="col-md-12">
@@ -47,6 +50,14 @@
                                     <label class="form-label fw-bold">Số điện thoại</label>
                                     <input type="tel" class="form-control" v-model="formData.phone"
                                         placeholder="Nhập số điện thoại...">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">Ngày nhận phòng</label>
+                                    <input type="date" class="form-control" v-model="bookingRoom.checkIn">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">Ngày trả phòng</label>
+                                    <input type="date" class="form-control" v-model="bookingRoom.checkOut">
                                 </div>
                             </div>
                         </div>
@@ -111,18 +122,81 @@
                     <div class="card mb-3 shadow-sm">
                         <div class="row g-0">
                             <div class="col-4">
-                                <img src="/assets/images/property-01.jpg"
-                                    class="img-fluid rounded-start h-100 object-fit-cover" alt="Hotel">
+                                <img
+                                    v-if="bookingRoom.image"
+                                    :src="bookingRoom.image"
+                                    class="img-fluid rounded-start h-100 object-fit-cover"
+                                    alt="Hotel"
+                                >
+                                <div v-else class="room-image-placeholder">
+                                    Chưa có ảnh
+                                </div>
                             </div>
                             <div class="col-8">
                                 <div class="card-body p-2">
-                                    <h6 class="fw-bold mb-1">Luxury Hotel & Resort</h6>
-                                    <div class="text-warning small mb-1">
-                                        <i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i><i
-                                            class="fa fa-star"></i><i class="fa fa-star"></i>
+                                    <h6 class="fw-bold mb-1">{{ bookingRoom.name || '---' }}</h6>
+                                    <div class="small text-muted" v-if="bookingRoom.variantName">
+                                        {{ bookingRoom.variantName }}
                                     </div>
-                                    <div class="small"><span class="badge bg-orange">9.8 Tuyệt vời</span> <span
-                                            class="text-muted">588 đánh giá</span></div>
+                                    <div class="small mt-1" v-if="bookingRoom.pricePerNight">
+                                        <span class="text-muted">Giá / đêm:</span>
+                                        <span class="fw-bold text-orange">{{ formatCurrency(bookingRoom.pricePerNight) }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card p-3 mb-3 shadow-sm">
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label class="form-label fw-bold">Thêm phòng</label>
+                                <input
+                                    type="number"
+                                    class="form-control"
+                                    v-model.number="bookingRoom.quantity"
+                                    placeholder="Thêm phòng"
+                                    min="0"
+                                    :max="bookingRoom.soPhongCon ?? 0"
+                                >
+                                <small class="text-muted" v-if="bookingRoom.soPhongCon">
+                                    Phòng trống: {{ bookingRoom.soPhongCon }}
+                                </small>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-bold">Loại phòng</label>
+                                <select class="form-select" v-model="bookingRoom.roomType">
+                                    <option v-if="roomTypeOptions.length === 0" disabled value="">
+                                        ---
+                                    </option>
+                                    <option v-for="type in roomTypeOptions" :key="type" :value="type">
+                                        {{ type }}
+                                    </option>
+                                </select>
+                                <div class="room-table mt-3" v-if="roomsByType.length">
+                                    <div class="fw-bold mb-2">Danh sách phòng theo loại</div>
+                                    <table class="table table-sm mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th>Loại phòng</th>
+                                                <th>Giá/đêm</th>
+                                                <th>Còn</th>
+                                                <th></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr v-for="room in roomsByType" :key="room.maBienThePhong">
+                                                <td>{{ room.tenBienThe }}</td>
+                                                <td>{{ room.pricePerNight ? formatCurrency(room.pricePerNight) : '---' }}</td>
+                                                <td>{{ room.soPhongCon ?? '---' }}</td>
+                                                <td class="text-end">
+                                                    <button type="button" class="btn btn-sm btn-outline-orange" @click="addRoomFromItem(room.raw)">
+                                                        Thêm
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
                                 </div>
                             </div>
                         </div>
@@ -132,15 +206,15 @@
                         <div class="d-flex justify-content-between align-items-center text-center">
                             <div>
                                 <small class="text-muted">Nhận phòng</small>
-                                <div class="fw-bold text-orange">10 Th12</div>
+                                <div class="fw-bold text-orange">{{ bookingRoom.checkIn || '---' }}</div>
                             </div>
                             <i class="fa fa-arrow-right text-muted"></i>
                             <div>
                                 <small class="text-muted">Trả phòng</small>
-                                <div class="fw-bold text-orange">12 Th12</div>
+                                <div class="fw-bold text-orange">{{ bookingRoom.checkOut || '---' }}</div>
                             </div>
                             <div class="border-start ps-3">
-                                <div class="fw-bold">2</div>
+                                <div class="fw-bold">{{ bookingRoom.nights ?? '---' }}</div>
                                 <small class="text-muted">đêm</small>
                             </div>
                         </div>
@@ -148,24 +222,15 @@
 
                     <div class="card shadow-sm">
                         <div class="card-body">
-                            <div class="d-flex justify-content-between mb-2">
-                                <span>Giá gốc</span>
-                                <span class="strike-price text-danger">5.000.000 ₫</span>
-                            </div>
-                            <div class="d-flex justify-content-between mb-2">
-                                <span>Giá giảm</span>
-                                <span>4.200.000 ₫</span>
-                            </div>
-                            <div class="d-flex justify-content-between mb-2">
-                                <span>Thuế và phí</span>
-                                <span>300.000 ₫</span>
-                            </div>
-                            <hr>
                             <div class="d-flex justify-content-between align-items-center">
                                 <span class="h5 fw-bold">Tổng cộng</span>
-                                <span class="price-final">4.500.000 ₫</span>
+                                <span class="price-final">
+                                    {{ totalAmount ? formatCurrency(totalAmount) : '---' }}
+                                </span>
                             </div>
-                            <div class="text-end small text-muted mt-1">Đã bao gồm: Phí dịch vụ, Thuế VAT</div>
+                            <div class="text-end small text-muted mt-1" v-if="totalAmount">
+                                Dựa trên {{ bookingRoom.nights }} đêm · {{ bookingRoom.quantity || 1 }} phòng
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -175,16 +240,152 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router'; // <--- BƯỚC 1: Thêm dòng này
+import axios from 'axios';
 
 // <--- BƯỚC 2: Khai báo router để dùng
 const router = useRouter(); 
+const API = import.meta.env.VITE_API_URL;
+
+const bookingRoom = ref({
+    name: '',
+    roomType: '',
+    variantName: '',
+    image: '',
+    maBienThePhong: null,
+    pricePerNight: null,
+    soPhongCon: null,
+    quantity: 1,
+    checkIn: '',
+    checkOut: '',
+    nights: null
+});
+const fallbackImage = '/assets/images/property-01.jpg';
+
+const formatCurrency = (amount) => {
+    return amount.toLocaleString('vi-VN') + ' ₫';
+};
+
+const roomTypes = ref([]);
+const roomList = ref([]);
+
+const totalAmount = computed(() => {
+    if (!bookingRoom.value.pricePerNight || !bookingRoom.value.nights) return null;
+    const qty = Number(bookingRoom.value.quantity || 1);
+    return Number(bookingRoom.value.pricePerNight) * Number(bookingRoom.value.nights) * qty;
+});
+
+const roomTypeOptions = computed(() => {
+    if (roomTypes.value.length > 0) return roomTypes.value;
+    const type = bookingRoom.value.roomType || bookingRoom.value.name;
+    return type ? [type] : [];
+});
+
+const roomsByType = computed(() => {
+    const type = bookingRoom.value.roomType;
+    if (!type || roomList.value.length === 0) return [];
+    return roomList.value
+        .filter((item) => (getField(item, 'tenLoai', 'TenLoai') === type))
+        .map((item) => mapRoomItem(item));
+});
+
+const calculateNights = (checkIn, checkOut) => {
+    if (!checkIn || !checkOut) return null;
+    const start = new Date(checkIn);
+    const end = new Date(checkOut);
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return null;
+    const diffMs = end - start;
+    const nights = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+    return nights > 0 ? nights : null;
+};
+
+const normalizeQuantity = () => {
+    const max = bookingRoom.value.soPhongCon == null ? null : Number(bookingRoom.value.soPhongCon);
+    const qty = Number(bookingRoom.value.quantity || 0);
+    if (max === 0) {
+        bookingRoom.value.quantity = 0;
+        return;
+    }
+    if (qty < 1) {
+        bookingRoom.value.quantity = 1;
+    } else if (max != null && max > 0 && qty > max) {
+        bookingRoom.value.quantity = max;
+    }
+};
+
+const persistBookingRoom = () => {
+    localStorage.setItem('booking_room', JSON.stringify(bookingRoom.value));
+};
+
+const getField = (item, ...keys) => {
+    for (const key of keys) {
+        if (item?.[key] !== undefined && item?.[key] !== null) return item[key];
+    }
+    return null;
+};
+
+const mapRoomItem = (item) => {
+    const giaGoc = getField(item, 'giaGoc', 'GiaGoc');
+    const phanTramGiam = getField(item, 'phanTramGiam', 'PhanTramGiam') || 0;
+    const pricePerNight = giaGoc != null
+        ? (phanTramGiam > 0
+            ? Number(giaGoc) * (100 - Number(phanTramGiam)) / 100
+            : Number(giaGoc))
+        : null;
+    return {
+        raw: item,
+        maBienThePhong: getField(item, 'maBienThePhong', 'MaBienThePhong'),
+        tenBienThe: getField(item, 'tenBienThe', 'TenBienThe') || '---',
+        tenLoai: getField(item, 'tenLoai', 'TenLoai') || '',
+        pricePerNight,
+        soPhongCon: getField(item, 'soPhongCon', 'SoPhongCon')
+    };
+};
+
+const applyRoomFromItem = (item) => {
+    if (!item) return;
+    const tenLoai = getField(item, 'tenLoai', 'TenLoai');
+    const tenBienThe = getField(item, 'tenBienThe', 'TenBienThe');
+    const giaGoc = getField(item, 'giaGoc', 'GiaGoc');
+    const phanTramGiam = getField(item, 'phanTramGiam', 'PhanTramGiam') || 0;
+    const soPhongCon = getField(item, 'soPhongCon', 'SoPhongCon');
+    const anhDaiDien = getField(item, 'anhDaiDien', 'AnhDaiDien');
+    const maBienThePhong = getField(item, 'maBienThePhong', 'MaBienThePhong');
+
+    bookingRoom.value.name = tenLoai || bookingRoom.value.name;
+    bookingRoom.value.roomType = tenLoai || bookingRoom.value.roomType;
+    bookingRoom.value.variantName = tenBienThe || bookingRoom.value.variantName;
+    bookingRoom.value.maBienThePhong = maBienThePhong ?? bookingRoom.value.maBienThePhong;
+    if (giaGoc != null) {
+        bookingRoom.value.pricePerNight = phanTramGiam > 0
+            ? Number(giaGoc) * (100 - Number(phanTramGiam)) / 100
+            : Number(giaGoc);
+    }
+    if (anhDaiDien) {
+        bookingRoom.value.image = `${API}/images/${anhDaiDien}`;
+    }
+    if (soPhongCon != null) {
+        bookingRoom.value.soPhongCon = soPhongCon;
+    }
+};
+
+const addRoomFromItem = (item) => {
+    const currentId = bookingRoom.value.maBienThePhong;
+    applyRoomFromItem(item);
+    if (currentId === bookingRoom.value.maBienThePhong) {
+        bookingRoom.value.quantity = Number(bookingRoom.value.quantity || 0) + 1;
+    } else {
+        bookingRoom.value.quantity = 1;
+    }
+    normalizeQuantity();
+    persistBookingRoom();
+};
 
 // Dữ liệu form
 const formData = ref({
-    name: 'Phạm Văn A',
-    email: 'email@example.com',
+    name: '',
+    email: '',
     phone: ''
 });
 
@@ -207,21 +408,176 @@ const startTimer = () => {
 };
 
 // Xử lý đặt phòng (ĐÂY LÀ ĐOẠN BẠN CẦN SỬA)
-const handleBooking = () => {
+const handleBooking = async () => {
     // 1. Kiểm tra xem đã nhập tên và sđt chưa
     if(!formData.value.name || !formData.value.phone) {
         alert("Vui lòng nhập đầy đủ họ tên và số điện thoại!");
         return;
     }
     
-    // 2. Chuyển hướng sang trang Thanh Toán
-    // <--- BƯỚC 3: Dùng lệnh này để chuyển trang
+    if (!bookingRoom.value.checkIn || !bookingRoom.value.checkOut || !bookingRoom.value.nights) {
+        alert("Vui lòng chọn ngày nhận phòng và trả phòng hợp lệ!");
+        return;
+    }
+    if (!bookingRoom.value.maBienThePhong || !bookingRoom.value.pricePerNight) {
+        alert("Thiếu thông tin phòng, vui lòng chọn lại phòng!");
+        return;
+    }
+
+    // 2. Lưu thông tin khách hàng để hiển thị hóa đơn
+    localStorage.setItem('booking_customer', JSON.stringify({
+        name: formData.value.name,
+        email: formData.value.email,
+        phone: formData.value.phone
+    }));
+
+    // 3. Gọi API tạo đặt phòng (lưu DB + trừ phòng)
+    try {
+        const userInfo = JSON.parse(localStorage.getItem('user_info') || '{}');
+        const userId = userInfo?.id ?? userInfo?.maKh ?? userInfo?.MaKh ?? null;
+        const payload = {
+            MaKh: userId,
+            MaBienThePhong: bookingRoom.value.maBienThePhong,
+            NgayNhan: bookingRoom.value.checkIn,
+            NgayTra: bookingRoom.value.checkOut,
+            GiaDat: Number(bookingRoom.value.pricePerNight),
+            SoLuong: Number(bookingRoom.value.quantity || 1)
+        };
+        const res = await axios.post(`${API}/api/DatPhong/tao`, payload, {
+            withCredentials: true
+        });
+        if (res?.data?.maDatPhong) {
+            localStorage.setItem('maDatPhong', String(res.data.maDatPhong));
+        }
+        if (res?.data?.soDem) {
+            bookingRoom.value.nights = res.data.soDem;
+            persistBookingRoom();
+        }
+    } catch (error) {
+        const message = error?.response?.data || 'Đặt phòng thất bại!';
+        alert(message);
+        return;
+    }
+
+    // 4. Chuyển hướng sang trang Thanh Toán
     router.push('/payment'); 
 };
 
 onMounted(() => {
+    const raw = localStorage.getItem('booking_room');
+    if (raw) {
+        try {
+            Object.assign(bookingRoom.value, JSON.parse(raw));
+        } catch (error) {
+            console.warn('Không đọc được dữ liệu đặt phòng:', error);
+        }
+    }
+    if (!bookingRoom.value.roomType) {
+        bookingRoom.value.roomType = bookingRoom.value.name || '';
+    }
+    if (!bookingRoom.value.quantity) {
+        bookingRoom.value.quantity = 1;
+    }
+    normalizeQuantity();
+    if (roomTypes.value.length === 0) {
+        axios.get(`${API}/api/DanhSachPhong`)
+            .then((res) => {
+                const list = Array.isArray(res.data) ? res.data : [];
+                roomList.value = list;
+                const types = list
+                    .map((item) => item.tenLoai || item.TenLoai)
+                    .filter(Boolean);
+                roomTypes.value = [...new Set(types)];
+                if (!bookingRoom.value.roomType && roomTypes.value.length > 0) {
+                    bookingRoom.value.roomType = roomTypes.value[0];
+                }
+            })
+            .catch((error) => {
+                console.warn('Không tải được danh sách loại phòng:', error);
+            });
+    }
+    const userInfo = JSON.parse(localStorage.getItem('user_info') || '{}');
+    if (userInfo?.name) {
+        formData.value.name = userInfo.name;
+    }
+    if (userInfo?.email) {
+        formData.value.email = userInfo.email;
+    }
     startTimer();
+
+    const maBienThe = bookingRoom.value.maBienThePhong;
+    if (maBienThe && roomList.value.length === 0) {
+        axios.get(`${API}/api/ChiTietPhong/${maBienThe}`)
+            .then((res) => {
+                const detail = res?.data?.chiTiet || res?.data?.ChiTiet;
+                if (!detail) return;
+                const tenLoai = detail.tenLoai || detail.TenLoai;
+                const tenBienThe = detail.tenBienThe || detail.TenBienThe;
+                const giaGoc = detail.giaGoc || detail.GiaGoc;
+                const phanTramGiam = detail.phanTramGiam || detail.PhanTramGiam || 0;
+                const anhDaiDien = detail.anhDaiDien || detail.AnhDaiDien;
+                const danhSachAnh = detail.danhSachAnh || detail.DanhSachAnh || [];
+                const soPhongCon = detail.soPhongCon || detail.SoPhongCon;
+
+                if (!bookingRoom.value.name && tenLoai) {
+                    bookingRoom.value.name = tenLoai;
+                }
+                if (!bookingRoom.value.roomType && tenLoai) {
+                    bookingRoom.value.roomType = tenLoai;
+                }
+                if (!bookingRoom.value.variantName && tenBienThe) {
+                    bookingRoom.value.variantName = tenBienThe;
+                }
+                if (!bookingRoom.value.pricePerNight && giaGoc) {
+                    const price = phanTramGiam > 0
+                        ? Number(giaGoc) * (100 - Number(phanTramGiam)) / 100
+                        : Number(giaGoc);
+                    bookingRoom.value.pricePerNight = price;
+                }
+                if (!bookingRoom.value.image) {
+                    const img = anhDaiDien || danhSachAnh[0];
+                    if (img) {
+                        bookingRoom.value.image = `${API}/images/${img}`;
+                    }
+                }
+                if (!bookingRoom.value.soPhongCon && soPhongCon != null) {
+                    bookingRoom.value.soPhongCon = soPhongCon;
+                }
+                persistBookingRoom();
+            })
+            .catch((error) => {
+                console.warn('Không tải được chi tiết phòng:', error);
+            });
+    }
 });
+
+const handleSwitchUser = () => {
+    localStorage.removeItem('user_info');
+    router.push('/dang-nhap');
+};
+
+watch(
+    () => [bookingRoom.value.checkIn, bookingRoom.value.checkOut, bookingRoom.value.quantity, bookingRoom.value.roomType],
+    () => {
+        bookingRoom.value.nights = calculateNights(bookingRoom.value.checkIn, bookingRoom.value.checkOut);
+        normalizeQuantity();
+        persistBookingRoom();
+    }
+);
+
+watch(
+    () => bookingRoom.value.roomType,
+    (type) => {
+        if (!type) return;
+        const match = roomList.value.find((item) => getField(item, 'tenLoai', 'TenLoai') === type);
+        if (match) {
+            applyRoomFromItem(match);
+            bookingRoom.value.quantity = 1;
+            normalizeQuantity();
+            persistBookingRoom();
+        }
+    }
+);
 
 onUnmounted(() => {
     if(interval) clearInterval(interval);
@@ -348,5 +704,34 @@ onUnmounted(() => {
 
 .object-fit-cover {
     object-fit: cover;
+}
+
+.room-table {
+    border: 1px solid #eee;
+    border-radius: 10px;
+    padding: 10px 12px;
+    background: #fff;
+}
+
+.btn-outline-orange {
+    border: 1px solid #f35525;
+    color: #f35525;
+}
+
+.btn-outline-orange:hover {
+    background: #f35525;
+    color: #fff;
+}
+
+.room-image-placeholder {
+    height: 100%;
+    min-height: 90px;
+    background: #f3f3f3;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #999;
+    font-size: 12px;
 }
 </style>

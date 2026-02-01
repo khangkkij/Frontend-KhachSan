@@ -53,11 +53,11 @@
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label fw-bold">Ngày nhận phòng</label>
-                                    <input type="date" class="form-control" v-model="bookingRoom.checkIn">
+                                    <input type="date" class="form-control" v-model="bookingRoom.checkIn" :min="minCheckinDate" :max="maxCheckinDate" @focus="ensureCheckinToday">
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label fw-bold">Ngày trả phòng</label>
-                                    <input type="date" class="form-control" v-model="bookingRoom.checkOut">
+                                    <input type="date" class="form-control" v-model="bookingRoom.checkOut" :min="minCheckoutDate" :max="maxCheckoutDate">
                                 </div>
                             </div>
                         </div>
@@ -92,6 +92,42 @@
                                         <input class="form-check-input" type="radio" name="bed" id="b2">
                                         <label class="form-check-label" for="b2"><i class="fa fa-bed me-2"></i>2 Giường
                                             đơn</label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <hr class="my-4">
+
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">Số người lớn</label>
+                                    <select class="form-select" v-model.number="guest.adults">
+                                        <option :value="1">1 người lớn</option>
+                                        <option :value="2">2 người lớn</option>
+                                    </select>
+                                    <small class="text-muted">Tối đa 2 người lớn.</small>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">Số trẻ em</label>
+                                    <select class="form-select" v-model.number="guest.children">
+                                        <option :value="0">0 trẻ em</option>
+                                        <option :value="1">1 trẻ em</option>
+                                        <option :value="2">2 trẻ em</option>
+                                    </select>
+                                    <small class="text-muted">Tối đa 2 trẻ em (≤ 10 tuổi).</small>
+                                </div>
+
+                                <div class="col-12" v-if="guest.children > 0">
+                                    <div class="fw-bold mb-2">Tuổi trẻ em</div>
+                                    <div class="row g-2">
+                                        <div class="col-6 col-md-4" v-for="(age, idx) in guest.childAges" :key="idx">
+                                            <label class="form-label small">Trẻ em {{ idx + 1 }}</label>
+                                            <select class="form-select" v-model.number="guest.childAges[idx]">
+                                                <option v-for="n in 11" :key="n - 1" :value="n - 1">
+                                                    {{ n - 1 }} tuổi
+                                                </option>
+                                            </select>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -198,6 +234,22 @@
                                         </tbody>
                                     </table>
                                 </div>
+                                <div class="mt-3" v-if="selectedRooms.length">
+                                    <div class="fw-bold mb-2">Phòng đã chọn</div>
+                                    <div class="selected-room-item border rounded p-2 mb-2 d-flex justify-content-between align-items-center"
+                                        v-for="item in selectedRooms" :key="item.maBienThePhong">
+                                        <div>
+                                            <div class="fw-bold">{{ item.tenLoai }} · {{ item.tenBienThe }}</div>
+                                            <div class="small text-muted">{{ formatCurrency(item.pricePerNight) }} / đêm</div>
+                                        </div>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <button type="button" class="btn btn-sm btn-outline-secondary" @click="decreaseRoom(item)">-</button>
+                                            <span class="fw-bold">{{ item.quantity }}</span>
+                                            <button type="button" class="btn btn-sm btn-outline-secondary" @click="increaseRoom(item)">+</button>
+                                            <button type="button" class="btn btn-sm btn-outline-danger" @click="removeRoom(item)">Xóa</button>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -229,7 +281,7 @@
                                 </span>
                             </div>
                             <div class="text-end small text-muted mt-1" v-if="totalAmount">
-                                Dựa trên {{ bookingRoom.nights }} đêm · {{ bookingRoom.quantity || 1 }} phòng
+                                Dựa trên {{ bookingRoom.nights }} đêm · {{ totalRoomCount || 1 }} phòng
                             </div>
                         </div>
                     </div>
@@ -262,6 +314,53 @@ const bookingRoom = ref({
     nights: null
 });
 const fallbackImage = '/assets/images/property-01.jpg';
+const selectedRooms = ref([]);
+
+const formatDateInput = (date) => {
+    const yyyy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const dd = String(date.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+};
+
+const maxCheckoutDate = computed(() => {
+    const today = new Date();
+    const max = new Date(today);
+    max.setMonth(today.getMonth() + 8);
+    return formatDateInput(max);
+});
+
+const minCheckinDate = computed(() => {
+    const today = new Date();
+    return formatDateInput(today);
+});
+
+const maxCheckinDate = computed(() => {
+    const today = new Date();
+    const max = new Date(today);
+    max.setMonth(today.getMonth() + 8);
+    return formatDateInput(max);
+});
+
+const minCheckoutDate = computed(() => {
+    const today = new Date();
+    if (!bookingRoom.value.checkIn) {
+        return formatDateInput(today);
+    }
+    const checkInDate = new Date(bookingRoom.value.checkIn);
+    if (Number.isNaN(checkInDate.getTime())) {
+        return formatDateInput(today);
+    }
+    const min = new Date(checkInDate);
+    min.setDate(checkInDate.getDate() + 1);
+    return formatDateInput(min);
+});
+
+const ensureCheckinToday = () => {
+    if (!bookingRoom.value.checkIn) {
+        bookingRoom.value.checkIn = minCheckinDate.value;
+    }
+};
 
 const formatCurrency = (amount) => {
     return amount.toLocaleString('vi-VN') + ' ₫';
@@ -270,10 +369,45 @@ const formatCurrency = (amount) => {
 const roomTypes = ref([]);
 const roomList = ref([]);
 
+const bookingItems = computed(() => {
+    const items = selectedRooms.value
+        .filter((item) => item && item.maBienThePhong && item.pricePerNight && item.quantity)
+        .map((item) => ({
+            maBienThePhong: item.maBienThePhong,
+            pricePerNight: Number(item.pricePerNight || 0),
+            quantity: Number(item.quantity || 0),
+            tenLoai: item.tenLoai,
+            tenBienThe: item.tenBienThe
+        }));
+    if (items.length > 0) {
+        return items;
+    }
+    const currentId = bookingRoom.value.maBienThePhong;
+    const currentPrice = Number(bookingRoom.value.pricePerNight || 0);
+    const currentQty = Number(bookingRoom.value.quantity || 0);
+    if (currentId && currentPrice > 0 && currentQty > 0) {
+        return [{
+            maBienThePhong: currentId,
+            pricePerNight: currentPrice,
+            quantity: currentQty,
+            tenLoai: bookingRoom.value.roomType || bookingRoom.value.name,
+            tenBienThe: bookingRoom.value.variantName || ''
+        }];
+    }
+    return [];
+});
+
 const totalAmount = computed(() => {
-    if (!bookingRoom.value.pricePerNight || !bookingRoom.value.nights) return null;
-    const qty = Number(bookingRoom.value.quantity || 1);
-    return Number(bookingRoom.value.pricePerNight) * Number(bookingRoom.value.nights) * qty;
+    if (!bookingRoom.value.nights) return null;
+    const nights = Number(bookingRoom.value.nights || 0);
+    if (!nights) return null;
+    return bookingItems.value.reduce((sum, item) => {
+        return sum + item.pricePerNight * item.quantity * nights;
+    }, 0);
+});
+
+const totalRoomCount = computed(() => {
+    return bookingItems.value.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
 });
 
 const roomTypeOptions = computed(() => {
@@ -316,6 +450,35 @@ const normalizeQuantity = () => {
 
 const persistBookingRoom = () => {
     localStorage.setItem('booking_room', JSON.stringify(bookingRoom.value));
+};
+
+const persistSelectedRooms = () => {
+    localStorage.setItem('booking_rooms', JSON.stringify(selectedRooms.value));
+};
+
+const ensureUserId = async () => {
+    const stored = JSON.parse(localStorage.getItem('user_info') || '{}');
+    const existingId = stored?.id ?? stored?.maKh ?? stored?.MaKh ?? null;
+    if (existingId) return existingId;
+    try {
+        const res = await axios.get(`${API}/api/KhachHang/profile`, { withCredentials: true });
+        const data = res?.data || {};
+        const maKh = data.maKh ?? data.MaKh ?? null;
+        if (maKh) {
+            localStorage.setItem('user_info', JSON.stringify({
+                ...stored,
+                id: maKh,
+                maKh: maKh,
+                name: data.hoVaTen ?? stored?.name,
+                email: data.email ?? stored?.email,
+                avatar: data.hinhAnh ?? stored?.avatar
+            }));
+            return maKh;
+        }
+    } catch (error) {
+        console.warn('Không lấy được mã khách hàng:', error);
+    }
+    return null;
 };
 
 const getField = (item, ...keys) => {
@@ -371,15 +534,45 @@ const applyRoomFromItem = (item) => {
 };
 
 const addRoomFromItem = (item) => {
-    const currentId = bookingRoom.value.maBienThePhong;
-    applyRoomFromItem(item);
-    if (currentId === bookingRoom.value.maBienThePhong) {
-        bookingRoom.value.quantity = Number(bookingRoom.value.quantity || 0) + 1;
+    const mapped = mapRoomItem(item);
+    if (!mapped.maBienThePhong || !mapped.pricePerNight) return;
+    const existing = selectedRooms.value.find((x) => x.maBienThePhong === mapped.maBienThePhong);
+    const max = mapped.soPhongCon != null ? Number(mapped.soPhongCon) : null;
+    if (existing) {
+        const nextQty = Number(existing.quantity || 0) + 1;
+        existing.quantity = max != null ? Math.min(nextQty, max) : nextQty;
     } else {
-        bookingRoom.value.quantity = 1;
+        selectedRooms.value.push({
+            maBienThePhong: mapped.maBienThePhong,
+            tenLoai: mapped.tenLoai || bookingRoom.value.roomType || bookingRoom.value.name,
+            tenBienThe: mapped.tenBienThe || '',
+            pricePerNight: mapped.pricePerNight,
+            soPhongCon: mapped.soPhongCon,
+            quantity: 1
+        });
     }
-    normalizeQuantity();
-    persistBookingRoom();
+    persistSelectedRooms();
+};
+
+const increaseRoom = (item) => {
+    if (!item) return;
+    const max = item.soPhongCon != null ? Number(item.soPhongCon) : null;
+    const nextQty = Number(item.quantity || 0) + 1;
+    item.quantity = max != null ? Math.min(nextQty, max) : nextQty;
+    persistSelectedRooms();
+};
+
+const decreaseRoom = (item) => {
+    if (!item) return;
+    const nextQty = Number(item.quantity || 0) - 1;
+    item.quantity = Math.max(nextQty, 1);
+    persistSelectedRooms();
+};
+
+const removeRoom = (item) => {
+    if (!item) return;
+    selectedRooms.value = selectedRooms.value.filter((x) => x.maBienThePhong !== item.maBienThePhong);
+    persistSelectedRooms();
 };
 
 // Dữ liệu form
@@ -388,6 +581,36 @@ const formData = ref({
     email: '',
     phone: ''
 });
+
+const guest = ref({
+    adults: 1,
+    children: 0,
+    childAges: []
+});
+
+const normalizeGuest = () => {
+    const adults = Number(guest.value.adults || 1);
+    const children = Number(guest.value.children || 0);
+    guest.value.adults = Math.min(2, Math.max(1, adults));
+    guest.value.children = Math.min(2, Math.max(0, children));
+    if (!Array.isArray(guest.value.childAges)) {
+        guest.value.childAges = [];
+    }
+    if (guest.value.childAges.length > guest.value.children) {
+        guest.value.childAges = guest.value.childAges.slice(0, guest.value.children);
+    }
+    while (guest.value.childAges.length < guest.value.children) {
+        guest.value.childAges.push(0);
+    }
+    guest.value.childAges = guest.value.childAges.map((age) => {
+        const parsed = Number(age || 0);
+        return Math.min(10, Math.max(0, parsed));
+    });
+};
+
+const persistGuest = () => {
+    localStorage.setItem('booking_guest', JSON.stringify(guest.value));
+};
 
 // Xử lý Timer đếm ngược
 const timerDisplay = ref("20:00");
@@ -419,8 +642,9 @@ const handleBooking = async () => {
         alert("Vui lòng chọn ngày nhận phòng và trả phòng hợp lệ!");
         return;
     }
-    if (!bookingRoom.value.maBienThePhong || !bookingRoom.value.pricePerNight) {
-        alert("Thiếu thông tin phòng, vui lòng chọn lại phòng!");
+    const items = bookingItems.value.filter((item) => item.maBienThePhong && item.pricePerNight && item.quantity);
+    if (items.length === 0) {
+        alert("Vui lòng chọn ít nhất 1 loại phòng!");
         return;
     }
 
@@ -430,19 +654,37 @@ const handleBooking = async () => {
         email: formData.value.email,
         phone: formData.value.phone
     }));
+    normalizeGuest();
+    persistGuest();
 
     // 3. Gọi API tạo đặt phòng (lưu DB + trừ phòng)
     try {
-        const userInfo = JSON.parse(localStorage.getItem('user_info') || '{}');
-        const userId = userInfo?.id ?? userInfo?.maKh ?? userInfo?.MaKh ?? null;
+        const userId = await ensureUserId();
+        if (!userId) {
+            alert("Vui lòng đăng nhập lại để đặt phòng!");
+            return;
+        }
         const payload = {
-            MaKh: userId,
-            MaBienThePhong: bookingRoom.value.maBienThePhong,
             NgayNhan: bookingRoom.value.checkIn,
-            NgayTra: bookingRoom.value.checkOut,
-            GiaDat: Number(bookingRoom.value.pricePerNight),
-            SoLuong: Number(bookingRoom.value.quantity || 1)
+            NgayTra: bookingRoom.value.checkOut
         };
+        if (userId) {
+            payload.MaKh = userId;
+        }
+        if (items.length === 1) {
+            payload.MaBienThePhong = items[0].maBienThePhong;
+            payload.GiaDat = Number(items[0].pricePerNight);
+            payload.SoLuong = Number(items[0].quantity || 1);
+        } else {
+            payload.Items = items.map((item) => ({
+                MaBienThePhong: item.maBienThePhong,
+                GiaDat: Number(item.pricePerNight),
+                SoLuong: Number(item.quantity || 1)
+            }));
+            payload.MaBienThePhong = items[0].maBienThePhong;
+            payload.GiaDat = Number(items[0].pricePerNight);
+            payload.SoLuong = Number(items[0].quantity || 1);
+        }
         const res = await axios.post(`${API}/api/DatPhong/tao`, payload, {
             withCredentials: true
         });
@@ -453,6 +695,7 @@ const handleBooking = async () => {
             bookingRoom.value.nights = res.data.soDem;
             persistBookingRoom();
         }
+        localStorage.setItem('booking_rooms', JSON.stringify(items));
     } catch (error) {
         const message = error?.response?.data || 'Đặt phòng thất bại!';
         alert(message);
@@ -465,6 +708,7 @@ const handleBooking = async () => {
 
 onMounted(() => {
     const raw = localStorage.getItem('booking_room');
+    const rawRooms = localStorage.getItem('booking_rooms');
     if (raw) {
         try {
             Object.assign(bookingRoom.value, JSON.parse(raw));
@@ -472,13 +716,35 @@ onMounted(() => {
             console.warn('Không đọc được dữ liệu đặt phòng:', error);
         }
     }
+    if (rawRooms) {
+        try {
+            const parsed = JSON.parse(rawRooms);
+            if (Array.isArray(parsed)) {
+                selectedRooms.value = parsed;
+            }
+        } catch (error) {
+            console.warn('Không đọc được danh sách phòng:', error);
+        }
+    }
     if (!bookingRoom.value.roomType) {
         bookingRoom.value.roomType = bookingRoom.value.name || '';
+    }
+    if (!bookingRoom.value.checkIn) {
+        bookingRoom.value.checkIn = minCheckinDate.value;
     }
     if (!bookingRoom.value.quantity) {
         bookingRoom.value.quantity = 1;
     }
     normalizeQuantity();
+    const rawGuest = localStorage.getItem('booking_guest');
+    if (rawGuest) {
+        try {
+            Object.assign(guest.value, JSON.parse(rawGuest));
+        } catch (error) {
+            console.warn('Không đọc được dữ liệu khách:', error);
+        }
+    }
+    normalizeGuest();
     if (roomTypes.value.length === 0) {
         axios.get(`${API}/api/DanhSachPhong`)
             .then((res) => {
@@ -502,6 +768,9 @@ onMounted(() => {
     }
     if (userInfo?.email) {
         formData.value.email = userInfo.email;
+    }
+    if (!userInfo?.id && !userInfo?.maKh) {
+        ensureUserId();
     }
     startTimer();
 
@@ -557,8 +826,31 @@ const handleSwitchUser = () => {
 };
 
 watch(
+    () => [guest.value.adults, guest.value.children, guest.value.childAges],
+    () => {
+        normalizeGuest();
+        persistGuest();
+    },
+    { deep: true }
+);
+
+watch(
     () => [bookingRoom.value.checkIn, bookingRoom.value.checkOut, bookingRoom.value.quantity, bookingRoom.value.roomType],
     () => {
+        if (bookingRoom.value.checkIn) {
+            if (bookingRoom.value.checkIn < minCheckinDate.value) {
+                bookingRoom.value.checkIn = minCheckinDate.value;
+            } else if (bookingRoom.value.checkIn > maxCheckinDate.value) {
+                bookingRoom.value.checkIn = maxCheckinDate.value;
+            }
+        }
+        if (bookingRoom.value.checkOut) {
+            if (bookingRoom.value.checkOut < minCheckoutDate.value) {
+                bookingRoom.value.checkOut = minCheckoutDate.value;
+            } else if (bookingRoom.value.checkOut > maxCheckoutDate.value) {
+                bookingRoom.value.checkOut = maxCheckoutDate.value;
+            }
+        }
         bookingRoom.value.nights = calculateNights(bookingRoom.value.checkIn, bookingRoom.value.checkOut);
         normalizeQuantity();
         persistBookingRoom();

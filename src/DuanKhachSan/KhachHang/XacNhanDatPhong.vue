@@ -105,7 +105,7 @@
               <span class="fw-bold text-orange">{{ formatCurrency(payment.totalAmount) }}</span>
             </div>
             <div class="text-muted small mt-1" v-if="room.nights">
-              Dựa trên {{ room.nights }} đêm · {{ room.quantity || 1 }} phòng
+              Dựa trên {{ room.nights }} đêm · {{ totalRoomCount }} phòng
             </div>
           </div>
         </div>
@@ -125,10 +125,12 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import axios from 'axios';
+import Swal from 'sweetalert2';
 
 const router = useRouter();
+const route = useRoute();
 const API = import.meta.env.VITE_API_URL;
 const fallbackImage = '/assets/images/property-01.jpg';
 const invoiceCode = ref('---');
@@ -141,6 +143,7 @@ const room = ref({
   nights: null,
   quantity: 1
 });
+const bookingRooms = ref([]);
 
 const customer = ref({
   name: '',
@@ -166,6 +169,13 @@ const paymentLabel = computed(() => {
   return payment.value.option === 'deposit' ? 'Đặt cọc 30%' : 'Thanh toán 100%';
 });
 
+const totalRoomCount = computed(() => {
+  if (bookingRooms.value.length) {
+    return bookingRooms.value.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
+  }
+  return Number(room.value.quantity || 1);
+});
+
 const paymentMethodLabel = computed(() => {
   if (payment.value.method === 'momo') return 'MoMo';
   if (payment.value.method === 'visa') return 'Visa / MasterCard';
@@ -182,8 +192,31 @@ const handlePrint = () => {
 };
 
 const handleConfirm = () => {
-  alert('Xác nhận thành công!');
-  router.push('/');
+  Swal.fire({
+    title: 'Thành công!',
+    text: 'Đã cập nhật trạng thái thanh toán.',
+    icon: 'success',
+    confirmButtonText: 'Đóng'
+  }).then(() => {
+    router.push('/');
+  });
+};
+
+const createOrGetInvoice = async (maDatPhong) => {
+  try {
+    const res = await axios.post(`${API}/api/DatPhong/xac-nhan/${maDatPhong}`, null, {
+      withCredentials: true
+    });
+    const data = res?.data || {};
+    if (data.maHd != null) {
+      invoiceCode.value = `HD${data.maHd}`;  
+    }
+    if (!payment.value.totalAmount && data.tongTienPhaiTra != null) {
+      payment.value.totalAmount = Number(data.tongTienPhaiTra);
+    }
+  } catch (error) {
+    console.warn('Không tạo được hóa đơn:', error);
+  }
 };
 
 const fetchInvoice = async (maDatPhong) => {
@@ -210,9 +243,20 @@ const fetchInvoice = async (maDatPhong) => {
 };
 
 onMounted(() => {
+  if (route.query.status === 'success') {
+    Swal.fire({
+      title: 'Thành công!',
+      text: 'Thanh toán thành công!',
+      icon: 'success',
+      confirmButtonText: 'Đóng'
+    }).then(() => {
+      router.replace({ path: '/xac-nhan-dat-phong' });
+    });
+  }
   const rawRoom = localStorage.getItem('booking_room');
   const rawCustomer = localStorage.getItem('booking_customer');
   const rawPayment = localStorage.getItem('booking_payment');
+  const rawRooms = localStorage.getItem('booking_rooms');
   const maDatPhong = localStorage.getItem('maDatPhong');
 
   if (rawRoom) {
@@ -236,8 +280,18 @@ onMounted(() => {
       console.warn('Không đọc được dữ liệu thanh toán:', error);
     }
   }
+  if (rawRooms) {
+    try {
+      const parsed = JSON.parse(rawRooms);
+      if (Array.isArray(parsed)) {
+        bookingRooms.value = parsed;
+      }
+    } catch (error) {
+      console.warn('Không đọc được danh sách phòng:', error);
+    }
+  }
   if (maDatPhong) {
-    fetchInvoice(maDatPhong);
+    createOrGetInvoice(maDatPhong).then(() => fetchInvoice(maDatPhong));
   }
 });
 </script>

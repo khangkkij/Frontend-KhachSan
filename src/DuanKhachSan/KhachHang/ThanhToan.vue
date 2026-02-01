@@ -51,61 +51,15 @@
                           <div class="col-md-4">
                               <div class="payment-method" :class="{ active: paymentMethod === 'vnpay' }" @click="paymentMethod = 'vnpay'">
                                   <input class="form-check-input me-2" type="radio" value="vnpay" v-model="paymentMethod">
+                                  <img class="payment-logo" src="/assets/images/vnpay.svg" alt="VNPay">
                                   <span>VNPay</span>
                               </div>
                           </div>
                           <div class="col-md-4">
                               <div class="payment-method" :class="{ active: paymentMethod === 'momo' }" @click="paymentMethod = 'momo'">
                                   <input class="form-check-input me-2" type="radio" value="momo" v-model="paymentMethod">
-                                  <span>Momo</span>
-                              </div>
-                          </div>
-                          <div class="col-md-4">
-                              <div class="payment-method" :class="{ active: paymentMethod === 'visa' }" @click="paymentMethod = 'visa'">
-                                  <input class="form-check-input me-2" type="radio" value="visa" v-model="paymentMethod">
-                                  <span>Visa / MasterCard</span>
-                              </div>
-                          </div>
-                      </div>
-  
-                      <div v-if="paymentMethod === 'visa'" class="animate__animated animate__fadeIn">
-                          <h6 class="fw-bold mb-3">Thông tin thẻ</h6>
-                          <div class="row g-4">
-                              <div class="col-md-7">
-                                  <div class="mb-3">
-                                      <label class="form-label small fw-bold">Tên trên thẻ *</label>
-                                      <input type="text" class="form-control" v-model="cardInfo.name" placeholder="VD: NGUYEN VAN A">
-                                  </div>
-                                  <div class="mb-3">
-                                      <label class="form-label small fw-bold">Số thẻ *</label>
-                                      <div class="input-group">
-                                          <span class="input-group-text"><i class="fa fa-credit-card"></i></span>
-                                          <input type="text" class="form-control" v-model="cardInfo.number" placeholder="0000 0000 0000 0000" maxlength="19">
-                                      </div>
-                                  </div>
-                                  <div class="row">
-                                      <div class="col-6">
-                                          <label class="form-label small fw-bold">Ngày hết hạn *</label>
-                                          <input type="text" class="form-control" v-model="cardInfo.expiry" placeholder="MM/YY" maxlength="5">
-                                      </div>
-                                      <div class="col-6">
-                                          <label class="form-label small fw-bold">Mã CVC *</label>
-                                          <input type="password" class="form-control" v-model="cardInfo.cvc" placeholder="123" maxlength="3">
-                                      </div>
-                                  </div>
-                              </div>
-                              <div class="col-md-5">
-                                  <div class="card-visual text-white">
-                                      <div class="d-flex justify-content-between mb-4">
-                                          <div class="chip"></div>
-                                          <i class="fab fa-cc-visa fa-2x"></i>
-                                      </div>
-                                      <div class="h5 mb-3 text-shadow">{{ cardInfo.number || '**** **** **** ****' }}</div>
-                                      <div class="d-flex justify-content-between mt-2 text-uppercase">
-                                          <small>{{ cardInfo.name || 'YOUR NAME' }}</small>
-                                          <small>{{ cardInfo.expiry || 'MM/YY' }}</small>
-                                      </div>
-                                  </div>
+                                  <img class="payment-logo" src="/assets/images/momo.svg" alt="MoMo">
+                                  <span>MoMo</span>
                               </div>
                           </div>
                       </div>
@@ -220,17 +174,19 @@
   
   <script setup>
   import { ref, computed, onMounted } from 'vue';
-  import { useRouter } from 'vue-router';
+  import { useRouter, useRoute } from 'vue-router';
   import axios from 'axios';
+  import Swal from 'sweetalert2';
   
   const router = useRouter();
+  const route = useRoute();
   const API = import.meta.env.VITE_API_URL;
   
   // State quản lý
   const paymentOption = ref('deposit'); 
   const paymentMethod = ref('vnpay');
-  const cardInfo = ref({ name: 'PHAM VAN A', number: '', expiry: '', cvc: '' });
   const bookingRoom = ref({ pricePerNight: null, nights: null, quantity: 1 });
+  const bookingRooms = ref([]);
   
   // State Voucher
   const voucherInput = ref('');
@@ -241,10 +197,19 @@
   
   // Logic tiền phòng
   const baseAmount = computed(() => {
-      const price = Number(bookingRoom.value.pricePerNight || 0);
       const nights = Number(bookingRoom.value.nights || 0);
-      const qty = Number(bookingRoom.value.quantity || 1);
-      return price * nights * qty;
+      if (!nights) return 0;
+      const rooms = bookingRooms.value.length
+          ? bookingRooms.value
+          : [{
+              pricePerNight: Number(bookingRoom.value.pricePerNight || 0),
+              quantity: Number(bookingRoom.value.quantity || 1)
+          }];
+      return rooms.reduce((sum, room) => {
+          const price = Number(room.pricePerNight || 0);
+          const qty = Number(room.quantity || 0);
+          return sum + price * qty * nights;
+      }, 0);
   });
   
   const discountValue = computed(() => {
@@ -298,15 +263,16 @@
   const confirmPayment = async () => {
       const maDatPhong = localStorage.getItem('maDatPhong');
       if (!maDatPhong) return alert("Thiếu thông tin đặt phòng");
-      
+
       try {
           const endpoint = paymentOption.value === 'deposit' ? 'dat-coc' : 'thanh-toan';
-          await axios.post(`${API}/api/ThanhToan/${endpoint}`, {
-              MaDatPhong: Number(maDatPhong),
-              SoTien: Number(currentPayAmount.value),
-              HinhThucThanhToan: paymentMethod.value,
-              MaCode: appliedVoucher.value?.maCode || null // Gửi kèm mã Voucher về Backend
-          });
+          const res = await axios.post(`${API}/api/ThanhToan/${endpoint}`, {
+              maDatPhong: Number(maDatPhong),
+              soTien: Number(currentPayAmount.value),
+              hinhThucThanhToan: paymentMethod.value,
+              maCode: appliedVoucher.value?.maCode || null // Gửi kèm mã Voucher về Backend
+          }, { withCredentials: true });
+          const redirectUrl = res?.data?.redirectUrl;
           const paymentSnapshot = {
               option: paymentOption.value,
               method: paymentMethod.value,
@@ -317,15 +283,49 @@
               createdAt: new Date().toISOString()
           };
           localStorage.setItem('booking_payment', JSON.stringify(paymentSnapshot));
+          if (redirectUrl) {
+              window.location.href = redirectUrl;
+              return;
+          }
           router.push('/xac-nhan-dat-phong');
-      } catch (error) { alert("Thanh toán thất bại"); }
+      } catch (error) {
+          const serverMsg = error?.response?.data;
+          const msg = typeof serverMsg === 'string' ? serverMsg : 'Thanh toán thất bại';
+          Swal.fire({
+              title: 'Thất bại!',
+              text: msg,
+              icon: 'error',
+              confirmButtonText: 'Đóng'
+          });
+      }
   };
   
   onMounted(() => {
+      if (route.query.status === 'fail') {
+          Swal.fire({
+              title: 'Thất bại!',
+              text: 'Thanh toán không thành công. Vui lòng thử lại.',
+              icon: 'error',
+              confirmButtonText: 'Đóng'
+          }).then(() => {
+              router.replace({ path: '/payment' });
+          });
+      }
       const raw = localStorage.getItem('booking_room');
+      const rawRooms = localStorage.getItem('booking_rooms');
       if (raw) {
           const data = JSON.parse(raw);
           bookingRoom.value = { pricePerNight: data.pricePerNight, nights: data.nights, quantity: data.quantity || 1 };
+      }
+      if (rawRooms) {
+          try {
+              const parsed = JSON.parse(rawRooms);
+              if (Array.isArray(parsed)) {
+                  bookingRooms.value = parsed;
+              }
+          } catch (error) {
+              console.warn('Không đọc được danh sách phòng:', error);
+          }
       }
   });
   </script>
@@ -343,6 +343,8 @@
   .payment-box.active { border-color: #f35525 !important; background-color: #fff4e6; }
   .payment-method { display: flex; align-items: center; border: 1px solid #eee; border-radius: 8px; padding: 12px; cursor: pointer; background: #fff; }
   .payment-method.active { border-color: #f35525 !important; background-color: #fff4e6; }
+  .payment-logo { width: 52px; height: 26px; object-fit: contain; margin-right: 8px; }
+  .brand-icons { font-size: 20px; color: #2b2b2b; margin-right: 8px; }
   .card-visual { background: linear-gradient(135deg, #1e1e1e 0%, #444 100%); border-radius: 15px; height: 180px; padding: 25px; box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
   .chip { width: 45px; height: 35px; border-radius: 5px; background: linear-gradient(135deg, #d4af37 0%, #f0e68c 100%); }
   .btn-pay { background-color: #f35525; color: white; padding: 16px; font-weight: bold; font-size: 1.1rem; border-radius: 8px; cursor: pointer; width: 100%; transition: 0.3s; }

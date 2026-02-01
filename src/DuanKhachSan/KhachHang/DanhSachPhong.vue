@@ -2,6 +2,9 @@
 import { ref, computed, onMounted } from "vue";
 import { watch } from "vue"
 import axios from "axios";
+import { useRoute } from "vue-router";
+
+const route = useRoute();
 const API = import.meta.env.VITE_API_URL;
 const filter = ref("*");
 const dsPhong = ref([]);
@@ -17,6 +20,29 @@ const bedType = ref("*")
 const guests = ref(null)
 const kid = ref(null)
 const minArea = ref(null)
+
+onMounted(async () => {
+  // --- LOGIC HỨNG DỮ LIỆU TỪ URL (Hiếu add để hỗ trợ cho form tìm kiếm bên trang chủ) ---
+  const q = route.query;
+
+  if (q.keyword) keyword.value = q.keyword;
+  if (q.minPrice) minPrice.value = Number(q.minPrice);
+  if (q.maxPrice) maxPrice.value = Number(q.maxPrice);
+  if (q.onlyAvailable === 'true') onlyAvailable.value = true;
+  if (q.kid) kid.value = Number(q.kid);
+  if (q.guests) guests.value = Number(q.guests);
+  if (q.minArea) minArea.value = Number(q.minArea);
+  // -----------------------------------------------------
+
+  try {
+    const res = await axios.get(`${API}/api/DanhSachPhong`);
+    dsPhong.value = res.data;
+  } catch (err) {
+    console.error("Lỗi Load phòng: ", err);
+  } finally {
+    loading.value = false;
+  }
+});
 
 
 const totalPages = computed(() => {

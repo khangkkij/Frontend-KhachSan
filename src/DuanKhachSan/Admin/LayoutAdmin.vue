@@ -31,6 +31,10 @@
           <i class="bx bx-category icon"></i> Loại phòng
         </router-link>
 
+        <router-link to="/admin/hoa-don" class="menu-item" active-class="active">
+          <i class="bx bx-receipt icon"></i> Hóa đơn
+        </router-link>
+
         <router-link to="/admin/dich-vu" class="menu-item" active-class="active">
           <i class="bx bx-cube icon"></i> Dịch vụ
         </router-link>
@@ -70,6 +74,7 @@
 </template>
 
 <script setup>
+
 // Logic giữ nguyên
 </script>
 

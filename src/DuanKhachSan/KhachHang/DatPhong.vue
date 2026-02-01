@@ -666,7 +666,9 @@ const handleBooking = async () => {
         }
         const payload = {
             NgayNhan: bookingRoom.value.checkIn,
-            NgayTra: bookingRoom.value.checkOut
+            NgayTra: bookingRoom.value.checkOut,
+            SoNguoiLon: guest.value.adults,
+            SoTreEm: guest.value.children
         };
         if (userId) {
             payload.MaKh = userId;

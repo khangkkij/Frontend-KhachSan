@@ -30,6 +30,7 @@ import QuanLyVoucher from '@/DuanKhachSan/Admin/QuanLyVoucher.vue'
 import QuanLyNhanSu from '@/DuanKhachSan/Admin/QuanLyNhanSu.vue'
 import QuanLyDichVu from '@/DuanKhachSan/Admin/QuanLyDichVu.vue'
 import QuanLyKhachHang from '@/DuanKhachSan/Admin/QuanLyKhachHang.vue'
+import QuanLyHoaDon from '@/DuanKhachSan/Admin/QuanLyHoaDon.vue'
 //4. Import NhanVien
 import LayoutNhanVien from '@/DuanKhachSan/NhanVien/LayoutNhanVien.vue';
 import DashboardNhanVien from '@/DuanKhachSan/NhanVien/Views/Dashboard.vue';
@@ -104,6 +105,11 @@ const router = createRouter({
           path: 'khach-hang',
           name: 'admin-khach-hang',
           component: QuanLyKhachHang
+        },
+        {
+          path: 'hoa-don',
+          name: 'admin-hoa-don',
+          component: QuanLyHoaDon
         }
       ]
     },

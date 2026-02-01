@@ -798,6 +798,8 @@ const validateForm = () => {
   border-radius: 0.5rem;
   box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
   animation: slideIn 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
+  max-height: 90vh;  /* Giới hạn chiều cao tối đa là 90% màn hình */
+  overflow-y: auto;  /* Nếu nội dung dài hơn thì hiện thanh cuộn */
 }
 
 .modal-header {

@@ -33,6 +33,76 @@
         </div>
       </div>
     </div>
+    <div class="villa-agency-wrapper">
+      <div class="container search-container">
+        <div class="filter-wrapper p-4 bg-white shadow-sm rounded-4 mb-4">
+          <form @submit.prevent="handleSearch">
+            <div class="row g-3 align-items-end">
+              <div class="col-lg-5 col-md-12">
+                <label class="form-label fw-bold small text-muted">TÌM KIẾM PHÒNG</label>
+                <div class="input-group">
+                  <span class="input-group-text bg-light border-end-0"><i class="bi bi-search"></i></span>
+                  <input v-model="keyword" type="text" class="form-control bg-light border-start-0 ps-0"
+                    placeholder="Nhập tên phòng hoặc loại phòng..." />
+                </div>
+              </div>
+
+              <div class="col-lg-4 col-md-8">
+                <label class="form-label fw-bold small text-muted">KHOẢNG GIÁ (VNĐ)</label>
+                <div class="input-group">
+                  <input v-model.number="minPrice" type="number" class="form-control bg-light" placeholder="Từ">
+                  <span class="input-group-text bg-light border-start-0 border-end-0">→</span>
+                  <input v-model.number="maxPrice" type="number" class="form-control bg-light" placeholder="Đến">
+                </div>
+              </div>
+
+              <div class="col-lg-3 col-md-4 d-flex align-items-center justify-content-lg-end">
+                <div class="form-check form-switch custom-switch">
+                  <input v-model="onlyAvailable" class="form-check-input" type="checkbox" id="available">
+                  <label class="form-check-label fw-medium" for="available">Phòng còn trống</label>
+                </div>
+              </div>
+            </div>
+
+            <hr class="my-4 text-muted opacity-25">
+
+            <div class="row g-3">
+              <div class="col-md-3">
+                <div class="input-group">
+                  <span class="input-group-text bg-transparent border-0 ps-0"><i class="bi bi-people"></i></span>
+                  <input v-model.number="kid" type="number" min="0"
+                    class="form-control border-0 border-bottom rounded-0 shadow-none" placeholder="Số trẻ em" />
+                </div>
+              </div>
+
+              <div class="col-md-3">
+                <div class="input-group">
+                  <span class="input-group-text bg-transparent border-0 ps-0"><i class="bi bi-people"></i></span>
+                  <input v-model.number="guests" type="number" min="1"
+                    class="form-control border-0 border-bottom rounded-0 shadow-none" placeholder="Số người lớn" />
+                </div>
+              </div>
+
+              <div class="col-md-3">
+                <div class="input-group">
+                  <span class="input-group-text bg-transparent border-0 ps-0"><i class="bi bi-layers"></i></span>
+                  <input v-model.number="minArea" type="number"
+                    class="form-control border-0 border-bottom rounded-0 shadow-none" placeholder="Diện tích từ (m²)" />
+                </div>
+              </div>
+
+              <div class="col-md-3">
+                <button type="submit" class="btn btn-primary w-100 fw-bold shadow-sm"
+                  style="background: #f35525; border: none; height: 45px;">
+                  <i class="bi bi-search me-1"></i> Tìm Kiếm Ngay
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+
+    </div>
 
     <div class="featured section">
       <div class="container">
@@ -303,7 +373,8 @@
         <div class="row">
           <div class="col-lg-4 col-md-6" v-for="room in rooms.slice(0, 3)" :key="room.maBienThePhong">
             <div class="item">
-              <router-link :to="`/phong/${room.maBienThePhong}`"><img :src="room.anhDaiDien" :alt="room.tenBienThe"></router-link>
+              <router-link :to="`/phong/${room.maBienThePhong}`"><img :src="room.anhDaiDien"
+                  :alt="room.tenBienThe"></router-link>
               <span class="category">{{ room.TenLoai }}</span>
               <h6>{{ room.giaGoc }} VNĐ</h6>
               <h4><router-link :to="`/phong/${room.maBienThePhong}`">{{ room.tenBienThe }}</router-link></h4>
@@ -356,7 +427,7 @@
               <div class="col-lg-6">
                 <div class="item email">
                   <img src="/assets/images/email-icon.png" alt="" style="max-width: 52px;">
-                  <h6>info@villa.co<br><span>Email doanh nghiệp</span></h6>
+                  <h6>info@luxury.com<br><span>Email doanh nghiệp</span></h6>
                 </div>
               </div>
             </div>
@@ -405,6 +476,38 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import axios from 'axios';
+import { useRouter } from 'vue-router';
+const router = useRouter();
+
+const API_URL = import.meta.env.VITE_API_URL + '/api';
+
+// 1. KHAI BÁO CÁC BIẾN CHO FORM TÌM KIẾM (Khớp với v-model trong template)
+const keyword = ref("");
+const minPrice = ref(null);
+const maxPrice = ref(null);
+const onlyAvailable = ref(false);
+const kid = ref(null);
+const guests = ref(null);
+const minArea = ref(null);
+
+// 2. HÀM XỬ LÝ TÌM KIẾM -> CHUYỂN TRANG
+const handleSearch = () => {
+  const query = {};
+
+  // Chỉ đẩy lên URL những ô có dữ liệu
+  if (keyword.value) query.keyword = keyword.value;
+  if (minPrice.value) query.minPrice = minPrice.value;
+  if (maxPrice.value) query.maxPrice = maxPrice.value;
+  if (onlyAvailable.value) query.onlyAvailable = 'true';
+  if (kid.value) query.kid = kid.value;
+  if (guests.value) query.guests = guests.value;
+  if (minArea.value) query.minArea = minArea.value;
+
+  router.push({
+    path: '/danh-sach-phong',
+    query: query
+  });
+};
 
 // State cho loading
 const isLoading = ref(true);
@@ -461,9 +564,11 @@ const formData = ref({
 // ]);
 const rooms = ref([]);
 
+
+
 const loadData = async () => {
   try {
-    const response = await axios.get('https://localhost:7023/api/DanhSachPhong'); // Giả sử có API trả về danh sách phòng
+    const response = await axios.get(`${API_URL}/DanhSachPhong`); // Giả sử có API trả về danh sách phòng
     rooms.value = response.data;
   } catch (error) {
     console.error("Lỗi khi tải dữ liệu phòng:", error);
@@ -506,9 +611,56 @@ onMounted(() => {
 });
 
 // Hàm xử lý submit form
-const submitForm = () => {
-  console.log("Dữ liệu gửi đi:", formData.value);
-  alert("Cảm ơn bạn đã liên hệ! Chúng tôi sẽ phản hồi sớm nhất.");
+// Hàm xử lý submit form
+const submitForm = async () => {
+    // 1. Validate cơ bản (tránh gửi rỗng)
+    if (!formData.value.name || !formData.value.email || !formData.value.message) {
+        alert("Vui lòng điền tên, email và nội dung tin nhắn!");
+        return;
+    }
+
+    // Bật trạng thái loading (để disable nút bấm)
+    isLoading.value = true;
+
+    // 2. Map dữ liệu cho khớp với C# (ContactDto)
+    // C# bên kia đang chờ: HoTen, Email, TieuDe, NoiDung
+    const payload = {
+        HoTen: formData.value.name,
+        Email: formData.value.email,
+        TieuDe: formData.value.subject || 'Không có tiêu đề',
+        NoiDung: formData.value.message
+    };
+
+    try {
+        // 3. Gọi API và HỨNG RESPONSE
+        const response = await axios.post(`${API_URL}/LienHe`, payload);
+
+        // 4. Xử lý khi thành công
+        // response.data chính là cái { message: "..." } mà C# trả về
+        console.log("Server phản hồi:", response.data);
+        
+        alert(response.data.message || "Gửi tin nhắn thành công!");
+
+        // Reset form cho sạch sẽ
+        formData.value = {
+            name: '',
+            email: '',
+            subject: '',
+            message: ''
+        };
+
+    } catch (error) {
+        // 5. Xử lý khi lỗi
+        console.error("Lỗi khi gửi form liên hệ:", error);
+        
+        // Lấy thông báo lỗi cụ thể từ Server (nếu có)
+        const serverMessage = error.response?.data?.message || "Đã có lỗi xảy ra. Vui lòng thử lại sau.";
+        alert(serverMessage);
+
+    } finally {
+        // 6. Luôn chạy: Tắt loading để nút bấm sáng lại
+        isLoading.value = false;
+    }
 };
 </script>
 
@@ -534,4 +686,64 @@ const submitForm = () => {
   justify-content: center;
   z-index: 9999;
 }
+
+/* --- CSS CHO THANH TÌM KIẾM (STYLE MỚI) --- */
+.search-property {
+  position: relative;
+  margin-top: -60px;
+  /* Vẫn giữ hiệu ứng đè lên banner */
+  z-index: 10;
+  margin-bottom: 60px;
+}
+
+/* Style cho Card trắng */
+.filter-wrapper {
+  transition: all 0.3s ease;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  /* Viền mờ rất nhẹ */
+}
+
+/* Style cho các ô input/select để giống DanhSachPhong */
+.form-control,
+.form-select,
+.input-group-text {
+  border-color: transparent;
+  /* Bỏ viền đậm */
+  padding: 0.6rem 0.75rem;
+}
+
+.bg-light {
+  background-color: #f8f9fa !important;
+  /* Màu xám nhạt nền nã */
+}
+
+.input-group-text {
+  color: #f35525;
+  /* Icon màu cam chủ đạo */
+}
+
+.form-select:focus {
+  background-color: #fff !important;
+  box-shadow: 0 0 0 2px rgba(243, 85, 37, 0.2);
+  /* Highlight màu cam khi chọn */
+}
+
+/* CSS ĐỂ ĐẨY FORM LÊN ĐÈ VÀO BANNER */
+.search-container {
+  position: relative;
+  margin-top: -80px; /* Kéo lên trên */
+  z-index: 10;       /* Đè lên các phần tử khác */
+}
+
+.filter-wrapper {
+  /* Giữ nguyên style bạn đã có */
+  background: #fff;
+  border-radius: 1rem;
+  box-shadow: 0px 10px 30px rgba(0,0,0,0.1) !important;
+}
+
+/* Các style khác giữ nguyên */
+.form-control, .form-select { border-radius: 8px; }
+.form-control:focus { border-color: #f35525; box-shadow: 0 0 0 0.2rem rgba(243, 85, 37, 0.1); }
+.custom-switch .form-check-input:checked { background-color: #f35525; border-color: #f35525; }
 </style>

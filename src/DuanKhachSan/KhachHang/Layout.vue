@@ -107,6 +107,7 @@
 <script>
 /* global $ */
 import axios from 'axios';
+import Swal from 'sweetalert2';
 
 export default {
     name: 'KhachHangLayout',
@@ -116,15 +117,15 @@ export default {
             user: {}
         }
     },
-    // Layout.vue - Sửa lại đoạn mounted
     mounted() {
         // 1. "Đón" dữ liệu từ URL do Backend gửi về
         const urlParams = new URLSearchParams(window.location.search);
         const isLoginSuccess = urlParams.get('login_success');
         const nameFromFB = urlParams.get('name');
         const emailFromFB = urlParams.get('email');
+        const provider = urlParams.get('provider'); // Lấy provider (google hoặc facebook)
 
-        if (isLoginSuccess === 'true' && nameFromFB) {
+        if (isLoginSuccess === 'true' && nameFromFB && provider) {
             // 2. Tạo object đúng định dạng mà hàm checkLoginStatus() yêu cầu
             const userInfo = {
                 name: nameFromFB,
@@ -142,9 +143,19 @@ export default {
             this.isLoggedIn = true;
             this.user.name = nameFromFB;
 
-            alert("Đăng nhập Facebook thành công!");
+            // 6. Hiển thị thông báo khác nhau dựa trên provider
+            let providerText = "Hệ thống";
+            if (provider === 'facebook') providerText = "Facebook";
+            else if (provider === 'google') providerText = "Google";
+
+            Swal.fire({
+                title: 'Đăng nhập thành công!',
+                text: `Xin chào ${nameFromFB}, bạn đã đăng nhập bằng ${providerText}.`,
+                icon: 'success',
+                confirmButtonColor: '#f35525'
+            });
         } else {
-            // Nếu không phải từ FB về thì kiểm tra dữ liệu cũ đã lưu
+            // Nếu không phải từ Facebook/Google về thì kiểm tra dữ liệu cũ đã lưu
             this.checkLoginStatus();
         }
     },
@@ -178,11 +189,16 @@ export default {
 
                 // Xóa dữ liệu Client
                 localStorage.removeItem('user_info');
+                localStorage.removeItem('isLoggedIn');
 
-                alert("Đã đăng xuất thành công!");
-
-                // --- QUAN TRỌNG: Dùng cái này để Header cập nhật lại ngay lập tức ---
-                window.location.href = '/dang-nhap';
+                Swal.fire({
+                    title: 'Đã đăng xuất!',
+                    text: 'Bạn đã đăng xuất thành công.',
+                    icon: 'success',
+                    confirmButtonColor: '#f35525'
+                }).then(() => {
+                    window.location.href = '/dang-nhap';
+                });
             }
         }
     }

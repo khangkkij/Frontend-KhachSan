@@ -16,7 +16,8 @@
                                     <fieldset>
                                         <label class="form-label">Họ và Tên (*)</label>
                                         <input type="text" v-model="fullName" class="form-control"
-                                            placeholder="Nguyễn Văn A" required>
+                                            :class="{ 'is-invalid': errors.fullName }" placeholder="Nguyễn Văn A">
+                                        <span class="error-text" v-if="errors.fullName">{{ errors.fullName }}</span>
                                     </fieldset>
                                 </div>
 
@@ -24,27 +25,31 @@
                                     <fieldset>
                                         <label class="form-label">Email (*)</label>
                                         <input type="email" v-model="email" class="form-control"
-                                            placeholder="name@example.com" required>
+                                            :class="{ 'is-invalid': errors.email }" placeholder="name@example.com">
+                                        <span class="error-text" v-if="errors.email">{{ errors.email }}</span>
                                     </fieldset>
                                 </div>
 
                                 <div class="col-lg-6 mb-3">
                                     <fieldset>
                                         <label class="form-label">Số điện thoại (*)</label>
-                                        <input type="tel" v-model="phone" class="form-control" placeholder="09xxxxxxx"
-                                            required>
+                                        <input type="tel" v-model="phone" class="form-control"
+                                            :class="{ 'is-invalid': errors.phone }" placeholder="09xxxxxxx">
+                                        <span class="error-text" v-if="errors.phone">{{ errors.phone }}</span>
                                     </fieldset>
                                 </div>
 
                                 <div class="col-lg-6 mb-3">
                                     <fieldset>
                                         <label class="form-label">Giới tính (*)</label>
-                                        <select v-model="gender" class="form-control form-select" required>
+                                        <select v-model="gender" class="form-control form-select"
+                                            :class="{ 'is-invalid': errors.gender }">
                                             <option value="" disabled selected>Chọn giới tính</option>
                                             <option value="Nam">Nam</option>
                                             <option value="Nữ">Nữ</option>
                                             <option value="Khác">Khác</option>
                                         </select>
+                                        <span class="error-text" v-if="errors.gender">{{ errors.gender }}</span>
                                     </fieldset>
                                 </div>
 
@@ -52,7 +57,8 @@
                                     <fieldset>
                                         <label class="form-label">Căn cước công dân (*)</label>
                                         <input type="text" v-model="cccd" class="form-control"
-                                            placeholder="Số CCCD/CMND" required>
+                                            :class="{ 'is-invalid': errors.cccd }" placeholder="Số CCCD (12 chữ số)">
+                                        <span class="error-text" v-if="errors.cccd">{{ errors.cccd }}</span>
                                     </fieldset>
                                 </div>
 
@@ -60,7 +66,8 @@
                                     <fieldset>
                                         <label class="form-label">Mật khẩu (*)</label>
                                         <input type="password" v-model="password" class="form-control"
-                                            placeholder="******" required>
+                                            :class="{ 'is-invalid': errors.password }" placeholder="******">
+                                        <span class="error-text" v-if="errors.password">{{ errors.password }}</span>
                                     </fieldset>
                                 </div>
 
@@ -68,18 +75,21 @@
                                     <fieldset>
                                         <label class="form-label">Nhập lại mật khẩu (*)</label>
                                         <input type="password" v-model="confirmPassword" class="form-control"
-                                            placeholder="******" required>
+                                            :class="{ 'is-invalid': errors.confirmPassword }" placeholder="******">
+                                        <span class="error-text" v-if="errors.confirmPassword">{{ errors.confirmPassword
+                                        }}</span>
                                     </fieldset>
                                 </div>
 
                                 <div class="col-lg-12 mb-4">
                                     <div class="form-check">
                                         <input class="form-check-input" type="checkbox" v-model="agreeTerms"
-                                            id="agreeTerms" required>
+                                            id="agreeTerms">
                                         <label class="form-check-label" for="agreeTerms">
                                             Tôi đồng ý với <a href="#" class="text-orange">Điều khoản & Chính sách</a>
                                         </label>
                                     </div>
+                                    <span class="error-text" v-if="errors.agreeTerms">{{ errors.agreeTerms }}</span>
                                 </div>
 
                                 <div class="col-lg-12">
@@ -129,8 +139,8 @@
 
 <script>
 /* global $ */
-import axios from 'axios'; // Đừng quên import axios
-
+import axios from 'axios';
+import Swal from 'sweetalert2';
 export default {
     name: 'DangKy',
     data() {
@@ -138,11 +148,12 @@ export default {
             fullName: '',
             email: '',
             phone: '',
-            gender: '', // Mới thêm
-            cccd: '',   // Mới thêm
+            gender: '',
+            cccd: '',
             password: '',
             confirmPassword: '',
-            agreeTerms: false
+            agreeTerms: false,
+            errors: {} // Chứa thông tin lỗi
         }
     },
     mounted() {
@@ -154,26 +165,68 @@ export default {
         }
     },
     methods: {
-        async handleRegister() {
-            // 1. Kiểm tra mật khẩu khớp
-            if (this.password !== this.confirmPassword) {
-                alert("Mật khẩu nhập lại không khớp!");
-                return;
-            }
-            // 2. Kiểm tra điều khoản
-            if (!this.agreeTerms) {
-                alert("Bạn cần đồng ý với điều khoản!");
-                return;
-            }
-            // 3. Kiểm tra độ dài mật khẩu (Frontend check nhanh)
-            if (this.password.length < 6) {
-                alert("Mật khẩu phải có ít nhất 6 ký tự!");
-                return;
+        validateForm() {
+            this.errors = {}; // Reset lỗi
+
+            // Validate Họ tên
+            const nameRegex = /^[a-zA-ZÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐĨŨƠàáâãèéêìíòóôõùúăđĩũơƯĂẠẢẤẦẨẪẬẮẰẲẴẶẸẺẼỀỀỂưăạảấầẩẫậắằẳẵặẹẻẽềềểỄỆỈỊỌỎỐỒỔỖỘỚỜỞỠỢỤỦỨỪễệỉịọỏốồổỗộớờởỡợụủứừỬỮỰỲỴÝỶỸửữựỳỵýỷỹ\s]+$/;
+            if (!this.fullName.trim()) {
+                this.errors.fullName = "Vui lòng nhập họ tên.";
+            } else if (!nameRegex.test(this.fullName)) {
+                this.errors.fullName = "Tên không được chứa số hoặc ký tự đặc biệt.";
             }
 
+            // Validate Email
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!this.email) {
+                this.errors.email = "Email không được để trống.";
+            } else if (!this.email || !emailRegex.test(this.email)) {
+                this.errors.email = "Email không hợp lệ (Ví dụ: abc@gmail.com).";
+            }
+
+            // Validate Số điện thoại (VN)
+            const phoneRegex = /(84|0[3|5|7|8|9])+([0-9]{8})\b/;
+            if (!this.phone) {
+                this.errors.phone = "Số điện thoại không được để trống.";
+            } else if (!phoneRegex.test(this.phone)) {
+                this.errors.phone = "Số điện thoại không hợp lệ.";
+            }
+
+            // Validate Giới tính
+            if (!this.gender) {
+                this.errors.gender = "Vui lòng chọn giới tính.";
+            }
+
+            // Validate CCCD (12 số)
+
+            if (!this.cccd) {
+                this.errors.cccd = "Vui lòng nhập số CCCD.";
+            } else if (!/^\d{12}$/.test(this.cccd)) {
+                this.errors.cccd = "CCCD phải bao gồm đúng 12 chữ số.";
+            }
+
+            // Validate Mật khẩu
+            if (this.password.length < 6) {
+                this.errors.password = "Mật khẩu phải có ít nhất 6 ký tự.";
+            }
+
+            // Validate Nhập lại mật khẩu
+            if (this.confirmPassword !== this.password) {
+                this.errors.confirmPassword = "Mật khẩu xác nhận không khớp.";
+            }
+
+            // Validate Điều khoản
+            if (!this.agreeTerms) {
+                this.errors.agreeTerms = "Bạn phải đồng ý với điều khoản.";
+            }
+
+            return Object.keys(this.errors).length === 0;
+        },
+
+        async handleRegister() {
+            if (!this.validateForm()) return;
+
             try {
-                // 4. Chuẩn bị dữ liệu gửi đi
-                // Tên trường (Key) phải KHỚP CHÍNH XÁC với Class 'RegisterRequest' trong C#
                 const registerData = {
                     HoVaTen: this.fullName,
                     Email: this.email,
@@ -183,27 +236,40 @@ export default {
                     Cccd: this.cccd
                 };
 
-                // 5. Gọi API
-                // Dùng biến môi trường hoặc link cứng nếu bạn chưa sửa file .env
-                // const apiUrl = `${import.meta.env.VITE_API_URL}/api/Login/register`;
                 const apiUrl = `${import.meta.env.VITE_API_URL}/api/Login/register`;
+
+                // Hiện thông báo đang xử lý
+                Swal.fire({
+                    title: 'Đang xử lý...',
+                    didOpen: () => { Swal.showLoading() }
+                });
 
                 const response = await axios.post(apiUrl, registerData);
 
                 if (response.status === 200) {
-                    alert("Đăng ký thành công! Hãy đăng nhập ngay.");
-                    this.$router.push('/dang-nhap');
+                    // THAY THẾ alert thành công
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Thành công!',
+                        text: 'Mã xác thực đã được gửi vào Gmail của bạn. Vui lòng kiểm tra!',
+                        confirmButtonColor: '#f35525'
+                    }).then(() => {
+                        this.$router.push({
+                            path: '/xac-thuc-gmail',
+                            query: { email: this.email }
+                        });
+                    });
                 }
 
             } catch (error) {
-                if (error.response) {
-                    // Lỗi từ Server trả về (ví dụ: Email trùng)
-                    const msg = error.response.data.message || JSON.stringify(error.response.data);
-                    alert("Đăng ký thất bại: " + msg);
-                } else {
-                    console.error(error);
-                    alert("Không thể kết nối đến Server!");
-                }
+                // THAY THẾ alert lỗi
+                const msg = error.response?.data?.message || "Không thể kết nối đến Server!";
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Đăng ký thất bại',
+                    text: msg,
+                    confirmButtonColor: '#1e1e1e'
+                });
             }
         }
     }
@@ -211,7 +277,7 @@ export default {
 </script>
 
 <style scoped>
-/* CSS giữ nguyên, chỉ thay đổi vị trí HTML */
+/* CSS Gốc của bạn */
 .register-container {
     background: #fff;
     border-radius: 20px;
@@ -237,41 +303,28 @@ export default {
     font-weight: 700;
 }
 
-.text-orange:hover {
-    text-decoration: underline;
-}
-
 .form-control {
     background-color: #f4f4f4;
-    border: none;
+    border: 1px solid transparent;
     height: 45px;
     padding-left: 15px;
     font-size: 14px;
     border-radius: 5px;
+    transition: all 0.3s;
 }
 
-.form-control:focus {
-    background-color: #fff;
-    border: 1px solid #f35525;
-    box-shadow: none;
+/* Hiệu ứng khi có lỗi */
+.form-control.is-invalid {
+    border: 1px solid #ff4d4d !important;
+    background-color: #fff5f5;
 }
 
-/* Style cho thẻ select giống input */
-.form-select {
-    background-color: #f4f4f4;
-    border: none;
-    height: 45px;
-    padding-left: 15px;
-    font-size: 14px;
-    border-radius: 5px;
-    cursor: pointer;
-}
-
-.form-label {
+.error-text {
+    color: #ff4d4d;
+    font-size: 12px;
+    margin-top: 4px;
+    display: block;
     font-weight: 500;
-    font-size: 13px;
-    color: #333;
-    margin-bottom: 5px;
 }
 
 .orange-button {
@@ -282,14 +335,13 @@ export default {
     font-weight: 500;
     padding: 12px 20px;
     border-radius: 25px;
-    transition: all .3s;
+    cursor: pointer;
 }
 
 .orange-button:hover {
     background-color: #f35525;
 }
 
-/* Slider Style */
 .fit-cover {
     object-fit: cover;
 }
@@ -304,21 +356,5 @@ export default {
     color: #fff;
     text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.7);
     width: 100%;
-}
-
-.welcome-overlay h3 {
-    font-size: 32px;
-    font-weight: 800;
-    margin-bottom: 10px;
-}
-
-.carousel-item::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.3);
 }
 </style>

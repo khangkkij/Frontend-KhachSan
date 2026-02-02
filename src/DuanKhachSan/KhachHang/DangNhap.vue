@@ -98,8 +98,8 @@
 </template>
 
 <script>
-import axios from 'axios';
-
+import axios, { all } from 'axios';
+import Swal from 'sweetalert2';
 export default {
     name: 'DangNhap',
     data() {
@@ -109,71 +109,99 @@ export default {
             rememberMe: false
         }
     },
+    mounted() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const loginSuccess = urlParams.get('login_success');
+        const provider = urlParams.get('provider'); // Google hay Facebook gửi từ C#
+        const name = urlParams.get('name');
+
+        // MỞ F12 ĐỂ XEM DÒNG NÀY TRÊN TRÌNH DUYỆT
+        console.log("Dữ liệu nhận được từ URL:", { loginSuccess, provider, name });
+
+        // Chỉ hiển thị alert nếu loginSuccess = true và provider được xác định
+        if (loginSuccess === 'true' && provider) {
+            const decodedName = decodeURIComponent(name || 'Khách');
+
+            // Lưu thông tin người dùng
+            localStorage.setItem('user_info', JSON.stringify({
+                name: decodedName,
+                email: decodeURIComponent(urlParams.get('email') || '')
+            }));
+
+            // Quyết định chữ hiển thị dựa trên provider
+            let sourceName = "Hệ thống";
+            if (provider === 'google') sourceName = "Google";
+            else if (provider === 'facebook') sourceName = "Facebook";
+
+            // Hiện thông báo bằng SweetAlert2
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: 'Đăng nhập thành công!',
+                    text: `Xin chào ${decodedName}, bạn đã đăng nhập bằng ${sourceName}.`,
+                    icon: 'success',
+                    confirmButtonColor: '#f35525'
+                }).then(() => {
+                    // Xóa URL bẩn và chuyển trang
+                    window.history.replaceState({}, document.title, "/");
+                    window.location.href = '/';
+                });
+            } else {
+                // Nếu Swal lỗi thì dùng tạm alert để không bị mất thông báo
+                alert(`Chào ${decodedName}, bạn đã đăng nhập bằng ${sourceName}`);
+                window.location.href = '/';
+            }
+        }
+    },
+
     methods: {
         async handleLogin() {
-            // 1. Kiểm tra dữ liệu nhập vào cơ bản
-            if (!this.email || !this.password) {
-                alert("Vui lòng nhập đầy đủ Email và Mật khẩu!");
-                return;
-            }
+            console.log("=== CHECK FORM LOGIN ===");
+            console.log("Email:", this.email);
 
             try {
-                // 2. Chuẩn bị dữ liệu khớp với C# LoginRequest
-                // Lưu ý: Tên trường (key) phải khớp với Class LoginRequest trong C#
-                const loginData = {
-                    Email: this.email,
-                    MatKhau: this.password
-                };
-
-                // 3. Gọi API
                 const response = await axios.post(
-                    `${import.meta.env.VITE_API_URL}/api/Login/login`, // Đảm bảo biến môi trường đúng
-                    loginData,
-                    {
-                        withCredentials: true // <--- BẮT BUỘC: Để nhận và gửi Cookie HttpOnly
-                    }
+                    `${import.meta.env.VITE_API_URL}/api/Login/login`,
+                    { Email: this.email, MatKhau: this.password },
+                    { withCredentials: true }
                 );
 
-                if (response.status === 200) {
-                    const result = response.data; // Cục { message, data: { user... } }
-                    const userInfo = result.data;
+                console.log("Server Response:", response.data);
 
-                    // 4. Lưu thông tin hiển thị (KHÔNG LƯU TOKEN VÌ TOKEN ĐÃ Ở TRONG COOKIE)
+                if (response.status === 200) {
+                    const userInfo = response.data.data;
                     localStorage.setItem('user_info', JSON.stringify({
                         id: userInfo.maKh,
                         name: userInfo.hoVaTen,
-                        email: userInfo.email,
-                        avatar: userInfo.hinhAnh
+                        email: userInfo.email
                     }));
 
-                    // Phát sự kiện để Header cập nhật lại tên người dùng (nếu bạn dùng EventBus hoặc Vuex/Pinia)
-                    // window.location.reload(); // Cách đơn giản nhất để refresh lại header
-
-                    alert(`Xin chào ${userInfo.hoVaTen}, đăng nhập thành công!`);
-
-                    // 5. Chuyển hướng về trang chủ
-                    window.location.href = '/';
+                    Swal.fire({
+                        title: 'Thành công!',
+                        text: `Chào mừng ${userInfo.hoVaTen} quay trở lại!`,
+                        icon: 'success',
+                        confirmButtonColor: '#f35525'
+                    }).then(() => {
+                        window.location.href = '/';
+                    });
                 }
-
             } catch (error) {
-                // 6. Xử lý các loại lỗi
-                if (error.response) {
-                    const status = error.response.status;
-                    if (status === 401) {
-                        alert("Sai Email hoặc Mật khẩu. Vui lòng kiểm tra lại!");
-                    } else if (status === 403) {
-                        alert("Tài khoản của bạn đã bị khóa!");
-                    } else {
-                        alert(`Lỗi hệ thống (${status}): ${error.response.data.message || 'Thử lại sau'}`);
-                    }
-                } else {
-                    console.error("Lỗi kết nối:", error);
-                    alert("Không thể kết nối đến Server. Hãy kiểm tra đường truyền!");
+                console.error("Login Error Details:", error.response);
+
+                let errorMsg = "Sai email hoặc mật khẩu!";
+                if (error.response && error.response.status === 403) {
+                    errorMsg = "Tài khoản của bạn đã bị khóa!";
                 }
+
+                Swal.fire({
+                    title: 'Thất bại',
+                    text: errorMsg,
+                    icon: 'error',
+                    confirmButtonColor: '#d33'
+                });
             }
         },
         loginGoogle() {
-            alert("Tính năng Đăng nhập Google đang được phát triển!");
+            window.location.href = "https://localhost:7023/api/Login/google-login";
         },
         loginFacebook() {
             window.location.href = "https://localhost:7023/api/Login/facebook-login";

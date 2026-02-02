@@ -6,13 +6,13 @@
                 <div class="col-lg-6 col-md-12 login-form-col">
                     <div class="login-wrapper">
                         <div class="text-center mb-3">
-                            <h2 class="text-uppercase text-orange">Đặt Lại Mật Khẩu</h2>
+                            <h2 class="text-uppercase text-orange">Xác Thực Gmail</h2>
                             <p class="text-muted" style="font-size: 13px;">
-                                Mã xác thực đã gửi đến <strong>{{ email || "admin@example.com" }}</strong>
+                                Mã xác thực đã được gửi đến email đăng ký của bạn.
                             </p>
                         </div>
 
-                        <form @submit.prevent="handleResetPassword">
+                        <form @submit.prevent="verifyEmail">
                             <div class="row">
                                 <div class="col-lg-12 mb-3">
                                     <fieldset>
@@ -21,34 +21,27 @@
                                             placeholder="000000" maxlength="6" required>
                                     </fieldset>
                                 </div>
+                                <button type="submit" class="orange-button w-100 border-0">
+                                    <span v-if="isLoading" class="spinner-border spinner-border-sm"></span>
+                                    Xác thực Gmail
+                                </button>
+                            </div>
 
-                                <div class="col-lg-12 mb-3">
-                                    <fieldset>
-                                        <label class="form-label">Mật khẩu mới</label>
-                                        <input type="password" v-model="newPassword" class="form-control"
-                                            placeholder="Nhập mật khẩu mới..." required>
-                                    </fieldset>
+                            <div class="col-lg-12 text-center mt-3">
+                                <div v-if="countdown > 0">
+                                    <p class="text-muted mb-0" style="font-size: 13px;">Gửi lại mã sau: <span
+                                            class="fw-bold text-orange">{{ countdown }}s</span></p>
                                 </div>
+                                <div v-else>
+                                    <a href="#" @click.prevent="resendOtp" class="text-dark fw-bold"
+                                        style="font-size: 13px;">Gửi lại mã OTP</a>
+                                </div>
+                            </div>
 
-                                <div class="col-lg-12 mb-4">
-                                    <fieldset>
-                                        <label class="form-label">Nhập lại mật khẩu</label>
-                                        <input type="password" v-model="confirmPassword" class="form-control"
-                                            placeholder="Nhập lại lần nữa..." required>
-                                    </fieldset>
-                                </div>
-
-                                <div class="col-lg-12">
-                                    <button type="submit" class="orange-button w-100 border-0">
-                                        Đổi Mật Khẩu & Đăng Nhập
-                                    </button>
-                                </div>
-
-                                <div class="col-lg-12 text-center mt-2">
-                                    <router-link to="/dang-nhap" class="text-muted" style="font-size: 13px;">
-                                        <i class="fa fa-arrow-left"></i> Hủy bỏ
-                                    </router-link>
-                                </div>
+                            <div class="col-lg-12 text-center mt-2">
+                                <router-link to="/dang-nhap" class="text-muted" style="font-size: 13px;">
+                                    <i class="fa fa-arrow-left"></i> Hủy bỏ
+                                </router-link>
                             </div>
                         </form>
                     </div>
@@ -57,8 +50,8 @@
                 <div class="col-lg-6 col-md-12 d-none d-lg-block">
                     <div class="carousel slide h-100">
                         <div class="welcome-overlay">
-                            <h3>Thiết Lập Mật Khẩu Mới</h3>
-                            <p class="TieuDe">Hãy sử dụng mật khẩu mạnh để bảo vệ tài khoản</p>
+                            <h3>Xác Thực Gmail</h3>
+                            <p class="TieuDe">Hãy xác thực email để bảo vệ tài khoản</p>
                         </div>
                         <div class="carousel-inner h-100">
                             <div class="carousel-item active h-100">
@@ -77,24 +70,21 @@
 
 <script>
 import axios from 'axios';
-import Swal from 'sweetalert2';
+import Swal from 'sweetalert2'; // Chú ý đã thêm import này
 
 export default {
-    name: 'XacNhanOTP',
+    name: 'XacThucGamil',
     data() {
         return {
             otp: '',
-            newPassword: '',
-            confirmPassword: '',
-            email: this.$route.query.email, // Lấy email từ URL
-            isLoading: false,
+            email: this.$route.query.email,
+            isLoading: false, // Trạng thái hiệu ứng nút bấm
             countdown: 0,
             timerId: null
         }
     },
-
     mounted() {
-        // Khi component mở, khoá gửi lại trong 60s nếu có email (ngăn spam ngay lập tức)
+        // Nếu có email, khóa gửi lại 60s để tránh spam
         if (this.email) {
             this.startCountdown(60);
         }
@@ -115,54 +105,106 @@ export default {
                 }
             }, 1000);
         },
-        async handleResetPassword() {
-            // 1. Kiểm tra mật khẩu khớp nhau
-            if (this.newPassword !== this.confirmPassword) {
-                Swal.fire({ icon: 'warning', text: 'Mật khẩu xác nhận không khớp!' });
+
+        async verifyEmail() {
+            // Kiểm tra độ dài mã trước khi gửi
+            if (this.otp.length < 6) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Thông báo',
+                    text: 'Vui lòng nhập đủ 6 số OTP.',
+                    confirmButtonColor: '#f35525'
+                });
                 return;
             }
 
             this.isLoading = true;
+            // Hiển thị trạng thái đang xử lý
             Swal.fire({
-                title: 'Đang cập nhật...',
+                title: 'Đang xác thực...',
                 allowOutsideClick: false,
                 didOpen: () => { Swal.showLoading() }
             });
 
             try {
-                const apiUrl = `${import.meta.env.VITE_API_URL}/api/Login/reset-password`;
-
-                // Gửi dữ liệu theo dạng Body (ResetPasswordRequest model)
-                const response = await axios.post(apiUrl, {
-                    email: this.email,
-                    otp: this.otp,
-                    newPassword: this.newPassword
+                const apiUrl = `${import.meta.env.VITE_API_URL}/api/Login/verify-otp`;
+                const response = await axios.put(apiUrl, null, {
+                    params: {
+                        email: this.email,
+                        otpKhachNhap: this.otp
+                    }
                 });
 
                 if (response.status === 200) {
+                    // Thay thế alert thành công bằng Swal
                     Swal.fire({
                         icon: 'success',
-                        title: 'Thành công!',
-                        text: 'Mật khẩu đã được thay đổi. Hãy đăng nhập lại.',
+                        title: 'Xác thực thành công!',
+                        text: 'Tài khoản của bạn đã được kích hoạt. Hãy đăng nhập ngay.',
                         confirmButtonColor: '#f35525'
                     }).then(() => {
                         this.$router.push('/dang-nhap');
                     });
                 }
             } catch (error) {
+                // Thay thế alert lỗi bằng Swal
                 const msg = error.response?.data?.message || "Mã OTP không đúng hoặc đã hết hạn!";
                 Swal.fire({
                     icon: 'error',
-                    title: 'Thất bại',
-                    text: msg
+                    title: 'Lỗi xác thực',
+                    text: msg,
+                    confirmButtonColor: '#1e1e1e'
                 });
             } finally {
                 this.isLoading = false;
+            }
+        },
+
+        async resendOtp() {
+            if (this.countdown > 0) {
+                Swal.fire({ icon: 'info', title: 'Chờ đã', text: `Vui lòng chờ ${this.countdown}s trước khi gửi lại.` });
+                return;
+            }
+
+            console.log('resendOtp called, email=', this.email);
+
+            if (!this.email) {
+                Swal.fire({ icon: 'warning', title: 'Lỗi', text: 'Email không hợp lệ hoặc không được truyền.' });
+                return;
+            }
+
+            Swal.fire({
+                title: 'Đang gửi lại mã...',
+                allowOutsideClick: false,
+                didOpen: () => { Swal.showLoading() }
+            });
+
+            try {
+                const apiUrl = `${import.meta.env.VITE_API_URL}/api/Login/resend-otp`;
+                const response = await axios.post(apiUrl, null, { params: { email: this.email } });
+                console.log('resendOtp response', response);
+
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Đã gửi mã mới!',
+                    text: response.data?.message || 'Vui lòng kiểm tra lại hòm thư Gmail của bạn.',
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+                this.otp = '';
+
+                // Bật cooldown 60s
+                this.startCountdown(60);
+            } catch (error) {
+                console.log('resendOtp error', error);
+                const msg = error.response?.data?.message || error.message || 'Không thể kết nối đến máy chủ để gửi lại mã!';
+                Swal.fire({ icon: 'error', title: 'Thất bại', text: msg, confirmButtonColor: '#1e1e1e' });
             }
         }
     }
 }
 </script>
+
 <style scoped>
 /* Style Layout cũ */
 .login-container {

@@ -34,6 +34,8 @@ import QuanLyNhanSu from '@/DuanKhachSan/Admin/QuanLyNhanSu.vue'
 import QuanLyDichVu from '@/DuanKhachSan/Admin/QuanLyDichVu.vue'
 import QuanLyKhachHang from '@/DuanKhachSan/Admin/QuanLyKhachHang.vue'
 import QuanLyHoaDon from '@/DuanKhachSan/Admin/QuanLyHoaDon.vue'
+import CheckIn from '@/DuanKhachSan/Admin/CheckIn.vue'
+import CheckOut from '@/DuanKhachSan/Admin/CheckOut.vue'
 //4. Import NhanVien
 import LayoutNhanVien from '@/DuanKhachSan/NhanVien/LayoutNhanVien.vue';
 import DashboardNhanVien from '@/DuanKhachSan/NhanVien/Views/Dashboard.vue';
@@ -115,6 +117,16 @@ const router = createRouter({
           path: 'hoa-don',
           name: 'admin-hoa-don',
           component: QuanLyHoaDon
+        },
+        {
+          path: 'check-in',
+          name: 'admin-check-in',
+          component: CheckIn
+        },
+        {
+          path: 'check-out',
+          name: 'admin-check-out',
+          component: CheckOut
         }
       ]
     },

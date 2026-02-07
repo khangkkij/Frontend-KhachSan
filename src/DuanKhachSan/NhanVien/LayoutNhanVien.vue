@@ -19,6 +19,10 @@
           <i class="bx bx-building-house icon"></i> Sơ đồ phòng
         </router-link>
 
+        <router-link to="/NhanVien/user-manager" class="menu-item" active-class="active">
+          <i class="bx bx-group icon"></i> Khách hàng
+        </router-link>
+
         <router-link to="/NhanVien/service-manager" class="menu-item" active-class="active">
           <i class="bx bx-food-menu icon"></i> Gọi dịch vụ
         </router-link>

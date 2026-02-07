@@ -138,6 +138,7 @@ const router = createRouter({
       { path: 'dashboard', component: DashboardNhanVien },
       { path: 'room-manager', component: RoomManager },
       { path: 'service-manager', component: ServiceManager },
+      { path: 'user-manager', component: QuanLyKhachHang}
     ]
   }
   ]

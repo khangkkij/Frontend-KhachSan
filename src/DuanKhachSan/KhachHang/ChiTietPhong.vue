@@ -14,6 +14,7 @@ const currentImage = ref('')
 const selectedVariantId = ref(null)
 const bienTheNgauNhien=ref([])
 const tienIch=ref([])
+const baseUrl = API + '/'
 const iconMap = {
   'wifi-icon': 'fa-wifi',
   'pool-icon': 'fa-person-swimming',
@@ -63,6 +64,8 @@ onMounted(async() => {
     selectedVariantId.value = bienThePhong.value[0].maBienThePhong
   }
   initSelectedVariant(roomId)
+  console.log("So tre em"+selectedVariant.value.soTreEm)
+  console.log("So tre em"+selectedVariant.value.soNguoiToiDa)
 })
 const canBook = computed(() => {
   return selectedVariant.value
@@ -153,14 +156,16 @@ const goBooking = () => {
               />
             </div>
             <div class="thumbnail-list mt-3" v-if="selectedVariant?.danhSachAnh?.length">
-              <img
-                v-for="(img, index) in selectedVariant.danhSachAnh"
-                :key="index"
-                :src="`${API}/${img}`"
-                class="thumbnail-img"
-                :class="{ active: currentImage.includes(img) }"
-                @click="changeImage(img)"
-              />
+              <div class="thumbnail-scroll">
+                <img
+                  v-for="(img, index) in selectedVariant.danhSachAnh"
+                  :key="index"
+                  :src="`${API}/${img}`"
+                  class="thumbnail-img"
+                  :class="{ active: currentImage.includes(img) }"
+                  @click="changeImage(img)"
+                />
+              </div>
             </div>
 
             <div class="room-detail-container p-4 bg-white shadow-lg rounded-4">
@@ -200,9 +205,31 @@ const goBooking = () => {
                         :key="ti.maTi"
                         class="amenity-item"
                       >
-                        <div class="icon-wrapper">
-                          <i class="fa-solid" :class="iconMap[ti.icon] || 'fa-check'"></i>
+                        <div class="ti-icon-wrapper">
+                        <!-- ICON FONT -->
+                        <div
+                          v-if="ti.icon && !ti.icon.startsWith('uploads/')"
+                          class="icon-wrapper"
+                        >
+                          <i
+                            class="fa-solid"
+                            :class="iconMap[ti.icon] || 'fa-check'"
+                          ></i>
                         </div>
+
+                        <!-- ICON IMAGE -->
+                        <img
+                          v-else-if="ti.icon"
+                          :src="baseUrl + ti.icon"
+                          class="ti-img"
+                          alt="utility-icon"
+                        />
+
+                        <!-- FALLBACK -->
+                        <div v-else class="ti-no-icon">
+                          <i class="bi bi-box-seam"></i>
+                        </div>
+                      </div>
                         <span>{{ ti.tenTienIch }}</span>
                       </div>
                     </div>
@@ -217,7 +244,7 @@ const goBooking = () => {
                       <i class="bi bi-people fs-4 me-3 text-primary"></i>
                       <div>
                         <small class="text-muted d-block">Sức chứa</small>
-                        <span class="fw-medium text-dark">{{ selectedVariant?.soNguoiToiDa }} người lớn</span>
+                        <span class="fw-medium text-dark">{{ selectedVariant?.soNguoiToiDa }} người lớn<span v-if="selectedVariant.soTreEm>0">, {{ selectedVariant?.soTreEm }} trẻ em </span></span>
                       </div>
                     </div>
 
@@ -239,7 +266,7 @@ const goBooking = () => {
 
                     <div class="note-box mt-4 p-3 rounded-3 bg-warning-subtle border-start border-warning border-4">
                       <p class="small text-dark mb-0">
-                        <strong>Lưu ý:</strong> Giá chưa bao gồm VAT. Vui lòng thanh toán trước 50% để giữ chỗ.
+                        <strong>Lưu ý:</strong> Giá phòng hiển thị chưa bao gồm các chi phí phát sinh (nếu có)
                       </p>
                     </div>
                   </div>
@@ -443,6 +470,48 @@ const goBooking = () => {
 </template>
 
 <style scoped>
+.thumbnail-scroll {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 6px;
+  scroll-behavior: smooth;
+}
+
+/* Ẩn thanh scroll (tuỳ chọn) */
+.thumbnail-scroll::-webkit-scrollbar {
+  height: 6px;
+}
+.thumbnail-scroll::-webkit-scrollbar-thumb {
+  background: #d0d4dc;
+  border-radius: 10px;
+}
+
+.thumbnail-img {
+  flex: 0 0 auto;          /* QUAN TRỌNG: không cho co lại */
+  width: 90px;
+  height: 65px;
+  object-fit: cover;
+  border-radius: 8px;
+  cursor: pointer;
+  opacity: 0.7;
+  transition: all 0.2s ease;
+}
+
+.thumbnail-img:hover,
+.thumbnail-img.active {
+  opacity: 1;
+  border: 2px solid #0d6efd;
+}
+
+.ti-img {
+  width: 56px;
+  height: 56px;
+  /* object-fit: contain; giữ nguyên tỉ lệ */
+  border-radius: 12px;
+}
+
 /* Phông chữ & Khoảng cách */
 .room-detail-container {
   font-family: 'Inter', sans-serif;

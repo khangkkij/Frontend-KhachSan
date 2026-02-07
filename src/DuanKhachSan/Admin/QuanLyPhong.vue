@@ -2,7 +2,6 @@
 import {reactive, ref, computed, onMounted, watch } from 'vue'
 import axios from 'axios';
 const API = import.meta.env.VITE_API_URL
-/* ====== DỮ LIỆU MẪU (Mô phỏng hình 1) ====== */
 const variants = ref([])
 const dashboard = ref({
   tongBienThe: 0,
@@ -15,11 +14,12 @@ const form = reactive({
   tenBienThe: '',
   loaiGiuong: '',
   huongNhin: '',
-  soNguoiToiDa: 2,
+  soNguoiLon: 2,
+  soTreEm:2,
   dienTich: 30,
   giaNiemYet: 0,
   tienIchIds: [],
-  images: []   // 🔥 PHẢI là images
+  images: []
 })
 const formPhong = reactive({
   soPhong: '',
@@ -31,19 +31,6 @@ const roomToDelete = ref({
   soPhong: '',
   variantId: null
 })
-const ROOM_STATUS = {
-  0: 'Sẵn sàng',
-  1: 'Đang có khách',
-  2: 'Đang dọn dẹp',
-  3: 'Đang sửa chữa'
-}
-
-const ROOM_STATUS_TEXT_TO_VALUE = {
-  'Sẵn sàng': 0,
-  'Đang có khách': 1,
-  'Đang dọn dẹp': 2,
-  'Đang sửa chữa': 3
-}
 const roomEditing = ref({
   maPhong: null,
   soPhong: '',
@@ -70,7 +57,7 @@ const handleUploadImages = (e) => {
     }
   }
   previewImages.value = files.map(f => URL.createObjectURL(f))
-  form.images = files   // ❌ KHÔNG .value
+  form.images = files
 }
 const removeImage = (index) => {
   form.images.splice(index, 1)
@@ -87,8 +74,8 @@ const validateForm = () => {
   if (!form.loaiGiuong) errors.loaiGiuong = 'Vui lòng chọn loại giường'
   if (!form.huongNhin) errors.huongNhin = 'Vui lòng chọn hướng nhìn'
 
-  if (!form.soNguoiToiDa || form.soNguoiToiDa < 1)
-    errors.soNguoiToiDa = 'Số người lớn phải ≥ 1'
+  if (!form.soNguoiLon || form.soNguoiLon < 1)
+    errors.soNguoiLon = 'Số người lớn phải ≥ 1'
 
   if (!form.dienTich || form.dienTich < 10)
     errors.dienTich = 'Diện tích tối thiểu 10m²'
@@ -125,7 +112,8 @@ const submitVariant = async () => {
   fd.append('TenBienThe', form.tenBienThe)
   fd.append('LoaiGiuong', form.loaiGiuong)
   fd.append('HuongNhin', form.huongNhin)
-  fd.append('SoNguoiToiDa', form.soNguoiToiDa)
+  fd.append('SoNguoiLon', form.soNguoiLon)
+  fd.append('SoTreEm', form.soTreEm)
   fd.append('DienTich', form.dienTich)
   fd.append('GiaNiemYet', form.giaNiemYet)
 
@@ -145,6 +133,7 @@ const submitVariant = async () => {
         fd
       )
       alert('Tạo biến thể thành công!')
+      closeCreateModal()
     }
   } catch (err) {
     console.error(err)
@@ -152,6 +141,7 @@ const submitVariant = async () => {
     err.response?.data ||'Có lỗi xảy ra, vui lòng thử lại!'
     alert(msg)
   }
+  await loadVariants()
 }
 const submitPhong = async () => {
   try {
@@ -162,10 +152,11 @@ const submitPhong = async () => {
     })
 
     alert('Thêm phòng thành công!')
+    closeAddRoomModal()
+    await loadVariants()
   } catch (err) {
     alert(err.response?.data || 'Lỗi khi thêm phòng')
   }
-  loadVariants()
 }
 
 const submitEditRoom = async () => {
@@ -190,14 +181,15 @@ const submitEditRoom = async () => {
         room.trangThai = roomEditing.value.trangThai
       }
     }
-
+    alert('Cập nhật phòng thành công!')
+    closeEditRoomModal()
+    await loadVariants()
   } catch (err) {
     console.error(err)
     alert(err.response?.data || 'Lỗi khi thêm phòng')
   }
-  loadVariants()
+  await loadVariants()
 }
-
 
 const loadVariants = async () => {
   const res = await axios.get(`${API}/api/admin/QuanLyPhongBienThe`);
@@ -223,7 +215,8 @@ const openCreateModal = () => {
     tenBienThe: '',
     loaiGiuong: '',
     huongNhin: '',
-    soNguoiToiDa: 2,
+    soNguoiLon: 2,
+    soTreEm: 2,
     dienTich: 30,
     giaNiemYet: 0,
     tienIchIds: [],
@@ -231,7 +224,20 @@ const openCreateModal = () => {
   })
   previewImages.value = []
 }
-
+const closeCreateModal = () => {
+  const modalEl = document.getElementById('variantModal')
+  const modal = bootstrap.Modal.getInstance(modalEl)
+  modal?.hide()
+}
+const closeAddRoomModal = () => {
+  const modalEl = document.getElementById('addRoomModal')
+  const modal = bootstrap.Modal.getInstance(modalEl)
+  modal?.hide()
+}
+const closeEditRoomModal = () => {
+  const modalEl = document.getElementById('editRoomModal')
+  bootstrap.Modal.getInstance(modalEl)?.hide()
+}
 const openEditModal = async (v) => {
   isEditMode.value = true
 
@@ -247,7 +253,8 @@ const openEditModal = async (v) => {
       tenBienThe: data.tenBienThe,
       loaiGiuong: data.loaiGiuong ?? '',
       huongNhin: data.huongNhin ?? '',
-      soNguoiToiDa: data.soNguoiToiDa,
+      soNguoiLon: data.soNguoiLon,
+      soTreEm: data.soTreEm,
       dienTich: data.dienTich,
       giaNiemYet: data.giaNiemYet,
       tienIchIds: data.tienIchIds,
@@ -329,7 +336,7 @@ const confirmDeleteRoom = async () => {
       `${API}/api/admin/QuanLyPhong/${roomToDelete.value.maPhong}`
     )
 
-    // ❌ xóa cục bộ
+    //xóa cục bộ
     const variant = variants.value.find(
       v => v.maBienThePhong === roomToDelete.value.variantId
     )
@@ -597,7 +604,8 @@ const formatPrice = (val) => val?.toLocaleString('vi-VN')
             <h5 class="room-title">{{ v.tenBienThe }}</h5>
             <div class="room-meta">
               <i class='bx bx-fullscreen'></i> {{ v.dienTich }}m² &nbsp; 
-              <i class='bx bx-group'></i> {{ v.soNguoiToiDa }} người &nbsp; 
+              <i class='bx bx-group'></i> {{ v.soNguoiLon }} người lớn&nbsp; 
+              <span v-if="Number(v.soTreEm)"><i class='bx bx-child'></i> {{ v.soTreEm }} trẻ em &nbsp;</span>
               <i class='bx bx-show'></i> {{ v.huongNhin }}
             </div>
 
@@ -642,7 +650,7 @@ const formatPrice = (val) => val?.toLocaleString('vi-VN')
                 <i :class="['bx bx-chevron-down toggle-icon', { 'is-flipped': isCollapsed(v.maBienThePhong) }]"></i>
               </div>
 
-              <div v-show="!isCollapsed(v.maBienThePhong)" class="rooms-container-animate">
+              <div v-show="!isCollapsed(v.maBienThePhong)" class="rooms-container-animate room-list-scroll">
                 <div class="room-no-item room-item-row" v-for="r in v.phongs" :key="r.no">
                   <div class="d-flex align-items-center gap-2">
                     <span class="room-number">{{ r.soPhong }}</span>
@@ -774,11 +782,20 @@ const formatPrice = (val) => val?.toLocaleString('vi-VN')
 
           <!-- Số người -->
           <div class="col-md-4">
-            <label class="form-label small fw-bold">Số người tối đa</label>
-            <input type="number" min="1" class="form-control custom-input" :class="{ 'is-invalid': errors.soNguoiToiDa }"
-                   v-model.number="form.soNguoiToiDa">
+            <label class="form-label small fw-bold">Số người lớn tối đa</label>
+            <input type="number" min="1" class="form-control custom-input" :class="{ 'is-invalid': errors.soNguoiLon }"
+                   v-model.number="form.soNguoiLon">
             <div class="invalid-feedback">
-              {{ errors.soNguoiToiDa }}
+              {{ errors.soNguoiLon }}
+            </div>
+          </div>
+
+          <div class="col-md-4">
+            <label class="form-label small fw-bold">Số trẻ em tối đa</label>
+            <input type="number" min="1" class="form-control custom-input" :class="{ 'is-invalid': errors.soNguoiLon }"
+                   v-model.number="form.soTreEm">
+            <div class="invalid-feedback">
+              {{ errors.soTreEm }}
             </div>
           </div>
 
@@ -967,7 +984,6 @@ const formatPrice = (val) => val?.toLocaleString('vi-VN')
           <button
             class="btn btn-primary flex-grow-1 text-white fw-bold"
             @click="submitEditRoom"
-            data-bs-dismiss="modal"
           >
             <i class="bx bx-save me-1"></i> Lưu thay đổi
           </button>
@@ -993,34 +1009,72 @@ const formatPrice = (val) => val?.toLocaleString('vi-VN')
   </div>
 </div>
 <div class="modal fade" id="roomDetailModal" tabindex="-1">
-  <div class="modal-dialog modal-dialog-centered" style="max-width: 420px;">
-    <div class="modal-content border-0 shadow">
-      <div class="modal-body p-4">
-
-        <h5 class="fw-bold mb-3">
-          Phòng {{ roomDetail?.soPhong }}
+  <div class="modal-dialog modal-dialog-centered" style="max-width: 450px;">
+    <div class="modal-content border-0 shadow-lg" style="border-radius: 20px; overflow: hidden;">
+      
+      <div class="modal-header border-0 bg-light px-4 pt-4 pb-0">
+        <h5 class="fw-bold mb-0 text-primary">
+          <i class="bi bi-door-open-fill me-2"></i>Phòng {{ roomDetail?.soPhong }}
         </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
 
-        <p><strong>Biến thể:</strong> {{ roomDetail?.tenBienThe }}</p>
-        <p><strong>Trạng thái:</strong> {{ roomStatus(roomDetail?.trangThai).text }}</p>
-        <p><strong>Giá:</strong> {{ formatPrice(roomDetail?.gia) }} đ / đêm</p>
-
-        <hr />
-
-        <div v-if="roomDetail?.khachDangThue">
-          <h6 class="fw-bold">Khách đang thuê</h6>
-          <p>👤 {{ roomDetail.khachDangThue.tenKhach }}</p>
-          <p>📞 {{ roomDetail.khachDangThue.dienThoai }}</p>
-          <p>📅 {{ roomDetail.khachDangThue.checkIn }} → {{ roomDetail.khachDangThue.checkOut }}</p>
+      <div class="modal-body p-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <div>
+            <span class="badge rounded-pill px-3 py-2" 
+                  :class="roomDetail?.trangThai === 1 ? 'bg-success-subtle text-success' : 'bg-warning-subtle text-warning'">
+              ● {{ roomStatus(roomDetail?.trangThai).text }}
+            </span>
+          </div>
+          <div class="text-end">
+            <small class="text-muted d-block">Giá mỗi đêm</small>
+            <span class="fw-bold fs-5 text-danger">{{ formatPrice(roomDetail?.gia) }} đ</span>
+          </div>
         </div>
 
-        <div v-else class="text-muted">
-          Phòng hiện đang trống
+        <div class="p-3 bg-light rounded-3 mb-4">
+          <div class="d-flex align-items-center mb-2">
+            <i class="bi bi-layers me-2 text-secondary"></i>
+            <span><strong>Loại phòng:</strong> {{ roomDetail?.tenBienThe }}</span>
+          </div>
         </div>
 
-        <button class="btn btn-light w-100 mt-3" data-bs-dismiss="modal">
-          Đóng
-        </button>
+        <div v-if="roomDetail?.khachDangThue" class="card border-0 bg-primary-subtle text-primary-emphasis p-3">
+          <h6 class="fw-bold mb-3 d-flex align-items-center">
+            <i class="bi bi-person-badge-fill me-2"></i> Khách đang lưu trú
+          </h6>
+          
+          <div class="d-flex flex-column gap-2">
+            <div class="d-flex align-items-center">
+              <i class="bi bi-person me-2"></i>
+              <span>{{ roomDetail.khachDangThue.tenKhach }}</span>
+            </div>
+            <div class="d-flex align-items-center">
+              <i class="bi bi-telephone me-2"></i>
+              <span>{{ roomDetail.khachDangThue.dienThoai }}</span>
+            </div>
+            <div class="d-flex align-items-center mt-2 p-2 bg-white bg-opacity-50 rounded text-dark small">
+              <i class="bi bi-calendar-range me-2 text-primary"></i>
+              {{ roomDetail.khachDangThue.checkIn }} 
+              <i class="bi bi-arrow-right mx-2"></i> 
+              {{ roomDetail.khachDangThue.checkOut }}
+            </div>
+          </div>
+        </div>
+
+        <div v-else class="text-center py-4 rounded-3 border border-dashed">
+          <i class="bi bi-house-check text-muted fs-1 d-block mb-2"></i>
+          <span class="text-muted">Phòng hiện đang sẵn sàng đón khách</span>
+        </div>
+
+        <div class="row g-2 mt-4">
+          <div class="col-12">
+            <button class="btn btn-dark w-100 py-2 fw-semibold" data-bs-dismiss="modal" style="border-radius: 10px;">
+              Đóng
+            </button>
+          </div>
+        </div>
 
       </div>
     </div>
@@ -1092,6 +1146,11 @@ const formatPrice = (val) => val?.toLocaleString('vi-VN')
   align-items: center;
   justify-content: center;
 } */
+ .room-list-scroll {
+  max-height: 300px;      /* chỉnh theo UI */
+  overflow-y: auto;
+  padding-right: 6px;    /* tránh che nội dung khi có scrollbar */
+}
  .search-group {
   border-radius: 14px;
   overflow: hidden;

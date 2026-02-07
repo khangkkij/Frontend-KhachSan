@@ -207,7 +207,7 @@ watch(
                   type="number" 
                   min="1" 
                   class="form-control border-0 border-bottom rounded-0 shadow-none" 
-                  placeholder="Số lượng trẻ em tối đa"
+                  placeholder="Số lượng trẻ em"
                 />
               </div>
             </div>
@@ -220,7 +220,7 @@ watch(
                   type="number" 
                   min="1" 
                   class="form-control border-0 border-bottom rounded-0 shadow-none" 
-                  placeholder="Số lượng người lớn tối đa"
+                  placeholder="Số lượng người lớn"
                 />
               </div>
             </div>

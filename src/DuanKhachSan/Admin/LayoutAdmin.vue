@@ -28,7 +28,7 @@
         </router-link>
 
         <router-link to="/admin/loai-phong" class="menu-item" active-class="active">
-          <i class="bx bx-category icon"></i> Loại phòng
+          <i class="bx bx-category icon"></i> Danh mục
         </router-link>
 
         <router-link to="/admin/hoa-don" class="menu-item" active-class="active">

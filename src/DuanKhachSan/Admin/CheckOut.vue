@@ -148,37 +148,72 @@
         <div class="card card-custom">
           <div class="card-body">
             <h6 class="fw-bold mb-3">5. Chốt hóa đơn</h6>
+            <!-- <div v-if="hasDeposit" class="mb-3">
+              <label class="form-label">Áp dụng tiền cọc</label>
+              <div class="d-flex gap-3">
+                <div class="form-check">
+                  <input
+                    class="form-check-input"
+                    type="radio"
+                    id="applyDepositYes"
+                    :value="true"
+                    v-model="applyDeposit"
+                  />
+                  <label class="form-check-label" for="applyDepositYes">Khấu trừ tiền cọc</label>
+                </div>
+                <div class="form-check">
+                  <input
+                    class="form-check-input"
+                    type="radio"
+                    id="applyDepositNo"
+                    :value="false"
+                    v-model="applyDeposit"
+                  />
+                  <label class="form-check-label" for="applyDepositNo">Thanh toán 100%</label>
+                </div>
+              </div>
+            </div> -->
             <div class="summary">
-              <div class="d-flex justify-content-between">
-                <span>Tiền phòng</span>
-                <span class="fw-semibold">{{ formatCurrency(roomTotal) }}</span>
-              </div>
-              <div class="d-flex justify-content-between">
-                <span>Dịch vụ</span>
-                <span class="fw-semibold">{{ formatCurrency(serviceTotal) }}</span>
-              </div>
-              <div class="d-flex justify-content-between text-danger">
-                <span>Phụ thu</span>
-                <span class="fw-semibold">{{ formatCurrency(totalSurcharge) }}</span>
-              </div>
-              <div class="d-flex justify-content-between text-success" v-if="voucherDiscount > 0">
-                <span>Voucher</span>
-                <span class="fw-semibold">-{{ formatCurrency(voucherDiscount) }}</span>
-              </div>
-              <div class="d-flex justify-content-between text-primary" v-if="depositAmount > 0">
-                <span>Đặt cọc</span>
-                <span class="fw-semibold">-{{ formatCurrency(depositAmount) }}</span>
-              </div>
-              <div class="divider"></div>
-              <div class="d-flex justify-content-between total-row">
-                <span>Thành tiền</span>
-                <span>{{ formatCurrency(grandTotal) }}</span>
-              </div>
-              <div class="d-flex justify-content-between text-danger" v-if="refundAmount > 0">
-                <span>Hoàn tiền lại khách</span>
-                <span class="fw-semibold">{{ formatCurrency(refundAmount) }}</span>
-              </div>
-            </div>
+  <div class="d-flex justify-content-between">
+    <span>Tiền phòng</span>
+    <span class="fw-semibold">{{ formatCurrency(roomTotal) }}</span>
+  </div>
+  <div class="d-flex justify-content-between">
+    <span>Dịch vụ</span>
+    <span class="fw-semibold">{{ formatCurrency(serviceTotal) }}</span>
+  </div>
+  <div class="d-flex justify-content-between text-danger" v-if="totalSurcharge > 0">
+    <span>Phụ thu</span>
+    <span class="fw-semibold">{{ formatCurrency(totalSurcharge) }}</span>
+  </div>
+  <div class="d-flex justify-content-between text-success" v-if="voucherDiscount > 0">
+    <span>Voucher</span>
+    <span class="fw-semibold">-{{ formatCurrency(voucherDiscount) }}</span>
+  </div>
+
+  <div class="d-flex justify-content-between text-primary" v-if="depositAmount > 0">
+    <span>Đã thanh toán (Cọc/TT)</span>
+    <span class="fw-semibold">-{{ formatCurrency(depositAmount) }}</span>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="d-flex justify-content-between total-row">
+    <span>Cần thu thêm</span>
+    <span>{{ formatCurrency(grandTotal) }}</span>
+  </div>
+  
+  <div v-if="grandTotal === 0 && depositAmount > 0" class="text-end mt-1">
+     <small class="text-success fst-italic">
+        <i class='bx bx-check-circle'></i> Khách đã thanh toán đủ.
+     </small>
+  </div>
+  <div v-else-if="depositAmount >= roomTotal && grandTotal > 0" class="text-end mt-1">
+    <small class="text-warning fst-italic">
+      (Khách đã trả đủ tiền phòng, chỉ thu thêm dịch vụ/phụ thu)
+    </small>
+  </div>
+</div>
 
             <div class="mt-3">
               <label class="form-label">Phương thức thanh toán</label>
@@ -207,7 +242,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import axios from 'axios';
 
 const roomSearch = ref('');
@@ -225,6 +260,7 @@ const checkoutDetail = ref(null);
 const serviceCatalog = ref([]);
 const extraServices = ref([{ maDichVu: null, soLuong: 1 }]);
 const voucherDiscount = ref(0);
+const applyDeposit = ref(false);
 
 const API_BASE = import.meta.env.VITE_API_URL;
 const API_OCCUPIED = `${API_BASE}/api/admin/CheckInOut/rooms-occupied`;
@@ -287,16 +323,18 @@ const selectedRoom = computed(() =>
 
 const roomTotal = computed(() => {
   if (!checkoutDetail.value) return 0;
+  
   const checkIn = new Date(checkoutDetail.value.ngayNhan);
-  const now = new Date();
-  const [hours, minutes] = (actualCheckoutTime.value || '12:00').split(':').map(Number);
-  if (!Number.isNaN(hours) && !Number.isNaN(minutes)) {
-    now.setHours(hours, minutes, 0, 0);
-  }
-  const diffDays = Math.max(1, Math.ceil((now.setHours(0, 0, 0, 0) - checkIn.setHours(0, 0, 0, 0)) / 86400000));
+  
+  // SỬA: Lấy ngày trả dự kiến trong DB (thay vì new Date() là ngày hiện tại)
+  const scheduledDate = new Date(checkoutDetail.value.ngayTra);
+  
+  // Tính số ngày chênh lệch
+  const diffTime = scheduledDate - checkIn;
+  const diffDays = Math.max(1, Math.ceil(diffTime / (1000 * 60 * 60 * 24))); // Quy đổi ra ngày
+  
   return diffDays * (checkoutDetail.value.giaDat || 0);
 });
-
 const serviceTotal = computed(() => {
   if (!checkoutDetail.value) return 0;
   const used = checkoutDetail.value.dichVu?.reduce((sum, s) => sum + (s.thanhTien || 0), 0) || 0;
@@ -313,15 +351,28 @@ const lateFee = computed(() => {
 });
 const totalSurcharge = computed(() => lateFee.value + (extraFee.value || 0));
 
+// Tính tiền cần thu thêm (Logic: Cọc chỉ trừ tiền phòng, Dịch vụ tính riêng)
+// Tính tiền cần thu thêm
 const grandTotal = computed(() => {
-  const total =
-    roomTotal.value +
-    serviceTotal.value +
-    totalSurcharge.value -
-    (voucherDiscount.value || 0) -
-    (depositAmount.value || 0);
-  return total > 0 ? total : 0;
+  // 1. Tổng hóa đơn
+  const totalBill = 
+    roomTotal.value + 
+    serviceTotal.value + 
+    totalSurcharge.value - 
+    (voucherDiscount.value || 0);
+
+  // 2. Tổng đã đóng
+  const paid = depositAmount.value || 0;
+
+  // 3. Số tiền còn lại = Tổng hóa đơn - Đã đóng
+  const remaining = totalBill - paid;
+
+  // Nếu còn lại > 0 thì thu tiếp (đây chính là 70% còn thiếu + dịch vụ)
+  // Nếu còn lại <= 0 (đã đóng đủ hoặc dư) thì bằng 0.
+  return remaining > 0 ? remaining : 0;
 });
+
+
 
 const refundAmount = computed(() => {
   const total =
@@ -329,7 +380,7 @@ const refundAmount = computed(() => {
     serviceTotal.value +
     totalSurcharge.value -
     (voucherDiscount.value || 0) -
-    (depositAmount.value || 0);
+    (effectiveDeposit.value || 0);
   return total < 0 ? Math.abs(total) : 0;
 });
 
@@ -387,6 +438,7 @@ const finalizeCheckout = () => {
     thoiGianTraThucTe: now.toISOString(),
     voucherCode: voucherCode.value || null,
     hinhThucThanhToan: paymentMethod.value,
+    suDungTienCoc: applyDeposit.value,
     extraServices: extraServices.value
       .filter((s) => s.maDichVu && s.soLuong > 0)
       .map((s) => ({ maDichVu: s.maDichVu, soLuong: s.soLuong }))
@@ -428,6 +480,12 @@ const formatCurrency = (value) =>
 const formatDate = (value) => (value ? new Date(value).toLocaleDateString('vi-VN') : '');
 
 const depositAmount = computed(() => checkoutDetail.value?.tienCoc || 0);
+const hasDeposit = computed(() => depositAmount.value > 0);
+const effectiveDeposit = computed(() => (applyDeposit.value ? depositAmount.value : 0));
+
+watch(depositAmount, (val) => {
+  applyDeposit.value = val > 0;
+});
 
 const addExtraService = () => {
   extraServices.value.push({ maDichVu: null, soLuong: 1 });

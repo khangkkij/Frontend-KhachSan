@@ -21,6 +21,9 @@ import Voucher from '@/DuanKhachSan/KhachHang/Profile/Voucher.vue'
 import PhongDaLuu from '@/DuanKhachSan/KhachHang/Profile/PhongDaLuu.vue'
 import voucher from '@/DuanKhachSan/KhachHang/voucher.vue'
 import ProfileSidebar from '@/DuanKhachSan/KhachHang/Profile/ProfileSidebar.vue'
+import XacThucGamil from '@/DuanKhachSan/KhachHang/XacThucGamil.vue'
+import LichSuDanhGia from  '@/DuanKhachSan/KhachHang/Profile/LichSuDanhGia.vue'
+
 // 3. Import Admin
 import LayoutAdmin from '@/DuanKhachSan/Admin/LayoutAdmin.vue'
 import Dashboard from '@/DuanKhachSan/Admin/Dashboard.vue'
@@ -31,6 +34,8 @@ import QuanLyNhanSu from '@/DuanKhachSan/Admin/QuanLyNhanSu.vue'
 import QuanLyDichVu from '@/DuanKhachSan/Admin/QuanLyDichVu.vue'
 import QuanLyKhachHang from '@/DuanKhachSan/Admin/QuanLyKhachHang.vue'
 import QuanLyHoaDon from '@/DuanKhachSan/Admin/QuanLyHoaDon.vue'
+import CheckIn from '@/DuanKhachSan/Admin/CheckIn.vue'
+import CheckOut from '@/DuanKhachSan/Admin/CheckOut.vue'
 //4. Import NhanVien
 import LayoutNhanVien from '@/DuanKhachSan/NhanVien/LayoutNhanVien.vue';
 import DashboardNhanVien from '@/DuanKhachSan/NhanVien/Views/Dashboard.vue';
@@ -56,6 +61,8 @@ const router = createRouter({
         { path: 'payment', name: 'payment', component: ThanhToan },
         { path: 'xac-nhan-dat-phong', name: 'confirm-booking', component: XacNhanDatPhong },
         { path: 'voucher', name: 'voucher', component: voucher },
+        { path: 'xac-thuc-gmail', name: 'XacThucGamil', component: XacThucGamil },
+        { path: 'lich-su-danh-gia', name: 'review-history', component: LichSuDanhGia },
         // Profile Routes
         { path: 'ProfileSidebar', name: 'ProfileSidebar', component: ProfileSidebar },
         { path: 'profile', name: 'profile', component: HoSo },
@@ -110,6 +117,16 @@ const router = createRouter({
           path: 'hoa-don',
           name: 'admin-hoa-don',
           component: QuanLyHoaDon
+        },
+        {
+          path: 'check-in',
+          name: 'admin-check-in',
+          component: CheckIn
+        },
+        {
+          path: 'check-out',
+          name: 'admin-check-out',
+          component: CheckOut
         }
       ]
     },

@@ -26,6 +26,9 @@
             <router-link to="/saved" class="nav-link" :class="{ active: currentPage === 'saved' }">
                 <i class="fa fa-heart"></i> Phòng đã lưu
             </router-link>
+            <router-link to="/lich-su-danh-gia" class="nav-link" :class="{ active: activePage === 'review-history' }">
+                <i class="fa fa-star"></i> Lịch sử đánh giá
+            </router-link>
             
             <hr class="my-3 opacity-10">
             

@@ -16,7 +16,7 @@
         <div class="container my-5">
             <div class="row">
                 <div class="col-lg-4 mb-4">
-                    <ProfileSidebar :user="{ name: 'Nguyễn Tấn Thành' }" activePage="history" />
+                    <ProfileSidebar :user="{ name: user.name }" currentPage="history" />
                 </div>
 
                 <div class="col-lg-8">
@@ -41,17 +41,12 @@
                                         <td>{{ order.date }}</td>
                                         <td class="fw-bold">{{ order.price }}</td>
                                         <td class="text-center">
-                                            <span :class="getStatusBadge(order.status).class">
-                                                {{ getStatusBadge(order.status).text }}
+                                            <span :class="getStatusBadge(order.statusKey).class">
+                                                {{ getStatusBadge(order.statusKey).text }}
                                             </span>
                                         </td>
                                         <td>
                                             <div class="action-group">
-                                                <button v-if="order.status === 'pending'" class="btn-action btn-cancel"
-                                                    @click="openCancelModal(order)">
-                                                    <i class="fa fa-times"></i> Hủy
-                                                </button>
-
                                                 <router-link :to="'/order-detail/' + order.id"
                                                     class="btn-action btn-detail">
                                                     <i class="fa fa-eye"></i> Xem
@@ -59,81 +54,60 @@
                                             </div>
                                         </td>
                                     </tr>
+                                    <tr v-if="!isLoading && orders.length === 0">
+                                        <td colspan="6" class="text-center text-muted py-4">
+                                            Không có lịch sử đặt phòng
+                                        </td>
+                                    </tr>
                                 </tbody>
                             </table>
                         </div>
+                        <div v-if="isLoading" class="text-muted mt-3">Đang tải dữ liệu...</div>
+                        <div v-if="loadError" class="text-danger mt-2">{{ loadError }}</div>
                     </div>
                 </div>
             </div>
-        </div>
-
-        <div v-if="showModal" class="modal-backdrop fade show"></div>
-        <div v-if="showModal" class="modal fade show d-block" tabindex="-1">
-            <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content" style="border-radius: 15px; border: none;">
-                    <div class="modal-header border-0 pb-0">
-                        <h5 class="modal-title fw-bold text-danger">Xác Nhận Hủy Đơn {{ selectedOrder?.code }}</h5>
-                        <button type="button" class="btn-close" @click="closeModal"></button>
-                    </div>
-                    <div class="modal-body">
-                        <p class="mb-3 text-muted">Vui lòng chọn lý do hủy đơn:</p>
-
-                        <div v-for="reason in reasons" :key="reason.id" class="reason-option">
-                            <input class="form-check-input" type="radio" :value="reason.text" v-model="cancelReason"
-                                :id="reason.id">
-                            <label class="form-check-label w-100" :for="reason.id">{{ reason.text }}</label>
-                        </div>
-
-                        <p v-if="errorMsg" class="text-danger small mt-2">
-                            <i class="fa fa-exclamation-circle"></i> {{ errorMsg }}
-                        </p>
-                    </div>
-                    <div class="modal-footer border-0 pt-0">
-                        <button type="button" class="btn btn-light rounded-pill px-4" @click="closeModal">Đóng</button>
-                        <button type="button" class="btn btn-danger rounded-pill px-4" @click="confirmCancel">Xác Nhận
-                            Hủy</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div :class="['custom-toast', { show: showToast }]">
-            <i class="fa fa-check-circle"></i> Đã hủy đơn hàng thành công!
         </div>
 
     </div>
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
+import axios from 'axios';
 // 1. Import Component Sidebar
 import ProfileSidebar from './ProfileSidebar.vue';
 
-// Dữ liệu Đơn hàng
-const orders = ref([
-    { id: 1, code: '#BK001', name: 'Luxury Villa Da Lat', date: '20/10/2023', price: '5.000.000đ', status: 'completed' },
-    { id: 2, code: '#BK002', name: 'Sea View Apartment', date: '15/11/2023', price: '3.200.000đ', status: 'pending' },
-    { id: 3, code: '#BK003', name: 'Mountain Cabin', date: '01/12/2023', price: '1.500.000đ', status: 'cancelled' },
-]);
+const API = import.meta.env.VITE_API_URL;
+const user = ref({ name: 'Khách hàng' });
+const orders = ref([]);
+const isLoading = ref(false);
+const loadError = ref('');
 
-// Lý do hủy
-const reasons = [
-    { id: 'r1', text: 'Thay đổi kế hoạch di chuyển' },
-    { id: 'r2', text: 'Tìm được chỗ khác giá tốt hơn' },
-    { id: 'r3', text: 'Lý do cá nhân / Sức khỏe' },
-    { id: 'r4', text: 'Khác' }
-];
+const formatCurrency = (value) => {
+    return Number(value || 0).toLocaleString('vi-VN') + 'đ';
+};
 
-// State quản lý Modal & Toast
-const showModal = ref(false);
-const showToast = ref(false);
-const selectedOrder = ref(null);
-const cancelReason = ref('');
-const errorMsg = ref('');
+const formatDate = (value) => {
+    if (!value) return '---';
+    return new Date(value).toLocaleDateString('vi-VN');
+};
+
+const mapStatusKey = (status) => {
+    const s = (status || '').toString().toLowerCase().trim();
+    if (s.includes('huy')) return 'cancelled';
+    if (s.includes('traphong') || s.includes('da thanh toan') || s.includes('dathanhtoan')) return 'completed';
+    if (s.includes('dango') || s.includes('dang o')) return 'staying';
+    if (s.includes('chonhanphong') || s.includes('cho nhan phong')) return 'ready';
+    if (s.includes('choxacnhan') || s.includes('cho xac nhan')) return 'pending';
+    return 'pending';
+};
 
 // Helper: Badge trạng thái
-const getStatusBadge = (status) => {
-    switch (status) {
+const getStatusBadge = (statusKey) => {
+    switch (statusKey) {
+        case 'ready': return { class: 'badge-status bg-info-light', text: 'Chờ nhận phòng' };
+        case 'staying': return { class: 'badge-status bg-primary-light', text: 'Đang ở' };
         case 'completed': return { class: 'badge-status bg-success-light', text: 'Hoàn thành' };
         case 'pending': return { class: 'badge-status bg-warning-light', text: 'Đang xử lý' };
         case 'cancelled': return { class: 'badge-status bg-danger-light', text: 'Đã hủy' };
@@ -141,30 +115,41 @@ const getStatusBadge = (status) => {
     }
 };
 
-// Các hàm xử lý Modal
-const openCancelModal = (order) => {
-    selectedOrder.value = order;
-    cancelReason.value = '';
-    errorMsg.value = '';
-    showModal.value = true;
+const fetchProfile = async () => {
+    try {
+        const res = await axios.get(`${API}/api/KhachHang/profile`, { withCredentials: true });
+        user.value = { name: res.data?.hoVaTen || 'Khách hàng' };
+    } catch (err) {
+        console.error('Lỗi fetch profile:', err);
+    }
 };
 
-const closeModal = () => {
-    showModal.value = false;
+const fetchOrders = async () => {
+    isLoading.value = true;
+    loadError.value = '';
+    try {
+        const res = await axios.get(`${API}/api/DatPhong/lich-su`, { withCredentials: true });
+        const data = Array.isArray(res.data) ? res.data : [];
+        orders.value = data.map((item) => ({
+            id: item.maDatPhong,
+            code: `#BK${item.maDatPhong}`,
+            name: item.tenPhong || 'Phòng',
+            date: formatDate(item.ngayNhan),
+            price: formatCurrency(item.tongTien),
+            statusKey: mapStatusKey(item.trangThai),
+            statusRaw: item.trangThai
+        }));
+    } catch (err) {
+        loadError.value = err.response?.data || 'Không tải được lịch sử đặt phòng.';
+    } finally {
+        isLoading.value = false;
+    }
 };
 
-const confirmCancel = () => {
-    if (!cancelReason.value) {
-        errorMsg.value = 'Vui lòng chọn một lý do để tiếp tục.';
-        return;
-    }
-    if (selectedOrder.value) {
-        selectedOrder.value.status = 'cancelled';
-    }
-    closeModal();
-    showToast.value = true;
-    setTimeout(() => { showToast.value = false; }, 3000);
-};
+onMounted(() => {
+    fetchProfile();
+    fetchOrders();
+});
 </script>
 
 <style scoped>
@@ -186,6 +171,16 @@ const confirmCancel = () => {
 .bg-danger-light {
     background: #f8d7da;
     color: #721c24;
+}
+
+.bg-info-light {
+    background: #cff4fc;
+    color: #055160;
+}
+
+.bg-primary-light {
+    background: #cfe2ff;
+    color: #084298;
 }
 
 /* ĐÃ XÓA CSS SIDEBAR VÌ ĐÃ CÓ TRONG COMPONENT */

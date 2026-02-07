@@ -60,6 +60,9 @@
 </template>
 
 <script>
+import axios from 'axios';
+import Swal from 'sweetalert2';
+
 export default {
     name: 'QuenMatKhau',
     data() {
@@ -68,10 +71,39 @@ export default {
         }
     },
     methods: {
-        handleReset() {
-            console.log("Yêu cầu reset cho email:", this.email);
-            // Chuyển hướng sang trang nhập OTP
-            this.$router.push('/xac-nhan-otp');
+        async handleReset() {
+            // Hiển thị loading
+            Swal.fire({
+                title: 'Đang xử lý...',
+                allowOutsideClick: false,
+                didOpen: () => { Swal.showLoading() }
+            });
+
+            try {
+                const apiUrl = `${import.meta.env.VITE_API_URL}/api/Login/forgot-password`;
+                // Gửi email qua Query String như Backend yêu cầu
+                await axios.post(apiUrl, null, { params: { email: this.email } });
+
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Thành công',
+                    text: 'Mã xác thực đã được gửi vào Email của bạn!',
+                    confirmButtonColor: '#f35525'
+                }).then(() => {
+                    // Chuyển sang trang nhập OTP và truyền email theo kèm
+                    this.$router.push({
+                        path: '/xac-nhan-otp',
+                        query: { email: this.email }
+                    });
+                });
+            } catch (error) {
+                const msg = error.response?.data?.message || "Email không tồn tại trong hệ thống!";
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Lỗi',
+                    text: msg
+                });
+            }
         }
     }
 }

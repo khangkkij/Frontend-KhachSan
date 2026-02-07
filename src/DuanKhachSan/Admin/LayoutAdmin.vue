@@ -27,6 +27,14 @@
           <i class="bx bx-building-house icon"></i> Phòng
         </router-link>
 
+        <router-link to="/admin/check-in" class="menu-item" active-class="active">
+          <i class="bx bx-log-in icon"></i> Check-in
+        </router-link>
+
+        <router-link to="/admin/check-out" class="menu-item" active-class="active">
+          <i class="bx bx-log-out icon"></i> Check-out
+        </router-link>
+
         <router-link to="/admin/loai-phong" class="menu-item" active-class="active">
           <i class="bx bx-category icon"></i> Loại phòng
         </router-link>

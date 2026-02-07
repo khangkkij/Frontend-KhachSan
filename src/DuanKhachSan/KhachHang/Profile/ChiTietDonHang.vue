@@ -17,7 +17,7 @@
         <div class="container my-5">
             <div class="row">
                 <div class="col-lg-4 mb-4">
-                    <ProfileSidebar :user="user" activePage="history" />
+                    <ProfileSidebar :user="user" currentPage="history" />
                 </div>
 
                 <div class="col-lg-8">
@@ -27,8 +27,8 @@
                                 <h4 class="mb-1">Đơn hàng {{ order.code }}</h4>
                                 <p class="text-muted small mb-0">Ngày đặt: {{ order.createdDate }}</p>
                             </div>
-                            <span :class="getStatusBadge(order.status).class">
-                                {{ getStatusBadge(order.status).text }}
+                            <span :class="getStatusBadge(order.statusKey).class">
+                                {{ getStatusBadge(order.statusKey).text }}
                             </span>
                         </div>
 
@@ -50,13 +50,15 @@
 
                         <h5 class="mb-3 section-sub-title">Chi Tiết Phòng</h5>
                         <div class="room-preview">
-                            <img :src="order.roomImage" alt="Room">
+                            <img :src="order.roomImage || fallbackImage" alt="Room">
                             <div class="room-info">
                                 <h6>{{ order.roomName }}</h6>
-                                <p class="small text-muted mb-1"><i class="fa fa-map-marker-alt"></i> {{ order.location
-                                    }}</p>
-                                <p class="small mb-0"><strong>{{ order.guests }}</strong> Khách - <strong>{{
-                                        order.bedrooms }}</strong> Phòng ngủ</p>
+                                <p v-if="order.location" class="small text-muted mb-1">
+                                    <i class="fa fa-map-marker-alt"></i> {{ order.location }}
+                                </p>
+                                <p v-if="order.guests || order.bedrooms" class="small mb-0">
+                                    <strong>{{ order.guests }}</strong> Khách - <strong>{{ order.bedrooms }}</strong> Phòng ngủ
+                                </p>
                             </div>
                         </div>
 
@@ -112,6 +114,8 @@
                             </a>
                         </div>
                     </div>
+                    <div v-if="isLoading" class="text-muted mt-3">Đang tải dữ liệu...</div>
+                    <div v-if="loadError" class="text-danger mt-2">{{ loadError }}</div>
                 </div>
             </div>
         </div>
@@ -121,41 +125,70 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
+import axios from 'axios';
 import ProfileSidebar from './ProfileSidebar.vue';
 
 const route = useRoute();
 const orderId = route.params.id;
+const API = import.meta.env.VITE_API_URL;
+const fallbackImage = '/assets/images/property-01.jpg';
 
-// Dữ liệu User
 const user = ref({
-    name: 'Nguyễn Tấn Thành',
-    phone: '0987 654 321',
-    email: 'thanh@example.com'
+    name: 'Khách hàng',
+    phone: '',
+    email: ''
 });
 
-// Dữ liệu Đơn hàng
 const order = ref({
-    id: 1,
-    code: '#BK001',
-    createdDate: '15/10/2023 - 14:30 PM',
-    status: 'completed',
-    roomName: 'Luxury Villa Da Lat - View Đồi Thông',
-    roomImage: '/assets/images/property-01.jpg',
-    location: 'Phường 10, TP. Đà Lạt',
-    guests: 2,
-    bedrooms: 1,
-    checkIn: '20/10/2023',
-    checkOut: '22/10/2023',
-    totalNights: 2,
-    roomPrice: '4.500.000đ',
-    serviceFee: '500.000đ',
-    discount: '-0đ',
-    totalPrice: '5.000.000đ'
+    code: '---',
+    createdDate: '---',
+    statusKey: 'pending',
+    roomName: '---',
+    roomImage: '',
+    location: '',
+    guests: '',
+    bedrooms: '',
+    checkIn: '---',
+    checkOut: '---',
+    totalNights: 0,
+    roomPrice: '---',
+    serviceFee: '0đ',
+    discount: '0đ',
+    totalPrice: '0đ'
 });
+
+const isLoading = ref(false);
+const loadError = ref('');
+
+const formatCurrency = (value) => {
+    return Number(value || 0).toLocaleString('vi-VN') + 'đ';
+};
+
+const formatDate = (value) => {
+    if (!value) return '---';
+    return new Date(value).toLocaleDateString('vi-VN');
+};
+
+const formatDateTime = (value) => {
+    if (!value) return '---';
+    return new Date(value).toLocaleString('vi-VN');
+};
+
+const mapStatusKey = (status) => {
+    const s = (status || '').toString().toLowerCase().trim();
+    if (s.includes('huy')) return 'cancelled';
+    if (s.includes('traphong') || s.includes('da thanh toan') || s.includes('dathanhtoan')) return 'completed';
+    if (s.includes('dango') || s.includes('dang o')) return 'staying';
+    if (s.includes('chonhanphong') || s.includes('cho nhan phong')) return 'ready';
+    if (s.includes('choxacnhan') || s.includes('cho xac nhan')) return 'pending';
+    return 'pending';
+};
 
 // Helper: Badge trạng thái
-const getStatusBadge = (status) => {
-    switch (status) {
+const getStatusBadge = (statusKey) => {
+    switch (statusKey) {
+        case 'ready': return { class: 'order-status bg-info-light', text: 'Chờ nhận phòng' };
+        case 'staying': return { class: 'order-status bg-primary-light', text: 'Đang ở' };
         case 'completed': return { class: 'order-status bg-success-light', text: 'Hoàn thành' };
         case 'pending': return { class: 'order-status bg-warning-light', text: 'Đang xử lý' };
         case 'cancelled': return { class: 'order-status bg-danger-light', text: 'Đã hủy' };
@@ -163,14 +196,50 @@ const getStatusBadge = (status) => {
     }
 };
 
-onMounted(() => {
-    if (orderId == 2) {
-        order.value.code = '#BK002';
-        order.value.roomName = 'Sea View Apartment';
-        order.value.status = 'pending';
-        order.value.totalPrice = '3.200.000đ';
+const fetchOrderDetail = async () => {
+    if (!orderId) return;
+    isLoading.value = true;
+    loadError.value = '';
+    try {
+        const res = await axios.get(`${API}/api/DatPhong/lich-su/${orderId}`, { withCredentials: true });
+        const data = res?.data || {};
+
+        user.value = {
+            name: data.hoVaTen || 'Khách hàng',
+            phone: data.sdt || '',
+            email: data.email || ''
+        };
+
+        const roomName = [data.tenBienThe, data.tenLoai].filter(Boolean).join(' - ') || 'Phòng';
+        const roomImage = data.anhDaiDien ? `${API}/${data.anhDaiDien}` : '';
+        const totalPrice = data.tongTienPhaiTra ?? data.tongTienGoc ?? 0;
+        const discount = data.soTienGiam ? `-${formatCurrency(data.soTienGiam)}` : '0đ';
+
+        order.value = {
+            code: `#BK${data.maDatPhong || orderId}`,
+            createdDate: formatDateTime(data.ngayDat),
+            statusKey: mapStatusKey(data.trangThai),
+            roomName,
+            roomImage,
+            location: '',
+            guests: '',
+            bedrooms: '',
+            checkIn: formatDate(data.ngayNhan),
+            checkOut: formatDate(data.ngayTra),
+            totalNights: data.soDem || 0,
+            roomPrice: data.giaDat != null ? formatCurrency(data.giaDat) : '---',
+            serviceFee: '0đ',
+            discount,
+            totalPrice: formatCurrency(totalPrice)
+        };
+    } catch (err) {
+        loadError.value = err.response?.data || 'Không tải được chi tiết đặt phòng.';
+    } finally {
+        isLoading.value = false;
     }
-});
+};
+
+onMounted(fetchOrderDetail);
 </script>
 
 <style scoped>
@@ -179,6 +248,8 @@ onMounted(() => {
 .bg-success-light { background: #d4edda; color: #155724; }
 .bg-warning-light { background: #fff3cd; color: #856404; }
 .bg-danger-light { background: #f8d7da; color: #721c24; }
+.bg-info-light { background: #cff4fc; color: #055160; }
+.bg-primary-light { background: #cfe2ff; color: #084298; }
 
 /* Main Card */
 .main-card {

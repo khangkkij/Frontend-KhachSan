@@ -154,19 +154,31 @@
         <div class="card card-custom mb-4">
           <div class="card-body">
           <h6 class="fw-bold mb-3">4. Gán phòng</h6>
-          <div v-if="!isWalkIn && pendingDetails.length > 1" class="mb-3">
-            <label class="form-label">Chi tiết đặt phòng</label>
-            <select class="form-select" v-model="selectedDetailId">
-              <option :value="null">Chọn chi tiết</option>
-              <option
-                v-for="detail in pendingDetails"
-                :key="detail.maCtdp"
-                :value="detail.maCtdp"
+          <template v-if="!isWalkIn">
+            <div v-if="assignmentSlots.length" class="d-flex flex-column gap-3">
+              <div
+                v-for="slot in assignmentSlots"
+                :key="slot.key"
+                class="info-box"
               >
-                {{ detail.maCtdp }} · {{ formatDate(detail.ngayNhan) }} - {{ formatDate(detail.ngayTra) }}
-              </option>
-            </select>
-          </div>
+                <label class="form-label fw-semibold mb-2">
+                  {{ slot.label }}
+                </label>
+                <select class="form-select" v-model="assignedRoomsBySlot[slot.key]">
+                  <option :value="null">Chọn phòng phù hợp</option>
+                  <option
+                    v-for="room in getRoomOptionsForSlot(slot.key)"
+                    :key="getRoomId(room)"
+                    :value="getRoomId(room)"
+                  >
+                    Phòng {{ room.soPhong || room.number }} - {{ room.tenBienThe || room.type || room.maBienThePhong }}
+                  </option>
+                </select>
+              </div>
+            </div>
+            <div v-else class="text-muted">Booking này không còn chi tiết chờ gán phòng.</div>
+          </template>
+          <template v-else>
             <select class="form-select" v-model="selectedRoomId">
               <option :value="null">Chọn phòng phù hợp</option>
             <option
@@ -183,6 +195,7 @@
               Loại: {{ selectedRoom.tenBienThe || selectedRoom.type || selectedRoom.maBienThePhong }}
             </small>
             </div>
+          </template>
           </div>
         </div>
 
@@ -191,7 +204,7 @@
             <h6 class="fw-bold mb-3">5. Thu tiền cọc (Deposit)</h6>
             <div class="input-group mb-3">
               <span class="input-group-text">VND</span>
-              <input v-model.number="depositAmount" type="number" class="form-control" min="0" />
+              <input v-model="depositAmount" type="text" inputmode="numeric" class="form-control" placeholder="Nhập số tiền cọc" />
             </div>
             <div class="d-flex gap-3">
               <div class="form-check">
@@ -223,12 +236,20 @@
                 <span class="fw-semibold">{{ guestForm.name || 'Chưa nhập' }}</span>
               </div>
               <div class="d-flex justify-content-between">
-                <span>Phòng:</span>
-                <span class="fw-semibold">{{ selectedRoom ? selectedRoom.number : 'Chưa chọn' }}</span>
-              </div>
+  <span>Phòng:</span>
+  <span class="fw-semibold">
+    <template v-if="isWalkIn">
+      {{ selectedRoom ? (selectedRoom.soPhong || selectedRoom.number) : 'Chưa chọn' }}
+      {{ selectedRoom ? ' - ' + (selectedRoom.tenBienThe || selectedRoom.type) : '' }}
+    </template>
+    <template v-else>
+      {{ selectedRoomsSummary.length ? selectedRoomsSummary.join(', ') : 'Chưa chọn' }}
+    </template>
+  </span>
+</div>
               <div class="d-flex justify-content-between">
                 <span>Tiền cọc:</span>
-                <span class="fw-semibold">{{ formatCurrency(depositAmount) }}</span>
+                <span class="fw-semibold">{{ formatCurrency(normalizedDepositAmount) }}</span>
               </div>
             </div>
             <button class="btn btn-primary w-100 mt-3" @click="confirmCheckIn">
@@ -257,6 +278,8 @@ const selectedBooking = ref(null);
 const selectedRoomId = ref(null);
 const selectedDetailId = ref(null);
 const depositAmount = ref(0);
+const assignedRoomsBySlot = reactive({});
+
 const depositMethod = ref('cash');
 const idImageUrl = ref('');
 const actionMessage = ref('');
@@ -323,6 +346,24 @@ const filteredBookings = computed(() => {
 const pendingDetails = computed(() =>
   selectedBooking.value?.chiTietDatPhongs?.filter((ct) => !ct.maPhong) || []
 );
+const assignmentSlots = computed(() => {
+  if (isWalkIn.value || !selectedBooking.value) return [];
+
+  if (pendingDetails.value.length > 0) {
+    return pendingDetails.value.map((detail, index) => ({
+      key: String(detail.maCtdp ?? `detail-${index}`),
+      maCtdp: detail.maCtdp ?? null,
+      label: `Chi tiết ${detail.maCtdp ?? index + 1} · ${formatDate(detail.ngayNhan)} - ${formatDate(detail.ngayTra)}`
+    }));
+  }
+
+  const needed = Number(selectedBooking.value?.soPhongCanGan || 0);
+  return Array.from({ length: needed }, (_, index) => ({
+    key: `slot-${index + 1}`,
+    maCtdp: null,
+    label: `Phòng cần gán #${index + 1}`
+  }));
+});
 
 const availableRooms = computed(() => {
   if (isWalkIn.value) {
@@ -332,11 +373,79 @@ const availableRooms = computed(() => {
 });
 
 const selectedRoom = computed(() =>
-  availableRooms.value.find((r) => r.id === selectedRoomId.value || r.maPhong === selectedRoomId.value)
+  availableRooms.value.find((r) =>
+    String(r.id) === String(selectedRoomId.value) || String(r.maPhong) === String(selectedRoomId.value)
+  )
 );
+const getRoomId = (room) => room?.maPhong ?? room?.id ?? null;
+const getRoomById = (roomId) =>
+  availableRooms.value.find((r) => String(getRoomId(r)) === String(roomId));
+const getRoomOptionsForSlot = (slotKey) => {
+  const current = assignedRoomsBySlot[slotKey];
+  const used = new Set(
+    Object.entries(assignedRoomsBySlot)
+      .filter(([key, value]) => key !== String(slotKey) && value != null)
+      .map(([, value]) => String(value))
+  );
+  return availableRooms.value.filter((room) => {
+    const id = String(getRoomId(room));
+    return id === String(current) || !used.has(id);
+  });
+};
+const selectedRoomsSummary = computed(() =>
+  assignmentSlots.value
+    .map((slot) => {
+      const room = getRoomById(assignedRoomsBySlot[slot.key]);
+      if (!room) return null;
+      const roomNo = room.soPhong || room.number;
+      const roomType = room.tenBienThe || room.type || room.maBienThePhong;
+      return roomType ? `${roomNo} - ${roomType}` : `${roomNo}`;
+    })
+    .filter(Boolean)
+);
+
+const getBookingDepositAmount = (booking) => {
+  if (!booking) return 0;
+
+  const directCandidates = [
+    booking.daThanhToan,
+    booking.DaThanhToan,
+    booking.tienCoc,
+    booking.TienCoc,
+    booking.soTienCoc,
+    booking.SoTienCoc,
+    booking.depositAmount,
+    booking.DepositAmount
+  ];
+
+  for (const value of directCandidates) {
+    const parsed = normalizeAmount(value);
+    if (parsed > 0) return parsed;
+  }
+
+  if (Array.isArray(booking.thanhToans) && booking.thanhToans.length) {
+    const paid = booking.thanhToans.reduce((sum, item) => {
+      const status = String(item?.trangThai ?? item?.TrangThai ?? '').toLowerCase();
+      const amount = normalizeAmount(item?.soTien ?? item?.SoTien);
+      if (status === 'dathanhtoan' || status === 'dathanhcong') {
+        return sum + amount;
+      }
+      return sum;
+    }, 0);
+    if (paid > 0) return paid;
+  }
+
+  const estimatedTotal = normalizeAmount(booking.tongTienDuKien ?? booking.TongTienDuKien);
+  if (estimatedTotal > 0) {
+    return Math.round(estimatedTotal * 0.3);
+  }
+
+  return 0;
+};
 
 const selectBooking = (booking) => {
   selectedBooking.value = booking;
+  Object.keys(assignedRoomsBySlot).forEach((key) => delete assignedRoomsBySlot[key]);
   guestForm.name = booking.tenKhach || '';
   guestForm.phone = booking.sdt || '';
   guestForm.email = '';
@@ -345,6 +454,7 @@ const selectBooking = (booking) => {
   guestForm.note = '';
   actionMessage.value = '';
   errorMessage.value = '';
+  depositAmount.value = getBookingDepositAmount(booking);
   selectedRoomId.value = null;
   selectedDetailId.value = booking.chiTietDatPhongs?.find((ct) => !ct.maPhong)?.maCtdp || null;
 };
@@ -361,11 +471,11 @@ const handleFileChange = (event) => {
 const confirmCheckIn = async () => {
   actionMessage.value = '';
   errorMessage.value = '';
-  if (!selectedRoomId.value) {
-    errorMessage.value = 'Vui lòng chọn phòng.';
-    return;
-  }
   if (isWalkIn.value) {
+    if (!selectedRoomId.value) {
+      errorMessage.value = 'Vui lòng chọn phòng.';
+      return;
+    }
     if (!guestForm.name || !guestForm.phone) {
       errorMessage.value = 'Vui lòng nhập họ tên và số điện thoại.';
       return;
@@ -385,16 +495,16 @@ const confirmCheckIn = async () => {
         maPhong: selectedRoomId.value,
         ngayNhan: walkInDates.ngayNhan,
         ngayTra: walkInDates.ngayTra,
-        depositAmount: depositAmount.value || 0,
+        depositAmount: normalizedDepositAmount.value,
         depositMethod: depositMethod.value,
         ghiChu: guestForm.note || null
       };
       const res = await axios.post(API_WALKIN, payload);
       actionMessage.value = res.data?.message || 'Check-in walk-in thành công.';
-      if ((depositAmount.value || 0) > 0 && (depositMethod.value === 'vnpay' || depositMethod.value === 'momo')) {
+      if (normalizedDepositAmount.value > 0 && (depositMethod.value === 'vnpay' || depositMethod.value === 'momo')) {
         const payRes = await axios.post(API_CHECKIN_PAYMENT, {
           maDatPhong: res.data?.maDatPhong,
-          soTien: depositAmount.value,
+          soTien: normalizedDepositAmount.value,
           hinhThucThanhToan: depositMethod.value
         });
         const redirectUrl = payRes.data?.redirectUrl;
@@ -416,21 +526,34 @@ const confirmCheckIn = async () => {
     errorMessage.value = 'Vui lòng chọn booking.';
     return;
   }
+  const missingSlots = assignmentSlots.value.filter((slot) => !assignedRoomsBySlot[slot.key]);
+  if (missingSlots.length > 0) {
+    errorMessage.value = `Vui lòng chọn đủ phòng cho ${missingSlots.length} mục gán phòng.`;
+    return;
+  }
+  const chosenRoomIds = assignmentSlots.value.map((slot) => String(assignedRoomsBySlot[slot.key]));
+  if (new Set(chosenRoomIds).size !== chosenRoomIds.length) {
+    errorMessage.value = 'Mỗi chi tiết đặt phòng cần gán một phòng khác nhau.';
+    return;
+  }
   isSubmitting.value = true;
   try {
-    const payload = {
-      maDatPhong: selectedBooking.value.maDatPhong,
-      maPhong: selectedRoomId.value,
-      maCtdp: selectedDetailId.value,
-      depositAmount: depositAmount.value || 0,
-      depositMethod: depositMethod.value
-    };
-    const res = await axios.post(API_CHECKIN, payload);
-    actionMessage.value = res.data?.message || 'Check-in thành công.';
-    if ((depositAmount.value || 0) > 0 && (depositMethod.value === 'vnpay' || depositMethod.value === 'momo')) {
+    for (let i = 0; i < assignmentSlots.value.length; i += 1) {
+      const slot = assignmentSlots.value[i];
+      const payload = {
+        maDatPhong: selectedBooking.value.maDatPhong,
+        maPhong: assignedRoomsBySlot[slot.key],
+        maCtdp: slot.maCtdp,
+        depositAmount: i === 0 ? normalizedDepositAmount.value : 0,
+        depositMethod: depositMethod.value
+      };
+      await axios.post(API_CHECKIN, payload);
+    }
+    actionMessage.value = `Check-in thành công ${assignmentSlots.value.length} phòng.`;
+    if (normalizedDepositAmount.value > 0 && (depositMethod.value === 'vnpay' || depositMethod.value === 'momo')) {
       const payRes = await axios.post(API_CHECKIN_PAYMENT, {
         maDatPhong: selectedBooking.value.maDatPhong,
-        soTien: depositAmount.value,
+        soTien: normalizedDepositAmount.value,
         hinhThucThanhToan: depositMethod.value
       });
       const redirectUrl = payRes.data?.redirectUrl;
@@ -449,13 +572,24 @@ const confirmCheckIn = async () => {
 const formatCurrency = (value) =>
   new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value || 0);
 const formatDate = (value) => (value ? new Date(value).toLocaleDateString('vi-VN') : '');
+const normalizeAmount = (value) => {
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? value : 0;
+  }
+  const cleaned = String(value ?? '').replace(/[^\d-]/g, '');
+  const parsed = Number(cleaned);
+  return Number.isFinite(parsed) ? Math.max(0, parsed) : 0;
+};
+const normalizedDepositAmount = computed(() => normalizeAmount(depositAmount.value));
 
 watch(isWalkIn, (val) => {
   if (val) {
     selectedBooking.value = null;
+    Object.keys(assignedRoomsBySlot).forEach((key) => delete assignedRoomsBySlot[key]);
     searchQuery.value = '';
     selectedDetailId.value = null;
     selectedRoomId.value = null;
+    depositAmount.value = 0;
     fetchAvailableRooms();
     guestForm.name = '';
     guestForm.phone = '';

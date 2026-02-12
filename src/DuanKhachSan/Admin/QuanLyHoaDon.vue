@@ -101,7 +101,7 @@
                     <div class="avatar-wrapper me-2">
                         <img v-if="invoice.hinhAnhNhanVien" 
                              :src="getFullImageUrl(invoice.hinhAnhNhanVien)" 
-                             @error="handleImageError($event)"
+                             @error="handleImageError"
                              class="avatar-img" />
                         <div v-else class="avatar-initial-circle">
                             <img  
@@ -357,6 +357,12 @@ const getFullImageUrl = (imgName) => {
   if (imgName.startsWith('http')) return imgName;
   return `${IMG_URL}${imgName}`;
 };
+
+const handleImageError = (event) => {
+    event.target.onerror = null; // Ngăn lặp lại lỗi
+    event.target.src = getDefaultAvatar();
+};
+
 const getDefaultAvatar = () => `${API_URL}/images/avtDefault.jpg`;
 
 // --- LOGIC MÀU CHỨC VỤ (Đồng bộ trang Nhân sự) ---

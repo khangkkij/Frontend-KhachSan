@@ -36,6 +36,7 @@ import QuanLyKhachHang from '@/DuanKhachSan/Admin/QuanLyKhachHang.vue'
 import QuanLyHoaDon from '@/DuanKhachSan/Admin/QuanLyHoaDon.vue'
 import CheckIn from '@/DuanKhachSan/Admin/CheckIn.vue'
 import CheckOut from '@/DuanKhachSan/Admin/CheckOut.vue'
+import QuanLyDanhGia from '@/DuanKhachSan/Admin/QuanLyDanhGia.vue'
 //4. Import NhanVien
 import LayoutNhanVien from '@/DuanKhachSan/NhanVien/LayoutNhanVien.vue';
 import DashboardNhanVien from '@/DuanKhachSan/NhanVien/Views/Dashboard.vue';
@@ -127,6 +128,11 @@ const router = createRouter({
           path: 'check-out',
           name: 'admin-check-out',
           component: CheckOut
+        },
+         {
+          path: 'danh-gia',
+          name: 'admin-danh-gia',
+          component: QuanLyDanhGia
         }
       ]
     },

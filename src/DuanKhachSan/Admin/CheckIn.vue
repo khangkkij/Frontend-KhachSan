@@ -201,10 +201,13 @@
 
         <div class="card card-custom mb-4">
           <div class="card-body">
-            <h6 class="fw-bold mb-3">5. Thu tiền cọc (Deposit)</h6>
+            <h6 class="fw-bold mb-3">5. Thu thêm tiền cọc (nếu có)</h6>
+            <div v-if="!isWalkIn && selectedBooking" class="mb-2 small text-muted">
+              Khách đã thanh toán trước: <span class="fw-semibold text-primary">{{ formatCurrency(alreadyPaidAmount) }}</span>
+            </div>
             <div class="input-group mb-3">
               <span class="input-group-text">VND</span>
-              <input v-model="depositAmount" type="text" inputmode="numeric" class="form-control" placeholder="Nhập số tiền cọc" />
+              <input v-model="depositAmount" type="text" inputmode="numeric" class="form-control" placeholder="Nhập số tiền thu thêm (mặc định 0)" />
             </div>
             <div class="d-flex gap-3">
               <div class="form-check">
@@ -278,6 +281,7 @@ const selectedBooking = ref(null);
 const selectedRoomId = ref(null);
 const selectedDetailId = ref(null);
 const depositAmount = ref(0);
+const alreadyPaidAmount = ref(0);
 const assignedRoomsBySlot = reactive({});
 
 const depositMethod = ref('cash');
@@ -454,7 +458,9 @@ const selectBooking = (booking) => {
   guestForm.note = '';
   actionMessage.value = '';
   errorMessage.value = '';
-  depositAmount.value = getBookingDepositAmount(booking);
+  alreadyPaidAmount.value = getBookingDepositAmount(booking);
+  // Tránh thu trùng: tiền đã thanh toán trước chỉ hiển thị tham khảo.
+  depositAmount.value = 0;
   selectedRoomId.value = null;
   selectedDetailId.value = booking.chiTietDatPhongs?.find((ct) => !ct.maPhong)?.maCtdp || null;
 };
@@ -589,6 +595,7 @@ watch(isWalkIn, (val) => {
     searchQuery.value = '';
     selectedDetailId.value = null;
     selectedRoomId.value = null;
+    alreadyPaidAmount.value = 0;
     depositAmount.value = 0;
     fetchAvailableRooms();
     guestForm.name = '';

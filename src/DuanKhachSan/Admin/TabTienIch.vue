@@ -19,7 +19,8 @@ const errors = ref({
 const form = ref({
   tenTienIch: '',
   loaiTienIch: '',
-  trangThai: true
+  trangThai: true,
+  Icon:'',
 })
 const loaiTienIchOptions = [
   'Ẩm thực',
@@ -56,8 +57,8 @@ const validateForm = () => {
   }
 
   // khi thêm mới thì bắt buộc có icon
-  if (!isEdit.value && !file.value) {
-    errors.value.icon = 'Vui lòng chọn icon'
+  if (!isEdit.value && !form.value.icon.trim()) {
+    errors.value.icon = 'Vui lòng nhập icon'
     isValid = false
   }
 
@@ -84,7 +85,8 @@ const openEdit = (ti) => {
   form.value = {
     tenTienIch: ti.tenTienIch,
     loaiTienIch: ti.loaiTienIch,
-    trangThai: ti.trangThai
+    trangThai: ti.trangThai,
+    icon: ti.icon
   }
   file.value = null
   showModal.value = true
@@ -99,9 +101,10 @@ const resetForm = () => {
   form.value = {
     tenTienIch: '',
     loaiTienIch: '',
-    trangThai: true
+    trangThai: true,
+    icon: ''
   }
-  file.value = null
+  //file.value = null
 }
 
 // ====================== FILE ======================
@@ -116,10 +119,11 @@ const save = async () => {
   fd.append('TenTienIch', form.value.tenTienIch)
   fd.append('LoaiTienIch', form.value.loaiTienIch)
   fd.append('TrangThai', form.value.trangThai)
+  fd.append('Icon', form.value.icon)
 
-  if (file.value) {
-    fd.append('Icon', file.value)
-  }
+  // if (file.value) {
+  //   fd.append('Icon', file.value)
+  // }
 
   if (isEdit.value) {
     await axios.put(`${API}/api/TienIch/${currentId.value}`, fd)
@@ -189,10 +193,15 @@ const openDetail = async (ti) => {
         <div class="utility-card h-100">
           <div class="card-status-dot" :class="ti.trangThai ? 'bg-success' : 'bg-secondary'"></div>
           
-          <div class="ti-icon-wrapper">
+          <!-- <div class="ti-icon-wrapper">
             <img v-if="ti.icon" :src="baseUrl + ti.icon" class="ti-img" alt="utility-icon" />
             <div v-else class="ti-no-icon">
               <i class="bi bi-box-seam"></i>
+            </div>
+          </div> -->
+          <div class="ti-icon-wrapper">
+            <div class="ti-icon">
+              <i :class="['bi', ti.icon ? 'bi-' + ti.icon : 'bi-box-seam']"></i>
             </div>
           </div>
 
@@ -277,7 +286,8 @@ const openDetail = async (ti) => {
               </div>
               <div class="col-6">
                 <label class="form-label fw-bold">Biểu tượng (Icon)</label>
-                <input type="file" class="form-control" @change="onFileChange">
+                <input v-model="form.icon" class="form-control" :class="{'is-invalid': errors.icon}" placeholder="Tên bootstrap">
+                <!-- <input type="file" class="form-control" @change="onFileChange"> -->
               </div>
             </div>
           </div>
@@ -334,6 +344,9 @@ const openDetail = async (ti) => {
 </template>
 
 <style scoped>
+.ti-icon i {
+  font-size: 60px;   /* tăng lên tùy ý: 32px, 40px, 48px */
+}
 /* Container bao quanh thanh search */
 .search-box {
   background: white;

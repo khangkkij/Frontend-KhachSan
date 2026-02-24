@@ -192,15 +192,18 @@
   </div>
 
   <div class="d-flex justify-content-between text-primary" v-if="depositAmount > 0">
-    <span>Đã thanh toán (Cọc/TT)</span>
+    <span>Đã thanh toán trước</span>
     <span class="fw-semibold">-{{ formatCurrency(depositAmount) }}</span>
   </div>
 
   <div class="divider"></div>
 
   <div class="d-flex justify-content-between total-row">
-    <span>Cần thu thêm</span>
+    <span>Còn phải thu</span>
     <span>{{ formatCurrency(grandTotal) }}</span>
+  </div>
+  <div class="text-end">
+    <small class="text-muted">Còn phải thu = Tổng hóa đơn - Đã thanh toán trước</small>
   </div>
   
   <div v-if="grandTotal === 0 && depositAmount > 0" class="text-end mt-1">
@@ -407,6 +410,7 @@ const applyVoucher = () => {
     voucherMessage.value = 'Vui lòng chọn phòng.';
     return;
   }
+  voucherCode.value = code;
   axios
     .post(API_PREVIEW_VOUCHER, { voucherCode: code, tongTienGoc: roomTotal.value + serviceTotal.value + totalSurcharge.value })
     .then((res) => {
@@ -436,7 +440,7 @@ const finalizeCheckout = () => {
     maPhong: selectedRoom.value.maPhong,
     extraFee: extraFee.value || 0,
     thoiGianTraThucTe: now.toISOString(),
-    voucherCode: voucherCode.value || null,
+    voucherCode: voucherCode.value.trim().toUpperCase() || null,
     hinhThucThanhToan: paymentMethod.value,
     suDungTienCoc: applyDeposit.value,
     extraServices: extraServices.value

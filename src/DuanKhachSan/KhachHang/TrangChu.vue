@@ -246,119 +246,7 @@
       </div>
     </div>
 
-    <div class="section best-deal">
-      <div class="container">
-        <div class="row">
-          <div class="col-lg-4">
-            <div class="section-heading">
-              <h6>| Ưu đãi tốt nhất</h6>
-              <h2>Tìm phòng ưng ý ngay hôm nay!</h2>
-            </div>
-          </div>
-          <div class="col-lg-12">
-            <div class="tabs-content">
-              <div class="row">
-                <div class="nav-wrapper ">
-                  <ul class="nav nav-tabs" role="tablist">
-                    <li class="nav-item" role="presentation">
-                      <button class="nav-link active" id="appartment-tab" data-bs-toggle="tab"
-                        data-bs-target="#appartment" type="button" role="tab" aria-controls="appartment"
-                        aria-selected="true">Deluxe</button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                      <button class="nav-link" id="villa-tab" data-bs-toggle="tab" data-bs-target="#villa" type="button"
-                        role="tab" aria-controls="villa" aria-selected="false">VIP</button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                      <button class="nav-link" id="penthouse-tab" data-bs-toggle="tab" data-bs-target="#penthouse"
-                        type="button" role="tab" aria-controls="penthouse" aria-selected="false">Standard</button>
-                    </li>
-                  </ul>
-                </div>
-                <div class="tab-content" id="myTabContent">
-                  <div class="tab-pane fade show active" id="appartment" role="tabpanel"
-                    aria-labelledby="appartment-tab">
-                    <div class="row">
-                      <div class="col-lg-3">
-                        <div class="info-table">
-                          <ul>
-                            <li>Tổng diện tích <span>185 m2</span></li>
-                            <li>Tầng số <span>26</span></li>
-                            <li>Số phòng <span>4</span></li>
-                            <li>Bãi đậu xe <span>Có</span></li>
-                            <li>Thanh toán <span>Ngân hàng</span></li>
-                          </ul>
-                        </div>
-                      </div>
-                      <div class="col-lg-6">
-                        <img src="/assets/images/deal-01.jpg" alt="">
-                      </div>
-                      <div class="col-lg-3">
-                        <h4>Thông tin thêm về phòng</h4>
-                        <p>Nội dung mô tả chi tiết về phòng này. Vị trí thuận lợi, tiện ích đầy đủ.</p>
-                        <div class="icon-button">
-                          <a href="#"><i class="fa fa-calendar"></i> Đặt lịch xem</a>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="tab-pane fade" id="villa" role="tabpanel" aria-labelledby="villa-tab">
-                    <div class="row">
-                      <div class="col-lg-3">
-                        <div class="info-table">
-                          <ul>
-                            <li>Tổng diện tích <span>120 m2</span></li>
-                            <li>Tầng số <span>15</span></li>
-                            <li>Số phòng <span>3</span></li>
-                            <li>Bãi đậu xe <span>Có</span></li>
-                            <li>Thanh toán <span>Ngân hàng</span></li>
-                          </ul>
-                        </div>
-                      </div>
-                      <div class="col-lg-6">
-                        <img src="/assets/images/deal-01.jpg" alt="">
-                      </div>
-                      <div class="col-lg-3">
-                        <h4>Thông tin thêm về phòng</h4>
-                        <p>Nội dung mô tả chi tiết về phòng này. Vị trí thuận lợi, tiện ích đầy đủ.</p>
-                        <div class="icon-button">
-                          <a href="#"><i class="fa fa-calendar"></i> Đặt lịch xem</a>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="tab-pane fade" id="penthouse" role="tabpanel" aria-labelledby="penthouse-tab">
-                    <div class="row">
-                      <div class="col-lg-3">
-                        <div class="info-table">
-                          <ul>
-                            <li>Tổng diện tích <span>100 m2</span></li>
-                            <li>Tầng số <span>8</span></li>
-                            <li>Số phòng <span>2</span></li>
-                            <li>Bãi đậu xe <span>Có</span></li>
-                            <li>Thanh toán <span>Ngân hàng</span></li>
-                          </ul>
-                        </div>
-                      </div>
-                      <div class="col-lg-6">
-                        <img src="/assets/images/deal-01.jpg" alt="">
-                      </div>
-                      <div class="col-lg-3">
-                        <h4>Thông tin thêm về phòng</h4>
-                        <p>Nội dung mô tả chi tiết về phòng này. Vị trí thuận lợi, tiện ích đầy đủ.</p>
-                        <div class="icon-button">
-                          <a href="#"><i class="fa fa-calendar"></i> Đặt lịch xem</a>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+    <BestDeal />
 
     <div class="properties section">
       <div class="container">
@@ -477,6 +365,10 @@
 import { ref, onMounted } from 'vue';
 import axios from 'axios';
 import { useRouter } from 'vue-router';
+
+import BestDeal from './BestDeal.vue';
+
+
 const router = useRouter();
 
 const API_URL = import.meta.env.VITE_API_URL + '/api';

@@ -26,6 +26,10 @@
         <router-link to="/NhanVien/service-manager" class="menu-item" active-class="active">
           <i class="bx bx-food-menu icon"></i> Gọi dịch vụ
         </router-link>
+
+        <router-link to="/NhanVien/HoaDon" class="menu-item" active-class="active">
+          <i class="bx bx-receipt icon"></i> Hóa đơn
+        </router-link>
       </nav>
     </aside>
 

@@ -316,7 +316,7 @@ const selectedInvoice = ref(null);
 const fetchInvoices = async () => {
   isLoading.value = true;
   try {
-    const response = await axios.get(`${API_URL}/api/admin/HoaDon`);
+    const response = await axios.get(`${API_URL}/api/NhanVien/HoaDon`);
     // Dữ liệu đã được map đúng từ Backend mới
     invoices.value = response.data;
   } catch (error) { console.error(error); } 

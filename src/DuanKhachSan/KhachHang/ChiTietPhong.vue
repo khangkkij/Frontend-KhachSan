@@ -2,6 +2,9 @@
 import axios from 'axios';
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+
+import DanhGiaPhong from './DanhGiaPhong.vue';
+
 const route = useRoute();
 const router = useRouter();
 const roomId = route.params.id;
@@ -12,8 +15,8 @@ const imageOpacity = ref(1)
 const bienThePhong = ref([])
 const currentImage = ref('')
 const selectedVariantId = ref(null)
-const bienTheNgauNhien=ref([])
-const tienIch=ref([])
+const bienTheNgauNhien = ref([])
+const tienIch = ref([])
 const baseUrl = API + '/'
 const iconMap = {
   'wifi-icon': 'fa-wifi',
@@ -46,11 +49,11 @@ const changeImage = (img) => {
     imageOpacity.value = 1
   }, 150)
 }
-onMounted(async() => {
-  const res=await axios.get(`${API}/api/ChiTietPhong/${roomId}`)
-  room.value=res.data.chiTiet
-  bienTheNgauNhien.value=res.data.bienTheNgauNhien
-  tienIch.value=res.data.chiTiet.tienIch
+onMounted(async () => {
+  const res = await axios.get(`${API}/api/ChiTietPhong/${roomId}`)
+  room.value = res.data.chiTiet
+  bienTheNgauNhien.value = res.data.bienTheNgauNhien
+  tienIch.value = res.data.chiTiet.tienIch
   bienThePhong.value = res.data?.bienTheKhac ?? []
   if (bienThePhong.value.length > 0) {
     selectedVariantId.value = bienThePhong.value[0].maBienThePhong
@@ -64,8 +67,8 @@ onMounted(async() => {
     selectedVariantId.value = bienThePhong.value[0].maBienThePhong
   }
   initSelectedVariant(roomId)
-  console.log("So tre em"+selectedVariant.value.soTreEm)
-  console.log("So tre em"+selectedVariant.value.soNguoiToiDa)
+  console.log("So tre em" + selectedVariant.value.soTreEm)
+  console.log("So tre em" + selectedVariant.value.soNguoiToiDa)
 })
 const canBook = computed(() => {
   return selectedVariant.value
@@ -148,23 +151,12 @@ const goBooking = () => {
 
           <div class="col-lg-8">
             <div class="main-image">
-              <img
-                :src="currentImage"
-                alt="Room Detail"
-                class="main-room-image"
-                :style="{ opacity: imageOpacity }"
-              />
+              <img :src="currentImage" alt="Room Detail" class="main-room-image" :style="{ opacity: imageOpacity }" />
             </div>
             <div class="thumbnail-list mt-3" v-if="selectedVariant?.danhSachAnh?.length">
               <div class="thumbnail-scroll">
-                <img
-                  v-for="(img, index) in selectedVariant.danhSachAnh"
-                  :key="index"
-                  :src="`${API}/${img}`"
-                  class="thumbnail-img"
-                  :class="{ active: currentImage.includes(img) }"
-                  @click="changeImage(img)"
-                />
+                <img v-for="(img, index) in selectedVariant.danhSachAnh" :key="index" :src="`${API}/${img}`"
+                  class="thumbnail-img" :class="{ active: currentImage.includes(img) }" @click="changeImage(img)" />
               </div>
             </div>
 
@@ -173,9 +165,10 @@ const goBooking = () => {
                 <span class="badge bg-primary-subtle text-primary px-3 py-2 rounded-pill fw-bold">
                   <i class="bi bi-tag-fill me-1"></i> {{ room.tenLoai }}
                 </span>
-                <span v-if="selectedVariant" class="status-indicator" :class="selectedVariant.soPhongCon > 0 ? 'text-success' : 'text-danger'">
+                <span v-if="selectedVariant" class="status-indicator"
+                  :class="selectedVariant.soPhongCon > 0 ? 'text-success' : 'text-danger'">
                   <i class="bi bi-circle-fill fs-xs me-1"></i>
-                  Còn&nbsp;<strong>{{selectedVariant.soPhongCon}}</strong> &nbsp;phòng trống
+                  Còn&nbsp;<strong>{{ selectedVariant.soPhongCon }}</strong> &nbsp;phòng trống
                 </span>
               </div>
 
@@ -200,36 +193,21 @@ const goBooking = () => {
                   <section class="amenities-section">
                     <h5 class="section-title">Tiện ích đi kèm</h5>
                     <div class="amenity-grid mt-3">
-                      <div
-                        v-for="ti in tienIch"
-                        :key="ti.maTi"
-                        class="amenity-item"
-                      >
+                      <div v-for="ti in tienIch" :key="ti.maTi" class="amenity-item">
                         <div class="ti-icon-wrapper">
-                        <!-- ICON FONT -->
-                        <div
-                          v-if="ti.icon && !ti.icon.startsWith('uploads/')"
-                          class="icon-wrapper"
-                        >
-                          <i
-                            class="fa-solid"
-                            :class="iconMap[ti.icon] || 'fa-check'"
-                          ></i>
-                        </div>
+                          <!-- ICON FONT -->
+                          <div v-if="ti.icon && !ti.icon.startsWith('uploads/')" class="icon-wrapper">
+                            <i class="fa-solid" :class="iconMap[ti.icon] || 'fa-check'"></i>
+                          </div>
 
-                        <!-- ICON IMAGE -->
-                        <img
-                          v-else-if="ti.icon"
-                          :src="baseUrl + ti.icon"
-                          class="ti-img"
-                          alt="utility-icon"
-                        />
+                          <!-- ICON IMAGE -->
+                          <img v-else-if="ti.icon" :src="baseUrl + ti.icon" class="ti-img" alt="utility-icon" />
 
-                        <!-- FALLBACK -->
-                        <div v-else class="ti-no-icon">
-                          <i class="bi bi-box-seam"></i>
+                          <!-- FALLBACK -->
+                          <div v-else class="ti-no-icon">
+                            <i class="bi bi-box-seam"></i>
+                          </div>
                         </div>
-                      </div>
                         <span>{{ ti.tenTienIch }}</span>
                       </div>
                     </div>
@@ -239,12 +217,13 @@ const goBooking = () => {
                 <div class="col-lg-4">
                   <div class="info-card p-4 rounded-4 bg-light border-0">
                     <h5 class="fw-bold mb-3">Thông tin phòng</h5>
-                    
+
                     <div class="info-item d-flex align-items-center mb-3">
                       <i class="bi bi-people fs-4 me-3 text-primary"></i>
                       <div>
                         <small class="text-muted d-block">Sức chứa</small>
-                        <span class="fw-medium text-dark">{{ selectedVariant?.soNguoiToiDa }} người lớn<span v-if="selectedVariant.soTreEm>0">, {{ selectedVariant?.soTreEm }} trẻ em </span></span>
+                        <span class="fw-medium text-dark">{{ selectedVariant?.soNguoiToiDa }} người lớn<span
+                            v-if="selectedVariant.soTreEm > 0">, {{ selectedVariant?.soTreEm }} trẻ em </span></span>
                       </div>
                     </div>
 
@@ -303,16 +282,11 @@ const goBooking = () => {
 
               <!-- LIST SCROLL -->
               <div class="variant-list px-4 pb-3">
-                <div
-                  v-for="bt in bienThePhong"
-                  :key="bt.maBienThePhong"
-                  class="variant-card p-3 rounded-3 transition-all mb-3"
-                  :class="{
+                <div v-for="bt in bienThePhong" :key="bt.maBienThePhong"
+                  class="variant-card p-3 rounded-3 transition-all mb-3" :class="{
                     'active-variant': selectedVariantId === bt.maBienThePhong,
                     'disabled-variant': bt.soPhongCon === 0
-                  }"
-                  @click="chonBienThe(bt)"
-                >
+                  }" @click="chonBienThe(bt)">
                   <div class="d-flex justify-content-between align-items-start">
                     <div>
                       <h6 class="fw-bold mb-2">{{ bt.tenBienThe }}</h6>
@@ -330,20 +304,13 @@ const goBooking = () => {
                       </div>
                     </div>
 
-                    <input
-                      type="radio"
-                      class="form-check-input mt-1"
-                      :checked="selectedVariantId === bt.maBienThePhong"
-                      :disabled="bt.soPhongCon === 0"
-                    />
+                    <input type="radio" class="form-check-input mt-1" :checked="selectedVariantId === bt.maBienThePhong"
+                      :disabled="bt.soPhongCon === 0" />
                   </div>
 
                   <div class="mt-3 d-flex justify-content-between align-items-end">
                     <div>
-                      <div
-                        v-if="bt.phanTramGiam > 0"
-                        class="small text-decoration-line-through text-muted"
-                      >
+                      <div v-if="bt.phanTramGiam > 0" class="small text-decoration-line-through text-muted">
                         {{ bt.gia.toLocaleString('vi-VN') }}₫
                       </div>
 
@@ -353,10 +320,7 @@ const goBooking = () => {
                       </div>
                     </div>
 
-                    <span
-                      v-if="bt.phanTramGiam > 0"
-                      class="badge rounded-pill bg-danger-soft text-danger px-3 py-2"
-                    >
+                    <span v-if="bt.phanTramGiam > 0" class="badge rounded-pill bg-danger-soft text-danger px-3 py-2">
                       -{{ bt.phanTramGiam }}%
                     </span>
                   </div>
@@ -365,14 +329,10 @@ const goBooking = () => {
 
               <!-- FOOTER STICKY -->
               <div class="variant-footer">
-                <router-link
-                  :to="canBook 
-                    ? { path: '/booking', query: { variantId: selectedVariantId } } 
-                    : ''"
-                  class="btn btn-lg w-100 fw-bold btn-orange-gradient py-3 rounded-3"
-                  :class="{ 'disabled opacity-50 pointer-events-none': !canBook }"
-                  @click.prevent="goBooking"
-                >
+                <router-link :to="canBook
+                  ? { path: '/booking', query: { variantId: selectedVariantId } }
+                  : ''" class="btn btn-lg w-100 fw-bold btn-orange-gradient py-3 rounded-3"
+                  :class="{ 'disabled opacity-50 pointer-events-none': !canBook }" @click.prevent="goBooking">
                   <span v-if="canBook">XÁC NHẬN ĐẶT PHÒNG</span>
                   <span v-else>HẾT PHÒNG</span>
                 </router-link>
@@ -382,91 +342,82 @@ const goBooking = () => {
         </div>
       </div>
     </div>
+    <div v-if="selectedVariantId">
+    <DanhGiaPhong :roomId="selectedVariantId" />
+</div>
     <div class="related-rooms section mt-5">
-  <div class="container">
-    <div class="row">
-      <div class="col-lg-12">
-        <div class="section-heading d-flex justify-content-between align-items-center mb-4">
-          <h2 class="fw-bold">Phòng khách sạn tương tự</h2>
-          <router-link to="/danh-sach-phong" class="text-primary text-decoration-none">
-            Xem tất cả <i class="fa fa-arrow-right ms-1"></i>
-          </router-link>
-        </div>
-      </div>
-    </div>
-
-    <div class="row properties-box">
-      <div 
-        v-for="roomItem in bienTheNgauNhien" 
-        :key="roomItem.maBienThePhong" 
-        class="col-lg-4 col-md-6 align-self-center mb-30 properties-items"
-      >
-        <div class="item card-phong-tuong-tu">
-          <div class="thumb">
-            <span v-if="roomItem.phanTramGiam > 0" class="sale-badge">
-              -{{ roomItem.phanTramGiam }}%
-            </span>
-            <router-link :to="`/phong/${roomItem.maBienThePhong}`">
-              <img :src="`${API}/${roomItem.anhDaiDien}`" />
-            </router-link>
-          </div>
-
-          <div class="d-flex justify-content-between align-items-start">
-            <span class="category">{{ roomItem.tenLoai }}</span>
-            <div class="text-end">
-              <div
-                class="text-muted text-decoration-line-through small"
-                :style="{ visibility: roomItem.phanTramGiam > 0 ? 'visible' : 'hidden' }"
-              >
-                {{ Number(roomItem.giaGoc).toLocaleString("vi-VN") }} VNĐ
-              </div>
-              <div
-                class="fw-bold"
-                :style="roomItem.phanTramGiam > 0 ? { color: '#dc3545' } : {}"
-              >
-                {{
-                  roomItem.phanTramGiam > 0
-                    ? Number((roomItem.giaGoc * (100 - roomItem.phanTramGiam)) / 100).toLocaleString("vi-VN")
-                    : Number(roomItem.giaGoc).toLocaleString("vi-VN")
-                }}
-                VNĐ / đêm
-              </div>
+      <div class="container">
+        <div class="row">
+          <div class="col-lg-12">
+            <div class="section-heading d-flex justify-content-between align-items-center mb-4">
+              <h2 class="fw-bold">Phòng khách sạn tương tự</h2>
+              <router-link to="/danh-sach-phong" class="text-primary text-decoration-none">
+                Xem tất cả <i class="fa fa-arrow-right ms-1"></i>
+              </router-link>
             </div>
           </div>
+        </div>
 
-          <h4 class="mt-2">
-            <router-link :to="`/phong/${roomItem.maBienThePhong}`">
-              {{ roomItem.tenBienThe }}
-            </router-link>
-          </h4>
+        <div class="row properties-box">
+          <div v-for="roomItem in bienTheNgauNhien" :key="roomItem.maBienThePhong"
+            class="col-lg-4 col-md-6 align-self-center mb-30 properties-items">
+            <div class="item card-phong-tuong-tu">
+              <div class="thumb">
+                <span v-if="roomItem.phanTramGiam > 0" class="sale-badge">
+                  -{{ roomItem.phanTramGiam }}%
+                </span>
+                <router-link :to="`/phong/${roomItem.maBienThePhong}`">
+                  <img :src="`${API}/${roomItem.anhDaiDien}`" />
+                </router-link>
+              </div>
 
-          <div class="room-info-row">
-            <div style="margin-left: 30px;">Số người tối đa: <span>{{ roomItem.soNguoiToiDa }}</span></div>
-            <div style="margin-right: 100px;">Diện tích: <span>{{ roomItem.dienTich }} m²</span></div>
-          </div>
+              <div class="d-flex justify-content-between align-items-start">
+                <span class="category">{{ roomItem.tenLoai }}</span>
+                <div class="text-end">
+                  <div class="text-muted text-decoration-line-through small"
+                    :style="{ visibility: roomItem.phanTramGiam > 0 ? 'visible' : 'hidden' }">
+                    {{ Number(roomItem.giaGoc).toLocaleString("vi-VN") }} VNĐ
+                  </div>
+                  <div class="fw-bold" :style="roomItem.phanTramGiam > 0 ? { color: '#dc3545' } : {}">
+                    {{
+                      roomItem.phanTramGiam > 0
+                        ? Number((roomItem.giaGoc * (100 - roomItem.phanTramGiam)) / 100).toLocaleString("vi-VN")
+                        : Number(roomItem.giaGoc).toLocaleString("vi-VN")
+                    }}
+                    VNĐ / đêm
+                  </div>
+                </div>
+              </div>
 
-          <div class="room-info-row mt-1">
-            <div style="margin-left: 30px;">Phòng trống: <span>{{ roomItem.soPhongCon }}</span></div>
-          </div>
+              <h4 class="mt-2">
+                <router-link :to="`/phong/${roomItem.maBienThePhong}`">
+                  {{ roomItem.tenBienThe }}
+                </router-link>
+              </h4>
+
+              <div class="room-info-row">
+                <div style="margin-left: 30px;">Số người tối đa: <span>{{ roomItem.soNguoiToiDa }}</span></div>
+                <div style="margin-right: 100px;">Diện tích: <span>{{ roomItem.dienTich }} m²</span></div>
+              </div>
+
+              <div class="room-info-row mt-1">
+                <div style="margin-left: 30px;">Phòng trống: <span>{{ roomItem.soPhongCon }}</span></div>
+              </div>
 
 
-          <div class="main-button mt-3">
-            <router-link
-              :to="roomItem.soPhongCon > 0 ? `/phong/${roomItem.maBienThePhong}` : ''"
-              class="btn-book"
-              :class="{ disabled: roomItem.soPhongCon === 0 }"
-              :aria-disabled="roomItem.soPhongCon === 0"
-              @click.prevent="roomItem.soPhongCon === 0"
-            >
-              {{ roomItem.soPhongCon > 0 ? 'Đặt phòng' : 'Hết phòng' }}
-            </router-link>
+              <div class="main-button mt-3">
+                <router-link :to="roomItem.soPhongCon > 0 ? `/phong/${roomItem.maBienThePhong}` : ''" class="btn-book"
+                  :class="{ disabled: roomItem.soPhongCon === 0 }" :aria-disabled="roomItem.soPhongCon === 0"
+                  @click.prevent="roomItem.soPhongCon === 0">
+                  {{ roomItem.soPhongCon > 0 ? 'Đặt phòng' : 'Hết phòng' }}
+                </router-link>
+              </div>
+            </div>
           </div>
         </div>
       </div>
     </div>
   </div>
-</div>
-      </div>
 </template>
 
 <style scoped>
@@ -483,13 +434,15 @@ const goBooking = () => {
 .thumbnail-scroll::-webkit-scrollbar {
   height: 6px;
 }
+
 .thumbnail-scroll::-webkit-scrollbar-thumb {
   background: #d0d4dc;
   border-radius: 10px;
 }
 
 .thumbnail-img {
-  flex: 0 0 auto;          /* QUAN TRỌNG: không cho co lại */
+  flex: 0 0 auto;
+  /* QUAN TRỌNG: không cho co lại */
   width: 90px;
   height: 65px;
   object-fit: cover;
@@ -560,7 +513,8 @@ const goBooking = () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #198754; /* Success color */
+  color: #198754;
+  /* Success color */
 }
 
 /* Card thông tin bên phải */
@@ -580,9 +534,11 @@ const goBooking = () => {
 }
 
 .room-description {
-  white-space: pre-line; /* Giữ các dòng xuống hàng từ database */
+  white-space: pre-line;
+  /* Giữ các dòng xuống hàng từ database */
   text-align: justify;
 }
+
 .amenities-list .badge {
   font-size: 15px;
   padding: 10px 16px;
@@ -605,6 +561,7 @@ const goBooking = () => {
   margin-top: 6px;
   margin-bottom: 8px;
 }
+
 .room-info-row {
   margin-top: 6px;
   padding-top: 4px;
@@ -615,8 +572,10 @@ const goBooking = () => {
 }
 
 .properties-box .item {
-  padding: 14px 18px 20px; /* trên | trái-phải | dưới */
+  padding: 14px 18px 20px;
+  /* trên | trái-phải | dưới */
 }
+
 .category {
   margin-top: 12px;
 }
@@ -642,13 +601,15 @@ const goBooking = () => {
 
 .properties-box .item {
   background: #fff;
-  border-radius: 22px;        /* bo tròn hơn */
+  border-radius: 22px;
+  /* bo tròn hơn */
   padding: 18px;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.06);
   transition: all 0.3s ease;
   height: 100%;
   position: relative;
-  overflow: hidden;           /* ⭐ QUAN TRỌNG */
+  overflow: hidden;
+  /* ⭐ QUAN TRỌNG */
 }
 
 .properties-box .item:hover {
@@ -659,7 +620,8 @@ const goBooking = () => {
 .properties-box .item .thumb {
   overflow: hidden;
   height: 240px;
-  border-radius: 18px;        /* bo giống mẫu */
+  border-radius: 18px;
+  /* bo giống mẫu */
   position: relative;
 }
 
@@ -678,7 +640,8 @@ const goBooking = () => {
   padding: 8px 14px;
   font-size: 13px;
   font-weight: 600;
-  border-radius: 999px; /* tròn pill */
+  border-radius: 999px;
+  /* tròn pill */
   box-shadow: 0 8px 16px rgba(255, 90, 44, 0.4);
   z-index: 3;
 }
@@ -722,6 +685,7 @@ const goBooking = () => {
   font-weight: 500;
   font-size: 14px;
 }
+
 .variant-box {
   max-height: 75vh;
   display: flex;
@@ -744,13 +708,15 @@ const goBooking = () => {
   box-shadow: 0 -8px 20px rgba(0, 0, 0, 0.08);
   z-index: 10;
 }
+
 .btn-orange-gradient {
   /* Dải màu cam từ đậm sang nhạt hơn một chút */
   background: linear-gradient(135deg, #f35525 0%, #ff7a4d 100%);
   border: none;
   color: white !important;
   transition: all 0.3s ease;
-  text-transform: uppercase; /* Viết hoa để nhìn mạnh mẽ hơn */
+  text-transform: uppercase;
+  /* Viết hoa để nhìn mạnh mẽ hơn */
   letter-spacing: 1px;
   display: flex;
   align-items: center;
@@ -775,6 +741,7 @@ const goBooking = () => {
   cursor: not-allowed;
   box-shadow: none !important;
 }
+
 .transition-all {
   transition: all 0.25s ease-in-out;
 }
@@ -818,11 +785,24 @@ const goBooking = () => {
   border-radius: 50%;
   display: inline-block;
 }
-.green-dot { background-color: #28a745; box-shadow: 0 0 0 2px rgba(40, 167, 69, 0.2); }
-.red-dot { background-color: #dc3545; }
 
-.price-old { color: #adb5bd; }
-.bg-danger-soft { background-color: #fff5f5; border: 1px solid #feb2b2; }
+.green-dot {
+  background-color: #28a745;
+  box-shadow: 0 0 0 2px rgba(40, 167, 69, 0.2);
+}
+
+.red-dot {
+  background-color: #dc3545;
+}
+
+.price-old {
+  color: #adb5bd;
+}
+
+.bg-danger-soft {
+  background-color: #fff5f5;
+  border: 1px solid #feb2b2;
+}
 
 /* Nút đặt phòng */
 .btn-booking {
@@ -854,6 +834,7 @@ const goBooking = () => {
   height: 1.3em;
   cursor: pointer;
 }
+
 /* CSS cho ảnh chính */
 .main-image {
   width: 100%;
@@ -907,6 +888,7 @@ const goBooking = () => {
   color: #f35525 !important;
   /* Đổi màu đỏ thành màu cam chủ đạo của web */
 }
+
 .thumbnail-list {
   display: flex;
   gap: 10px;
@@ -933,6 +915,7 @@ const goBooking = () => {
   opacity: 1;
   border-color: #f35525;
 }
+
 .single-property {
   padding: 60px 0;
 }
@@ -941,6 +924,7 @@ const goBooking = () => {
   line-height: 1.7;
   color: #555;
 }
+
 .main-image {
   box-shadow: 0 15px 40px rgba(0, 0, 0, 0.12);
 }
@@ -952,17 +936,19 @@ const goBooking = () => {
 .main-room-image {
   transition: opacity 0.3s ease, transform 0.4s ease;
 }
+
 .thumbnail-list {
   margin-top: 15px;
 }
 
 .thumbnail-img {
-  box-shadow: 0 5px 15px rgba(0,0,0,0.12);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.12);
 }
 
 .thumbnail-img.active {
   transform: scale(1.05);
 }
+
 .variant-box {
   border-radius: 16px;
   padding: 24px;
@@ -971,6 +957,7 @@ const goBooking = () => {
   position: sticky;
   top: 100px;
 }
+
 .price-box {
   padding: 15px;
   border-radius: 12px;
@@ -981,9 +968,11 @@ const goBooking = () => {
 .price-box h3 {
   margin-top: 8px;
 }
-.main-button{
+
+.main-button {
   padding: 14px 0;
 }
+
 .main-button a {
   display: block;
   text-align: center;
@@ -1000,5 +989,4 @@ const goBooking = () => {
   transform: translateY(-3px);
   box-shadow: 0 15px 30px rgba(243, 85, 37, 0.45);
 }
-
 </style>

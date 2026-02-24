@@ -117,7 +117,7 @@ export default {
             user: {}
         }
     },
-    mounted() {
+    async mounted() {
         // 1. "Đón" dữ liệu từ URL do Backend gửi về
         const urlParams = new URLSearchParams(window.location.search);
         const isLoginSuccess = urlParams.get('login_success');
@@ -147,7 +147,22 @@ export default {
             let providerText = "Hệ thống";
             if (provider === 'facebook') providerText = "Facebook";
             else if (provider === 'google') providerText = "Google";
+            try {
+                // Tự động gọi API check-session để kiểm tra thời gian
+                // Gọi luôn (server dựa vào Cookie HttpOnly) vì client không thể đọc cookie an toàn
+                const res = await axios.post("https://localhost:7023/api/Login/check-session");
 
+                // Nếu server trả token mới thì lưu tạm để client có thể dùng (nếu cần)
+                if (res && res.data && res.data.token) {
+                    localStorage.setItem("accessToken", res.data.token);
+                }
+            } catch (err) {
+                // Nếu token hết hạn, xóa dữ liệu client và chuyển về trang đăng nhập
+                console.log("Phiên đăng nhập hết hạn, đăng xuất tự động...");
+                localStorage.removeItem('user_info');
+                localStorage.removeItem('isLoggedIn');
+                window.location.href = '/dang-nhap';
+            }
             Swal.fire({
                 title: 'Đăng nhập thành công!',
                 text: `Xin chào ${nameFromFB}, bạn đã đăng nhập bằng ${providerText}.`,
@@ -157,6 +172,13 @@ export default {
         } else {
             // Nếu không phải từ Facebook/Google về thì kiểm tra dữ liệu cũ đã lưu
             this.checkLoginStatus();
+        }
+
+        // Bắt đầu kiểm tra phiên định kỳ (mỗi 5 phút) chỉ khi đã đăng nhập
+        if (this.isLoggedIn) {
+            // Gọi ngay để phát hiện phiên đã hết hạn ngay lập tức
+            this.checkSession();
+            this._sessionTimer = setInterval(() => { this.checkSession(); }, 5 * 60 * 1000);
         }
     },
     methods: {
@@ -191,6 +213,12 @@ export default {
                 localStorage.removeItem('user_info');
                 localStorage.removeItem('isLoggedIn');
 
+                // Dừng heartbeat nếu có
+                if (this._sessionTimer) {
+                    clearInterval(this._sessionTimer);
+                    this._sessionTimer = null;
+                }
+
                 Swal.fire({
                     title: 'Đã đăng xuất!',
                     text: 'Bạn đã đăng xuất thành công.',
@@ -200,6 +228,41 @@ export default {
                     window.location.href = '/dang-nhap';
                 });
             }
+        },
+        async checkSession() {
+            try {
+                // Gắn header 'x-silent' để interceptor không hiển thị alert/redirect tự động
+                const res = await axios.post('https://localhost:7023/api/Login/check-session', {}, { withCredentials: true, headers: { 'x-silent': '1' } });
+                if (res && res.data && res.data.token) {
+                    // Lưu token mới tạm thời nếu server cấp
+                    localStorage.setItem('accessToken', res.data.token);
+                }
+            } catch (err) {
+                // Khi 401 hoặc lỗi khác -> đăng xuất client ngay
+                console.log('Phiên đăng nhập hết hạn, đăng xuất tự động...');
+
+                // Dừng heartbeat để không gây vòng lặp
+                if (this._sessionTimer) {
+                    clearInterval(this._sessionTimer);
+                    this._sessionTimer = null;
+                }
+
+                localStorage.removeItem('user_info');
+                localStorage.removeItem('isLoggedIn');
+
+                // Chỉ redirect nếu không ở trang đăng nhập để tránh vòng lặp
+                if (window.location.pathname !== '/dang-nhap') {
+                    // Thông báo cho người dùng trước khi chuyển hướng
+                    alert('Phiên đăng nhập đã hết hạn. Bạn sẽ được đăng xuất.');
+                    window.location.href = '/dang-nhap';
+                }
+            }
+        }
+    },
+    beforeUnmount() {
+        if (this._sessionTimer) {
+            clearInterval(this._sessionTimer);
+            this._sessionTimer = null;
         }
     }
 }

@@ -67,13 +67,17 @@
             <h6 class="fw-bold mb-3">2. Cập nhật dịch vụ phụ</h6>
             <div v-if="checkoutDetail" class="service-list">
               <div
-                v-for="(service, index) in checkoutDetail.dichVu"
-                :key="index"
+                v-for="(service, index) in displayServiceRows"
+                :key="`${service.loai || 'service'}-${index}`"
                 class="service-item"
               >
                 <div>
                   <div class="fw-semibold">{{ service.tenDichVu }}</div>
-                  <small class="text-muted">x{{ service.soLuong }} · {{ formatCurrency(service.donGia) }}</small>
+                  <small class="text-muted">
+                    x{{ service.soLuong }} · {{ formatCurrency(service.donGia) }}
+                    <span v-if="service.loai === 'surcharge'" class="ms-1 text-danger">(Phụ thu)</span>
+                  </small>
+                  <div v-if="service.moTa" class="small text-muted">{{ service.moTa }}</div>
                 </div>
                 <div class="fw-semibold">{{ formatCurrency(service.thanhTien) }}</div>
               </div>
@@ -130,6 +134,12 @@
                 <span class="input-group-text">VND</span>
                 <input v-model.number="extraFee" type="number" class="form-control" min="0" />
               </div>
+              <textarea
+                v-model="extraFeeNote"
+                class="form-control mt-2"
+                rows="2"
+                placeholder="Nhập mô tả phụ thu (ví dụ: bể ly, vệ sinh đặc biệt...)"
+              ></textarea>
             </div>
           </div>
         </div>
@@ -185,6 +195,9 @@
   <div class="d-flex justify-content-between text-danger" v-if="totalSurcharge > 0">
     <span>Phụ thu</span>
     <span class="fw-semibold">{{ formatCurrency(totalSurcharge) }}</span>
+  </div>
+  <div class="text-end" v-if="totalSurcharge > 0 && surchargeSummaryNote">
+    <small class="text-muted fst-italic">{{ surchargeSummaryNote }}</small>
   </div>
   <div class="d-flex justify-content-between text-success" v-if="voucherDiscount > 0">
     <span>Voucher</span>
@@ -252,6 +265,7 @@ const roomSearch = ref('');
 const selectedRoomId = ref(null);
 const actualCheckoutTime = ref('12:00');
 const extraFee = ref(0);
+const extraFeeNote = ref('');
 const voucherCode = ref('');
 const voucherMessage = ref('');
 const paymentMethod = ref('cash');
@@ -354,6 +368,67 @@ const lateFee = computed(() => {
 });
 const totalSurcharge = computed(() => lateFee.value + (extraFee.value || 0));
 
+const displayServiceRows = computed(() => {
+  const rows = (checkoutDetail.value?.dichVu || []).map((s) => ({
+    ...s,
+    loai: 'service',
+    moTa: s.moTa || ''
+  }));
+
+  const extraRows = extraServices.value
+    .filter((s) => s.maDichVu && (s.soLuong || 0) > 0)
+    .map((s) => {
+      const service = serviceCatalog.value.find((x) => x.maDichVu === s.maDichVu);
+      const donGia = service?.gia || 0;
+      const soLuong = s.soLuong || 0;
+      return {
+        maDichVu: s.maDichVu,
+        tenDichVu: service?.tenDichVu || 'Dịch vụ phát sinh',
+        soLuong,
+        donGia,
+        thanhTien: donGia * soLuong,
+        loai: 'service',
+        moTa: 'Dịch vụ phát sinh (xem trước trước khi chốt hóa đơn).'
+      };
+    });
+  rows.push(...extraRows);
+
+  if (lateFee.value > 0) {
+    rows.push({
+      tenDichVu: 'Phụ thu trả trễ',
+      soLuong: 1,
+      donGia: lateFee.value,
+      thanhTien: lateFee.value,
+      loai: 'surcharge',
+      moTa: 'Trả phòng sau 12:00 (30% giá phòng).'
+    });
+  }
+
+  if ((extraFee.value || 0) > 0) {
+    rows.push({
+      tenDichVu: 'Phụ thu khác',
+      soLuong: 1,
+      donGia: extraFee.value || 0,
+      thanhTien: extraFee.value || 0,
+      loai: 'surcharge',
+      moTa: extraFeeNote.value?.trim() || 'Khoản phụ thu nhập thủ công tại quầy.'
+    });
+  }
+
+  return rows;
+});
+
+const surchargeSummaryNote = computed(() => {
+  const notes = [];
+  if (lateFee.value > 0) {
+    notes.push('Có phụ thu trả trễ sau 12:00');
+  }
+  if ((extraFee.value || 0) > 0 && extraFeeNote.value?.trim()) {
+    notes.push(extraFeeNote.value.trim());
+  }
+  return notes.join(' | ');
+});
+
 // Tính tiền cần thu thêm (Logic: Cọc chỉ trừ tiền phòng, Dịch vụ tính riêng)
 // Tính tiền cần thu thêm
 const grandTotal = computed(() => {
@@ -392,6 +467,8 @@ const selectRoom = (room) => {
   checkoutDetail.value = null;
   voucherDiscount.value = 0;
   voucherMessage.value = '';
+  extraFee.value = 0;
+  extraFeeNote.value = '';
   extraServices.value = [{ maDichVu: null, soLuong: 1 }];
   checkoutMessage.value = '';
   errorMessage.value = '';

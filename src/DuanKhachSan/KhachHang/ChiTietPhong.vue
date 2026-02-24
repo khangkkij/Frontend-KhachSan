@@ -195,13 +195,14 @@ const goBooking = () => {
                     <div class="amenity-grid mt-3">
                       <div v-for="ti in tienIch" :key="ti.maTi" class="amenity-item">
                         <div class="ti-icon-wrapper">
+                          
                           <!-- ICON FONT -->
-                          <div v-if="ti.icon && !ti.icon.startsWith('uploads/')" class="icon-wrapper">
-                            <i class="fa-solid" :class="iconMap[ti.icon] || 'fa-check'"></i>
+                          <div v-if="ti.icon" class="icon-wrapper">
+                            <i :class="['bi', ti.icon ? 'bi-' + ti.icon : 'bi-box-seam']"></i>
                           </div>
 
                           <!-- ICON IMAGE -->
-                          <img v-else-if="ti.icon" :src="baseUrl + ti.icon" class="ti-img" alt="utility-icon" />
+                          <!-- <img v-else-if="ti.icon" :src="baseUrl + ti.icon" class="ti-img" alt="utility-icon" /> -->
 
                           <!-- FALLBACK -->
                           <div v-else class="ti-no-icon">

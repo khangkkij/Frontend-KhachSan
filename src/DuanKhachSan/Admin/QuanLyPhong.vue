@@ -687,8 +687,8 @@ const formatPrice = (val) => val?.toLocaleString('vi-VN')
                     </button>
                   </div>
                 </div>
-
-                <button
+              </div>
+              <button
                   class="btn btn-success btn-add-room mt-2"
                   @click="openAddRoom(v.maBienThePhong)"
                   data-bs-toggle="modal"
@@ -696,8 +696,6 @@ const formatPrice = (val) => val?.toLocaleString('vi-VN')
                 >
                   <i class='bx bx-plus'></i> Thêm phòng
                 </button>
-
-              </div>
             </div>
           </div>
         </div>
@@ -928,7 +926,6 @@ const formatPrice = (val) => val?.toLocaleString('vi-VN')
                 <option :value="3">Đang sửa chữa</option>
               </select>
             </div>
-
             <div class="d-flex gap-2">
               <button class="btn btn-light flex-grow-1" data-bs-dismiss="modal">Hủy</button>
               <button

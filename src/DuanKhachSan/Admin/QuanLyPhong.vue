@@ -3,6 +3,8 @@ import {reactive, ref, computed, onMounted, watch } from 'vue'
 import axios from 'axios';
 const API = import.meta.env.VITE_API_URL
 const variants = ref([])
+const isEditingPrice = ref(false)
+const editingIndex = ref(null)
 const dashboard = ref({
   tongBienThe: 0,
   tongPhong: 0,
@@ -18,9 +20,64 @@ const form = reactive({
   soTreEm:2,
   dienTich: 30,
   giaNiemYet: 0,
+  priceRanges: [],
   tienIchIds: [],
   images: []
 })
+const tempPrice = reactive({
+  maThietLapGia: 0,
+  loaiGia: 'Le',
+  moTa: '',
+  ngayBatDau: '',
+  ngayKetThuc: '',
+  macDinh: false,
+  gia: 0
+})
+function addPriceRange() {
+  if (!tempPrice.ngayBatDau || !tempPrice.ngayKetThuc || !tempPrice.gia) {
+    alert("Vui lòng nhập đủ thông tin khoảng giá")
+    return
+  }
+
+  if (editingIndex.value !== null) {
+    form.priceRanges[editingIndex.value] = { ...tempPrice }
+  } else {
+    form.priceRanges.push({ ...tempPrice })
+  }
+  resetTempPrice()
+  closePriceModal()
+}
+function resetTempPrice() {
+  tempPrice.maThietLapGia=0
+  tempPrice.loaiGia = 'Le'
+  tempPrice.moTa = ''
+  tempPrice.ngayBatDau = ''
+  tempPrice.ngayKetThuc = ''
+  tempPrice.gia = 0
+  tempPrice.macDinh = false
+
+  isEditingPrice.value = false
+  editingIndex.value = null
+}
+function removePriceRange(index) {
+  form.priceRanges.splice(index, 1)
+}
+function editPriceRange(index) {
+  const p = form.priceRanges[index]
+
+  tempPrice.maThietLapGia = p.maThietLapGia || 0
+  tempPrice.loaiGia = p.loaiGia
+  tempPrice.moTa = p.moTa
+  tempPrice.ngayBatDau = p.ngayBatDau
+  tempPrice.ngayKetThuc = p.ngayKetThuc
+  tempPrice.gia = p.gia
+  tempPrice.macDinh = p.macDinh ?? false
+
+  editingIndex.value = index
+  isEditingPrice.value = true
+
+  new bootstrap.Modal(document.getElementById('priceRangeModal')).show()
+}
 const formPhong = reactive({
   soPhong: '',
   maBienThePhong: null,
@@ -37,7 +94,17 @@ const roomEditing = ref({
   trangThai: 0
 })
 const roomDetail = ref(null)
+const openPriceModal = () => {
+  const modal = new bootstrap.Modal(
+    document.getElementById('priceRangeModal')
+  )
+  modal.show()
+}
 
+const closePriceModal = () => {
+  const modalEl = document.getElementById('priceRangeModal')
+  bootstrap.Modal.getInstance(modalEl)?.hide()
+}
 const openRoomDetail = async (maPhong) => {
   const res = await axios.get(
     `${API}/api/admin/QuanLyPhong/${maPhong}/detail`
@@ -116,6 +183,19 @@ const submitVariant = async () => {
   fd.append('SoTreEm', form.soTreEm)
   fd.append('DienTich', form.dienTich)
   fd.append('GiaNiemYet', form.giaNiemYet)
+
+  form.priceRanges.forEach((p, index) => {
+    fd.append(`PriceRanges[${index}].MaThietLapGia`, p.maThietLapGia || 0)
+    fd.append(`PriceRanges[${index}].LoaiGia`, p.loaiGia)
+    fd.append(`PriceRanges[${index}].MoTa`, p.moTa)
+    fd.append(`PriceRanges[${index}].NgayBatDau`, p.ngayBatDau)
+    fd.append(`PriceRanges[${index}].NgayKetThuc`, p.ngayKetThuc)
+    fd.append(`PriceRanges[${index}].Gia`, p.gia)
+    fd.append(`PriceRanges[${index}].MacDinh`, p.macDinh ?? false)
+  })
+  for (let pair of fd.entries()) {
+  console.log(pair[0] + ':', pair[1])
+}
 
   form.tienIchIds.forEach(id => fd.append('TienIchIds', id))
   form.images.forEach(file => fd.append('Images', file))
@@ -219,6 +299,7 @@ const openCreateModal = () => {
     soTreEm: 2,
     dienTich: 30,
     giaNiemYet: 0,
+    priceRanges: [],
     tienIchIds: [],
     hinhAnhs: []
   })
@@ -257,6 +338,15 @@ const openEditModal = async (v) => {
       soTreEm: data.soTreEm,
       dienTich: data.dienTich,
       giaNiemYet: data.giaNiemYet,
+      priceRanges: data.priceRanges?.map(p => ({
+        maThietLapGia: p.maThietLap ?? p.maThietLapGia ?? 0,
+        loaiGia: p.loaiGia,
+        moTa: p.moTa,
+        ngayBatDau: p.ngayBatDau,
+        ngayKetThuc: p.ngayKetThuc,
+        gia: p.gia,
+        macDinh: p.macDinh ?? false
+      })) || [],
       tienIchIds: data.tienIchIds,
       images: [] // reset file upload
     })
@@ -428,17 +518,19 @@ watch([keyword, selectedLoaiPhong, activeLoaiPhong], () => {
   }, 300)
 })
 
-const collapsedVariants = ref([])
+const openedVariants = ref([])
+
 const toggleRooms = (id) => {
-  const index = collapsedVariants.value.indexOf(id)
+  const index = openedVariants.value.indexOf(id)
 
   if (index > -1) {
-    collapsedVariants.value.splice(index, 1)
+    openedVariants.value.splice(index, 1)
   } else {
-    collapsedVariants.value.push(id)
+    openedVariants.value.push(id)
   }
 }
-const isCollapsed = (id) => collapsedVariants.value.includes(id)
+
+const isCollapsed = (id) => !openedVariants.value.includes(id)
 const formatPrice = (val) => val?.toLocaleString('vi-VN')
 </script>
 
@@ -816,6 +908,62 @@ const formatPrice = (val) => val?.toLocaleString('vi-VN')
               {{ errors.giaNiemYet }}
             </div>
           </div>
+          <div class="col-12 mt-4">
+            <div class="p-3 border rounded bg-light">
+
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <label class="form-label small fw-bold mb-0">
+                  Khoảng giá đặc biệt
+                </label>
+
+                <button type="button"
+                        class="btn btn-sm btn-outline-danger"
+                        @click="openPriceModal">
+                  + Thêm khoảng giá
+                </button>
+              </div>
+
+              <!-- Danh sách đã thêm -->
+              <div v-if="form.priceRanges.length === 0"
+                  class="text-muted small">
+                Chưa có khoảng giá nào
+              </div>
+
+              <div v-for="(p, i) in form.priceRanges"
+                  :key="i"
+                  class="border rounded p-2 mb-2 bg-white">
+
+                <div class="fw-bold">
+                  Loại giá: {{ p.loaiGia }}
+                </div>
+
+                <div class="small text-muted">
+                  Bắt đầu: {{ p.ngayBatDau }} → {{ p.ngayKetThuc }}
+                </div>
+                <div class="small text-muted">
+                  Mô tả: {{ p.moTa }}
+                </div>
+                <div class="small text-muted">
+                  Giá: {{ p.gia }}
+                </div>
+                <span 
+                  class="badge"
+                  :class="p.macDinh ? 'bg-success' : 'bg-secondary'"
+                >
+                  {{ p.macDinh ? 'Đang dùng' : 'Không dùng' }}
+                </span><br>
+                <button class="btn btn-sm btn-warning mt-1 me-2"
+                        @click="editPriceRange(i)">
+                  Sửa
+                </button>
+                <button class="btn btn-sm btn-danger mt-1"
+                        @click="removePriceRange(i)">
+                  Xóa
+                </button>
+              </div>
+
+            </div>
+          </div>
         </div>
 
         <!-- TIỆN ÍCH -->
@@ -882,8 +1030,6 @@ const formatPrice = (val) => val?.toLocaleString('vi-VN')
     </div>
   </div>
 </div>
-
-
     <div class="modal fade" id="addRoomModal" tabindex="-1">
       <div class="modal-dialog modal-dialog-centered" style="max-width: 400px;">
         <div class="modal-content border-0 shadow">
@@ -939,6 +1085,73 @@ const formatPrice = (val) => val?.toLocaleString('vi-VN')
         </div>
       </div>
     </div>
+<div class="modal fade" id="priceRangeModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content shadow-lg border-0 rounded-4">
+
+      <div class="modal-header">
+        <h5 class="modal-title">Thêm khoảng giá</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+
+        <div class="mb-3">
+          <label>Loại giá</label>
+          <select class="form-select" v-model="tempPrice.loaiGia">
+            <option value="Le">Giá lễ</option>
+            <option value="CuoiTuan">Giá cuối tuần</option>
+          </select>
+        </div>
+
+        <div class="mb-3">
+          <label>Mô tả</label>
+          <input type="text" class="form-control" v-model="tempPrice.moTa">
+        </div>
+
+        <div class="row">
+          <div class="col-md-6">
+            <label>Từ ngày</label>
+            <input type="date" class="form-control" v-model="tempPrice.ngayBatDau">
+          </div>
+          <div class="col-md-6">
+            <label>Đến ngày</label>
+            <input type="date" class="form-control" v-model="tempPrice.ngayKetThuc">
+          </div>
+        </div>
+
+        <div class="mt-3">
+          <label>Giá</label>
+          <input type="number" class="form-control" v-model.number="tempPrice.gia">
+        </div>
+        <!-- CHỈ HIỆN KHI ĐANG SỬA -->
+        <div class="mt-3" v-if="isEditingPrice">
+          <label class="form-label fw-bold">Thiết lập</label>
+          <div class="form-check form-switch">
+            <input
+              class="form-check-input"
+              type="checkbox"
+              v-model="tempPrice.macDinh"
+              id="macDinhSwitch"
+            >
+            <label class="form-check-label" for="macDinhSwitch">
+              Đặt làm giá mặc định
+            </label>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+        <button class="btn btn-primary" @click="addPriceRange">
+          {{ isEditingPrice ? 'Cập nhật' : 'Tiếp tục' }}
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
 <div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered" style="max-width: 400px;">
     <div class="modal-content border-0 shadow-lg">
@@ -1133,6 +1346,12 @@ const formatPrice = (val) => val?.toLocaleString('vi-VN')
 </template>
 
 <style>
+#priceRangeModal {
+  z-index: 5000;
+}
+#variantModal{
+  z-index:2000;
+}
 /* .room-preview-icon {
   width: 80px;
   height: 80px;

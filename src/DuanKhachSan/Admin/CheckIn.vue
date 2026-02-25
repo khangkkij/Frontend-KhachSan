@@ -458,9 +458,14 @@ const selectBooking = (booking) => {
   guestForm.note = '';
   actionMessage.value = '';
   errorMessage.value = '';
-  alreadyPaidAmount.value = getBookingDepositAmount(booking);
-  // Tránh thu trùng: tiền đã thanh toán trước chỉ hiển thị tham khảo.
-  depositAmount.value = 0;
+
+  // 1. Tính toán số tiền đã thanh toán
+  const paid = getBookingDepositAmount(booking);
+  alreadyPaidAmount.value = paid;
+
+  // 2. Gán giá trị đó xuống ô input (thay vì gán bằng 0)
+  depositAmount.value = paid; 
+
   selectedRoomId.value = null;
   selectedDetailId.value = booking.chiTietDatPhongs?.find((ct) => !ct.maPhong)?.maCtdp || null;
 };

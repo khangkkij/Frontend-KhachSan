@@ -206,7 +206,7 @@
 
   <div class="d-flex justify-content-between text-primary" v-if="depositAmount > 0">
     <span>Đã thanh toán trước</span>
-    <span class="fw-semibold">-{{ formatCurrency(depositAmount) }}</span>
+    <span class="fw-semibold">-{{ formatCurrency(effectiveDeposit) }}</span>
   </div>
 
   <div class="divider"></div>
@@ -338,20 +338,19 @@ const selectedRoom = computed(() =>
   occupiedRooms.value.find((r) => r.maPhong === selectedRoomId.value)
 );
 
+// --- CÁC ĐOẠN ĐÃ CHỈNH SỬA LOGIC ---
+
+// 1. Tính tiền phòng dựa trên ngày nhận và ngày trả dự kiến
 const roomTotal = computed(() => {
   if (!checkoutDetail.value) return 0;
-  
   const checkIn = new Date(checkoutDetail.value.ngayNhan);
-  
-  // SỬA: Lấy ngày trả dự kiến trong DB (thay vì new Date() là ngày hiện tại)
   const scheduledDate = new Date(checkoutDetail.value.ngayTra);
-  
-  // Tính số ngày chênh lệch
   const diffTime = scheduledDate - checkIn;
-  const diffDays = Math.max(1, Math.ceil(diffTime / (1000 * 60 * 60 * 24))); // Quy đổi ra ngày
-  
+  const diffDays = Math.max(1, Math.ceil(diffTime / (1000 * 60 * 60 * 24))); 
   return diffDays * (checkoutDetail.value.giaDat || 0);
 });
+
+// 2. Tính tổng dịch vụ (bao gồm cả dịch vụ thêm mới)
 const serviceTotal = computed(() => {
   if (!checkoutDetail.value) return 0;
   const used = checkoutDetail.value.dichVu?.reduce((sum, s) => sum + (s.thanhTien || 0), 0) || 0;
@@ -362,10 +361,45 @@ const serviceTotal = computed(() => {
   return used + extra;
 });
 
+// 3. Tiền thanh toán trước (SỬA: Không còn giới hạn bởi tiền phòng)
+const effectiveDeposit = computed(() => {
+  if (!applyDeposit.value) return 0;
+  return checkoutDetail.value?.tienCoc || 0; // Lấy toàn bộ tiền đã đóng
+});
+
+// 4. Tổng tiền còn phải thu (SỬA: Tổng hóa đơn trừ sạch tiền đã đóng)
+const grandTotal = computed(() => {
+  const totalBill =
+    roomTotal.value +
+    serviceTotal.value +
+    lateFee.value +
+    (extraFee.value || 0) -
+    (voucherDiscount.value || 0);
+
+  const remaining = totalBill - effectiveDeposit.value;
+  return remaining > 0 ? remaining : 0; // Trả về 0 nếu khách đã đóng dư
+});
+
+// 5. Số tiền thừa cần trả lại khách (Nếu có)
+const refundAmount = computed(() => {
+  const totalBill =
+    roomTotal.value +
+    serviceTotal.value +
+    lateFee.value +
+    (extraFee.value || 0) -
+    (voucherDiscount.value || 0);
+    
+  const diff = effectiveDeposit.value - totalBill;
+  return diff > 0 ? diff : 0;
+});
+
+// --- KẾT THÚC CÁC ĐOẠN SỬA ---
+
 const lateFee = computed(() => {
   const rate = checkoutDetail.value?.giaDat || 0;
   return actualCheckoutTime.value > '12:00' ? Math.round(rate * 0.3) : 0;
 });
+
 const totalSurcharge = computed(() => lateFee.value + (extraFee.value || 0));
 
 const displayServiceRows = computed(() => {
@@ -429,39 +463,6 @@ const surchargeSummaryNote = computed(() => {
   return notes.join(' | ');
 });
 
-// Tính tiền cần thu thêm (Logic: Cọc chỉ trừ tiền phòng, Dịch vụ tính riêng)
-// Tính tiền cần thu thêm
-const grandTotal = computed(() => {
-  // 1. Tổng hóa đơn
-  const totalBill = 
-    roomTotal.value + 
-    serviceTotal.value + 
-    totalSurcharge.value - 
-    (voucherDiscount.value || 0);
-
-  // 2. Tổng đã đóng
-  const paid = depositAmount.value || 0;
-
-  // 3. Số tiền còn lại = Tổng hóa đơn - Đã đóng
-  const remaining = totalBill - paid;
-
-  // Nếu còn lại > 0 thì thu tiếp (đây chính là 70% còn thiếu + dịch vụ)
-  // Nếu còn lại <= 0 (đã đóng đủ hoặc dư) thì bằng 0.
-  return remaining > 0 ? remaining : 0;
-});
-
-
-
-const refundAmount = computed(() => {
-  const total =
-    roomTotal.value +
-    serviceTotal.value +
-    totalSurcharge.value -
-    (voucherDiscount.value || 0) -
-    (effectiveDeposit.value || 0);
-  return total < 0 ? Math.abs(total) : 0;
-});
-
 const selectRoom = (room) => {
   selectedRoomId.value = room.maPhong;
   checkoutDetail.value = null;
@@ -489,7 +490,10 @@ const applyVoucher = () => {
   }
   voucherCode.value = code;
   axios
-    .post(API_PREVIEW_VOUCHER, { voucherCode: code, tongTienGoc: roomTotal.value + serviceTotal.value + totalSurcharge.value })
+    .post(API_PREVIEW_VOUCHER, { 
+        voucherCode: code, 
+        tongTienGoc: roomTotal.value + serviceTotal.value + totalSurcharge.value 
+    })
     .then((res) => {
       voucherDiscount.value = res.data?.soTienGiam || 0;
       voucherMessage.value = res.data?.message || 'Đã kiểm tra voucher.';
@@ -532,9 +536,7 @@ const finalizeCheckout = () => {
 
       if (paymentMethod.value === 'vnpay' || paymentMethod.value === 'momo') {
         const amount = res.data?.tongTienPhaiTra ?? grandTotal.value;
-        if (amount <= 0) {
-          return;
-        }
+        if (amount <= 0) return;
         try {
           const payRes = await axios.post(API_CHECKOUT_PAYMENT, {
             maDatPhong: selectedRoom.value.maDatPhong,
@@ -542,9 +544,7 @@ const finalizeCheckout = () => {
             hinhThucThanhToan: paymentMethod.value
           });
           const redirectUrl = payRes.data?.redirectUrl;
-          if (redirectUrl) {
-            window.location.href = redirectUrl;
-          }
+          if (redirectUrl) window.location.href = redirectUrl;
         } catch (err) {
           errorMessage.value = err.response?.data || err.message;
         }
@@ -561,8 +561,6 @@ const formatCurrency = (value) =>
 const formatDate = (value) => (value ? new Date(value).toLocaleDateString('vi-VN') : '');
 
 const depositAmount = computed(() => checkoutDetail.value?.tienCoc || 0);
-const hasDeposit = computed(() => depositAmount.value > 0);
-const effectiveDeposit = computed(() => (applyDeposit.value ? depositAmount.value : 0));
 
 watch(depositAmount, (val) => {
   applyDeposit.value = val > 0;
@@ -576,7 +574,6 @@ const removeExtraService = (index) => {
   extraServices.value.splice(index, 1);
 };
 </script>
-
 <style scoped>
 .page-container {
   color: #566a7f;

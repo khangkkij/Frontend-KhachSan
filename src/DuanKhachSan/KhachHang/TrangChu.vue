@@ -465,8 +465,6 @@ const loadData = async () => {
   } catch (error) {
     console.error("Lỗi khi tải dữ liệu phòng:", error);
   }
-
-
 };
 
 

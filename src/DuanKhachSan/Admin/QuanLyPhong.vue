@@ -20,17 +20,18 @@ const form = reactive({
   soTreEm:2,
   dienTich: 30,
   giaNiemYet: 0,
+  giaCuoiTuan: 0,
+  giaHienTai: 0,
   priceRanges: [],
   tienIchIds: [],
   images: []
 })
 const tempPrice = reactive({
   maThietLapGia: 0,
-  loaiGia: 'Le',
+  loaiGia: 'Lễ',
   moTa: '',
   ngayBatDau: '',
   ngayKetThuc: '',
-  macDinh: false,
   gia: 0
 })
 function addPriceRange() {
@@ -49,7 +50,7 @@ function addPriceRange() {
 }
 function resetTempPrice() {
   tempPrice.maThietLapGia=0
-  tempPrice.loaiGia = 'Le'
+  tempPrice.loaiGia = 'Lễ'
   tempPrice.moTa = ''
   tempPrice.ngayBatDau = ''
   tempPrice.ngayKetThuc = ''
@@ -183,6 +184,7 @@ const submitVariant = async () => {
   fd.append('SoTreEm', form.soTreEm)
   fd.append('DienTich', form.dienTich)
   fd.append('GiaNiemYet', form.giaNiemYet)
+  fd.append('GiaCuoiTuan', form.giaCuoiTuan)
 
   form.priceRanges.forEach((p, index) => {
     fd.append(`PriceRanges[${index}].MaThietLapGia`, p.maThietLapGia || 0)
@@ -338,6 +340,9 @@ const openEditModal = async (v) => {
       soTreEm: data.soTreEm,
       dienTich: data.dienTich,
       giaNiemYet: data.giaNiemYet,
+      giaCuoiTuan: data.giaCuoiTuan,
+      giaHienTai: data.giaHienTai,
+      giaDangApDungId: data.giaDangApDungId,
       priceRanges: data.priceRanges?.map(p => ({
         maThietLapGia: p.maThietLap ?? p.maThietLapGia ?? 0,
         loaiGia: p.loaiGia,
@@ -360,6 +365,13 @@ const openEditModal = async (v) => {
     alert('Không tải được dữ liệu biến thể')
   }
 }
+const dangDungGiaThuong = computed(() => {
+  return form.giaHienTai === form.giaNiemYet
+})
+
+const dangDungGiaCuoiTuan = computed(() => {
+  return form.giaHienTai === form.giaCuoiTuan
+})
 const openAddRoom = (maBienThePhong) => {
   formPhong.soPhong = ''
   formPhong.trangThai = 0
@@ -703,7 +715,7 @@ const formatPrice = (val) => val?.toLocaleString('vi-VN')
 
             <div class="d-flex justify-content-between align-items-center mt-3">
               <span class="bed-type"><i class='bx bx-bed me-1'></i> {{ v.loaiGiuong }}</span>
-              <span class="room-price">{{ formatPrice(v.giaGoc) }} đ <small class="text-muted fw-normal">/đêm</small></span>
+              <span class="room-price">{{ formatPrice(v.giaHienTai) }} đ <small class="text-muted fw-normal">/đêm</small></span>
             </div>
 
             <div class="amenities-list mt-3">
@@ -727,8 +739,8 @@ const formatPrice = (val) => val?.toLocaleString('vi-VN')
             <div v-if="v.holidayPrice" class="holiday-box mt-3">
               <div class="d-flex justify-content-between align-items-center">
                 <span class="holiday-label">HOLIDAY</span>
-                <span class="holiday-name">{{ giaGoc }}</span>
-                <span class="holiday-val text-warning fw-bold">{{ formatPrice(v.giaGoc) }} đ</span>
+                <span class="holiday-name">{{ giaHienTai }}</span>
+                <span class="holiday-val text-warning fw-bold">{{ formatPrice(v.giaHienTai) }} đ</span>
               </div>
             </div>
 
@@ -901,12 +913,37 @@ const formatPrice = (val) => val?.toLocaleString('vi-VN')
 
           <!-- Giá -->
           <div class="col-md-4">
-            <label class="form-label small fw-bold">Giá niêm yết (VNĐ)</label>
-            <input type="number" class="form-control custom-input fw-bold text-orange" :class="{ 'is-invalid': errors.giaNiemYet }"
-                   v-model.number="form.giaNiemYet">
-            <div class="invalid-feedback">
-              {{ errors.giaNiemYet }}
-            </div>
+            <!-- GIÁ THƯỜNG -->
+            <label class="form-label small fw-bold d-flex justify-content-between">
+              Giá niêm yết (VNĐ)
+              <span 
+                v-if="isEditMode"
+                class="badge"
+                :class="dangDungGiaThuong ? 'bg-success' : 'bg-secondary'"
+              >
+                {{ dangDungGiaThuong ? 'Đang dùng' : 'Không dùng' }}
+              </span>
+            </label>
+
+            <input type="number"
+                  class="form-control custom-input fw-bold text-orange"
+                  v-model.number="form.giaNiemYet">
+
+            <!-- GIÁ CUỐI TUẦN -->
+            <label class="form-label small fw-bold mt-3 d-flex justify-content-between">
+              Giá cuối tuần (VNĐ)
+              <span 
+                v-if="isEditMode"
+                class="badge"
+                :class="dangDungGiaCuoiTuan ? 'bg-success' : 'bg-secondary'"
+              >
+                {{ dangDungGiaCuoiTuan ? 'Đang dùng' : 'Không dùng' }}
+              </span>
+            </label>
+
+            <input type="number"
+                  class="form-control custom-input fw-bold text-orange"
+                  v-model.number="form.giaCuoiTuan">
           </div>
           <div class="col-12 mt-4">
             <div class="p-3 border rounded bg-light">
@@ -948,9 +985,13 @@ const formatPrice = (val) => val?.toLocaleString('vi-VN')
                 </div>
                 <span 
                   class="badge"
-                  :class="p.macDinh ? 'bg-success' : 'bg-secondary'"
+                  :class="p.maThietLapGia === form.giaDangApDungId 
+                            ? 'bg-success' 
+                            : 'bg-secondary'"
                 >
-                  {{ p.macDinh ? 'Đang dùng' : 'Không dùng' }}
+                  {{ p.maThietLapGia === form.giaDangApDungId 
+                      ? 'Đang dùng' 
+                      : 'Không dùng' }}
                 </span><br>
                 <button class="btn btn-sm btn-warning mt-1 me-2"
                         @click="editPriceRange(i)">
@@ -1098,10 +1139,12 @@ const formatPrice = (val) => val?.toLocaleString('vi-VN')
 
         <div class="mb-3">
           <label>Loại giá</label>
-          <select class="form-select" v-model="tempPrice.loaiGia">
-            <option value="Le">Giá lễ</option>
-            <option value="CuoiTuan">Giá cuối tuần</option>
-          </select>
+          <input 
+            type="text" 
+            class="form-control" 
+            v-model="tempPrice.loaiGia"
+            readonly
+          >
         </div>
 
         <div class="mb-3">
@@ -1124,22 +1167,6 @@ const formatPrice = (val) => val?.toLocaleString('vi-VN')
           <label>Giá</label>
           <input type="number" class="form-control" v-model.number="tempPrice.gia">
         </div>
-        <!-- CHỈ HIỆN KHI ĐANG SỬA -->
-        <div class="mt-3" v-if="isEditingPrice">
-          <label class="form-label fw-bold">Thiết lập</label>
-          <div class="form-check form-switch">
-            <input
-              class="form-check-input"
-              type="checkbox"
-              v-model="tempPrice.macDinh"
-              id="macDinhSwitch"
-            >
-            <label class="form-check-label" for="macDinhSwitch">
-              Đặt làm giá mặc định
-            </label>
-          </div>
-        </div>
-
       </div>
 
       <div class="modal-footer">
@@ -1152,6 +1179,9 @@ const formatPrice = (val) => val?.toLocaleString('vi-VN')
     </div>
   </div>
 </div>
+
+
+
 <div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered" style="max-width: 400px;">
     <div class="modal-content border-0 shadow-lg">

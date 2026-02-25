@@ -67,35 +67,6 @@
                         <div class="card-body">
                             <h5 class="fw-bold mb-3">Yêu cầu đặc biệt</h5>
                             <p class="text-muted small">Phụ thuộc vào tình trạng thực tế của khách sạn.</p>
-                            <div class="row">
-                                <div class="col-md-6 border-end">
-                                    <p class="fw-bold small">Quy định hút thuốc:</p>
-                                    <div class="form-check mb-2">
-                                        <input class="form-check-input" type="radio" name="smoke" id="r1" checked>
-                                        <label class="form-check-label" for="r1"><i class="fa fa-ban me-2"></i>Phòng
-                                            không hút thuốc</label>
-                                    </div>
-                                    <div class="form-check mb-2">
-                                        <input class="form-check-input" type="radio" name="smoke" id="r2">
-                                        <label class="form-check-label" for="r2"><i class="fa fa-smoking me-2"></i>Phòng
-                                            hút thuốc</label>
-                                    </div>
-                                </div>
-                                <div class="col-md-6 ps-md-4">
-                                    <p class="fw-bold small">Chọn loại giường:</p>
-                                    <div class="form-check mb-2">
-                                        <input class="form-check-input" type="radio" name="bed" id="b1" checked>
-                                        <label class="form-check-label" for="b1"><i class="fa fa-bed me-2"></i>Giường
-                                            lớn (1 King)</label>
-                                    </div>
-                                    <div class="form-check mb-2">
-                                        <input class="form-check-input" type="radio" name="bed" id="b2">
-                                        <label class="form-check-label" for="b2"><i class="fa fa-bed me-2"></i>2 Giường
-                                            đơn</label>
-                                    </div>
-                                </div>
-                            </div>
-
                             <hr class="my-4">
 
                             <div class="row g-3">
@@ -148,9 +119,12 @@
                         </div>
                     </div>
 
-                    <button type="button" @click="handleBooking" class="btn btn-lg w-100 py-3 fw-bold shadow btn-next">
-                        KẾ TIẾP: BƯỚC CUỐI CÙNG <br>
-                        <small class="fw-normal" style="font-size: 14px;">Có liền xác nhận đặt phòng!</small>
+                    <button type="button" @click="handleBooking" class="btn w-100 py-2 fw-bold shadow-sm btn-next">
+                        <span class="btn-next-title">
+                            Kế tiếp: Bước cuối cùng
+                            <i class="fa fa-arrow-right ms-2"></i>
+                        </span>
+                        <span class="btn-next-subtitle">Có liền xác nhận đặt phòng!</span>
                     </button>
                 </div>
 
@@ -214,7 +188,8 @@
                                     <table class="table table-sm mb-0">
                                         <thead>
                                             <tr>
-                                                <th>Loại phòng</th>
+                                                <th>Phòng</th>
+                                                <th>Đánh giá</th>
                                                 <th>Giá/đêm</th>
                                                 <th>Còn</th>
                                                 <th></th>
@@ -222,7 +197,34 @@
                                         </thead>
                                         <tbody>
                                             <tr v-for="room in roomsByType" :key="room.maBienThePhong">
-                                                <td>{{ room.tenBienThe }}</td>
+                                                <td>
+                                                    <div class="room-cell">
+                                                        <img
+                                                            v-if="room.anhDaiDien"
+                                                            :src="resolveRoomImage(room.anhDaiDien)"
+                                                            class="room-thumb"
+                                                            alt="Ảnh phòng"
+                                                        />
+                                                        <div v-else class="room-thumb room-thumb-placeholder">No img</div>
+                                                        <div>
+                                                            <div class="fw-semibold">{{ room.tenBienThe }}</div>
+                                                            <button
+                                                                type="button"
+                                                                class="btn btn-link p-0 room-link"
+                                                                @click="goToRoomDetail(room.maBienThePhong)"
+                                                            >
+                                                                Xem chi tiết
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div class="rating-inline">
+                                                        <i class="fa fa-star text-warning me-1"></i>
+                                                        <span>{{ formatRating(room.soSaoTrungBinh) }}</span>
+                                                        <small class="text-muted ms-1">({{ room.soLuongDanhGia || 0 }})</small>
+                                                    </div>
+                                                </td>
                                                 <td>{{ room.pricePerNight ? formatCurrency(room.pricePerNight) : '---' }}</td>
                                                 <td>{{ room.soPhongCon ?? '---' }}</td>
                                                 <td class="text-end">
@@ -501,9 +503,25 @@ const mapRoomItem = (item) => {
         maBienThePhong: getField(item, 'maBienThePhong', 'MaBienThePhong'),
         tenBienThe: getField(item, 'tenBienThe', 'TenBienThe') || '---',
         tenLoai: getField(item, 'tenLoai', 'TenLoai') || '',
+        anhDaiDien: getField(item, 'anhDaiDien', 'AnhDaiDien') || '',
+        soLuongDanhGia: Number(getField(item, 'soLuongDanhGia', 'SoLuongDanhGia') || 0),
+        soSaoTrungBinh: Number(getField(item, 'soSaoTrungBinh', 'SoSaoTrungBinh') || 0),
         pricePerNight,
         soPhongCon: getField(item, 'soPhongCon', 'SoPhongCon')
     };
+};
+
+const resolveRoomImage = (imagePath) => {
+    if (!imagePath) return '';
+    if (String(imagePath).startsWith('http')) return imagePath;
+    return `${API}/images/${imagePath}`;
+};
+
+const formatRating = (value) => Number(value || 0).toFixed(1);
+
+const goToRoomDetail = (maBienThePhong) => {
+    if (!maBienThePhong) return;
+    router.push({ name: 'room-detail', params: { id: maBienThePhong } });
 };
 
 const applyRoomFromItem = (item) => {
@@ -750,7 +768,14 @@ onMounted(() => {
     if (roomTypes.value.length === 0) {
         axios.get(`${API}/api/DanhSachPhong`)
             .then((res) => {
-                const list = Array.isArray(res.data) ? res.data : [];
+                const payload = res?.data;
+                const list = Array.isArray(payload)
+                    ? payload
+                    : Array.isArray(payload?.DanhSach)
+                        ? payload.DanhSach
+                        : Array.isArray(payload?.danhSach)
+                            ? payload.danhSach
+                            : [];
                 roomList.value = list;
                 const types = list
                     .map((item) => item.tenLoai || item.TenLoai)
@@ -873,6 +898,7 @@ watch(
     }
 );
 
+
 onUnmounted(() => {
     if(interval) clearInterval(interval);
 });
@@ -985,15 +1011,50 @@ onUnmounted(() => {
 }
 
 .btn-next {
-    background-color: #f35525;
-    border-color: #f35525;
-    color: white;
-    transition: all 0.3s;
+    background: linear-gradient(135deg, #ff8a52 0%, #ff6b2d 55%, #f35525 100%);
+    border: none;
+    border-radius: 12px;
+    color: #fff !important;
+    box-shadow: 0 6px 14px rgba(243, 85, 37, 0.22);
+    transition: all 0.25s ease;
+    letter-spacing: 0.2px;
+}
+
+.btn-next,
+.btn-next:hover,
+.btn-next:focus,
+.btn-next:active,
+.btn-next .btn-next-title,
+.btn-next .btn-next-subtitle {
+    color: #fff !important;
+}
+
+.btn-next-title {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    font-size: 1rem;
+    text-transform: none;
+}
+
+.btn-next-subtitle {
+    display: block;
+    margin-top: 2px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    opacity: 0.92;
 }
 
 .btn-next:hover {
-    background-color: #d14013;
-    transform: translateY(-2px);
+    background: linear-gradient(135deg, #ffa06f 0%, #ff7b3a 55%, #ff6426 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 10px 18px rgba(243, 85, 37, 0.24);
+}
+
+.btn-next:active {
+    transform: translateY(0);
+    box-shadow: 0 4px 10px rgba(243, 85, 37, 0.2);
 }
 
 .object-fit-cover {
@@ -1005,6 +1066,46 @@ onUnmounted(() => {
     border-radius: 10px;
     padding: 10px 12px;
     background: #fff;
+}
+
+.room-cell {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.room-thumb {
+    width: 56px;
+    height: 42px;
+    border-radius: 8px;
+    object-fit: cover;
+    border: 1px solid #eee;
+    flex-shrink: 0;
+}
+
+.room-thumb-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f4f5f7;
+    color: #9aa0a6;
+    font-size: 11px;
+}
+
+.room-link {
+    font-size: 12px;
+    color: #f35525;
+    text-decoration: none;
+}
+
+.room-link:hover {
+    color: #d9471b;
+    text-decoration: underline;
+}
+
+.rating-inline {
+    white-space: nowrap;
+    font-weight: 600;
 }
 
 .btn-outline-orange {

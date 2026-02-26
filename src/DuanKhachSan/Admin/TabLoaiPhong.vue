@@ -33,7 +33,7 @@ const closeModal = () => showModal.value = false
 
 const validateForm = () => {
   errors.tenLoai = ''
-  if (!form.tenLoai.trim()) { errors.tenLoai = 'Tên loại phòng không được để trống'; return false; }
+  if (!form.tenLoai.trim()) { errors.tenLoai = 'Tên hạng phòng không được để trống'; return false; }
   return true
 }
 
@@ -61,15 +61,15 @@ const deleteLoaiPhong = async (id) => {
     <div class="card-header bg-white border-bottom py-3 px-4">
       <div class="row align-items-center">
         <div class="col-md-4">
-          <h5 class="mb-0 fw-bold">Danh sách Loại Phòng</h5>
+          <h5 class="mb-0 fw-bold">Danh sách Hạng Phòng</h5>
         </div>
         <div class="col-md-8 d-flex justify-content-end gap-3">
           <div class="search-container">
             <i class="bi bi-search"></i>
-            <input v-model="keyword" type="text" class="form-control form-control-sm ps-5" placeholder="Tìm tên loại phòng...">
+            <input v-model="keyword" type="text" class="form-control form-control-sm ps-5" placeholder="Tìm tên hạng phòng...">
           </div>
           <button class="btn btn-primary btn-sm px-3 d-flex align-items-center" @click="openAddModal">
-            <i class="bi bi-plus-lg me-2"></i> Thêm loại phòng
+            <i class="bi bi-plus-lg me-2"></i> Thêm hạng phòng
           </button>
         </div>
       </div>
@@ -81,7 +81,7 @@ const deleteLoaiPhong = async (id) => {
           <thead class="bg-light">
             <tr>
               <th class="ps-4 border-0 text-uppercase small fw-bold text-muted" style="width: 100px;">Mã số</th>
-              <th class="border-0 text-uppercase small fw-bold text-muted">Tên loại phòng</th>
+              <th class="border-0 text-uppercase small fw-bold text-muted">Tên hạng phòng</th>
               <th class="border-0 text-uppercase small fw-bold text-muted">Mô tả chi tiết</th>
               <th class="border-0 text-uppercase small fw-bold text-muted text-end pe-4">Thao tác</th>
             </tr>
@@ -118,7 +118,7 @@ const deleteLoaiPhong = async (id) => {
           </div>
           <div class="modal-body p-4">
             <div class="mb-3">
-              <label class="small fw-bold text-muted mb-1">TÊN LOẠI PHÒNG</label>
+              <label class="small fw-bold text-muted mb-1">TÊN HẠNG PHÒNG</label>
               <input v-model="form.tenLoai" type="text" class="form-control" :class="{'is-invalid': errors.tenLoai}">
               <div class="invalid-feedback">{{ errors.tenLoai }}</div>
             </div>
@@ -144,4 +144,30 @@ const deleteLoaiPhong = async (id) => {
 .btn-action:hover { background: #e9ecef; }
 .table th { background: #f8f9fa; padding: 15px 10px; }
 .table td { padding: 15px 10px; border-bottom: 1px solid #f1f1f1; }
+/* ===== MOBILE FIX ===== */
+@media (max-width: 768px) {
+
+  .search-container {
+    width: 100% !important;
+  }
+
+  .card-header .row {
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .card-header .col-md-8 {
+    flex-direction: column;
+    align-items: stretch !important;
+  }
+
+  .btn {
+    width: 100%;
+  }
+
+  .table-responsive {
+    overflow-x: auto;
+  }
+
+}
 </style>

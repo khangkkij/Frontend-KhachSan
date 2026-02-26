@@ -151,4 +151,35 @@ const confirmDelete = async (ti) => {
 .extra-small { font-size: 11px; }
 .table th { background: #f8f9fa; padding: 15px 10px; }
 .table td { padding: 12px 10px; border-bottom: 1px solid #f1f1f1; }
+/* ===== MOBILE FIX ===== */
+@media (max-width: 768px) {
+
+  .search-container {
+    width: 100% !important;
+  }
+
+  .card-header .row {
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .card-header .col-md-8 {
+    flex-direction: column;
+    align-items: stretch !important;
+  }
+
+  .btn {
+    width: 100%;
+  }
+
+  table {
+    min-width: 600px;
+  }
+
+  .modal-dialog {
+    margin: 0.5rem;
+    max-width: calc(100% - 1rem);
+  }
+
+}
 </style>

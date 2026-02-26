@@ -19,7 +19,7 @@
           :class="{ active: activeTab === 'loaiphong' }"
           @click="activeTab = 'loaiphong'"
         >
-          <i class="bi bi-house-door me-2"></i>Loại phòng
+          <i class="bi bi-house-door me-2"></i>Hạng phòng
         </button>
         <button
           class="tab-item"
@@ -80,4 +80,24 @@ const activeTab = ref('loaiphong')
 }
 
 .tab-item:hover { color: #0d6efd; }
+/* ===== MOBILE FIX ===== */
+@media (max-width: 768px) {
+
+  .corporate-tabs {
+    overflow-x: auto;
+    white-space: nowrap;
+    gap: 15px;
+  }
+
+  .tab-item {
+    flex: 0 0 auto;
+    font-size: 14px;
+  }
+
+  .container {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+}
 </style>

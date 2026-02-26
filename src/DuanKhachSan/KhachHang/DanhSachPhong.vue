@@ -328,6 +328,7 @@ watch(
               <div class="main-button">
                 <router-link
                   :to="room.soPhongCon > 0 ? `/phong/${room.maBienThePhong}` : ''"
+                  @click="console.log('Mã phòng:', room.maBienThePhong)"
                   class="btn-book"
                   :class="{ disabled: room.soPhongCon === 0 }"
                   :aria-disabled="room.soPhongCon === 0"
@@ -518,5 +519,34 @@ input::-webkit-inner-spin-button {
   pointer-events: none;
   background: none;
 }
+/* ===== MOBILE FIX ===== */
+@media (max-width: 768px) {
 
+  .properties-box .item .thumb {
+    height: 180px;
+  }
+
+  .properties-box .item {
+    padding: 14px;
+  }
+
+  .room-info-row {
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .room-info-row div {
+    margin: 0 !important;
+  }
+
+  .main-button a,
+  .btn-book {
+    width: 100%;
+  }
+
+  .category {
+    font-size: 12px;
+  }
+
+}
 </style>

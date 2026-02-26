@@ -34,17 +34,51 @@ const tempPrice = reactive({
   ngayKetThuc: '',
   gia: 0
 })
+const priceErrors = reactive({})
 function addPriceRange() {
-  if (!tempPrice.ngayBatDau || !tempPrice.ngayKetThuc || !tempPrice.gia) {
-    alert("Vui lòng nhập đủ thông tin khoảng giá")
-    return
+
+  // reset lỗi
+  priceErrors.moTa = ''
+  priceErrors.gia = ''
+  priceErrors.ngayBatDau = ''
+  priceErrors.ngayKetThuc = ''
+
+  // ===== VALIDATE =====
+
+  if (!tempPrice.moTa.trim()) {
+    priceErrors.moTa = 'Mô tả không được để trống'
   }
 
+  if (!tempPrice.gia || tempPrice.gia <= 0) {
+    priceErrors.gia = 'Giá phải lớn hơn 0'
+  }
+
+  if (!tempPrice.ngayBatDau) {
+    priceErrors.ngayBatDau = 'Vui lòng chọn ngày bắt đầu'
+  }
+
+  if (!tempPrice.ngayKetThuc) {
+    priceErrors.ngayKetThuc = 'Vui lòng chọn ngày kết thúc'
+  }
+
+  if (
+    tempPrice.ngayBatDau &&
+    tempPrice.ngayKetThuc &&
+    new Date(tempPrice.ngayKetThuc) < new Date(tempPrice.ngayBatDau)
+  ) {
+    priceErrors.ngayKetThuc = 'Ngày kết thúc phải lớn hơn hoặc bằng ngày bắt đầu'
+  }
+
+  // nếu có lỗi thì dừng
+  if (Object.values(priceErrors).some(e => e)) return
+
+  // ===== LƯU =====
   if (editingIndex.value !== null) {
     form.priceRanges[editingIndex.value] = { ...tempPrice }
   } else {
     form.priceRanges.push({ ...tempPrice })
   }
+
   resetTempPrice()
   closePriceModal()
 }
@@ -124,12 +158,24 @@ const handleUploadImages = (e) => {
       return
     }
   }
-  previewImages.value = files.map(f => URL.createObjectURL(f))
-  form.images = files
+  files.forEach(file => {
+    previewImages.value.push(URL.createObjectURL(file))
+    form.images.push(file)
+  })
+  e.target.value = ''
 }
 const removeImage = (index) => {
-  form.images.splice(index, 1)
+  const img = previewImages.value[index]
+
+  if (img.isOld) {
+    removedImages.value.push(img.url)
+  }
+
   previewImages.value.splice(index, 1)
+
+  if (!img.isOld) {
+    form.images.splice(index, 1)
+  }
 }
 
 const errors = reactive({})
@@ -137,10 +183,17 @@ const errors = reactive({})
 const validateForm = () => {
   Object.keys(errors).forEach(k => delete errors[k])
 
-  if (!form.maLp) errors.maLp = 'Vui lòng chọn loại phòng'
-  if (!form.tenBienThe.trim()) errors.tenBienThe = 'Tên biến thể không được để trống'
-  if (!form.loaiGiuong) errors.loaiGiuong = 'Vui lòng chọn loại giường'
-  if (!form.huongNhin) errors.huongNhin = 'Vui lòng chọn hướng nhìn'
+  if (!form.maLp)
+    errors.maLp = 'Vui lòng chọn hạng phòng'
+
+  if (!form.tenBienThe.trim())
+    errors.tenBienThe = 'Tên loại phòng không được để trống'
+
+  if (!form.loaiGiuong)
+    errors.loaiGiuong = 'Vui lòng chọn loại giường'
+
+  if (!form.huongNhin)
+    errors.huongNhin = 'Vui lòng chọn hướng nhìn'
 
   if (!form.soNguoiLon || form.soNguoiLon < 1)
     errors.soNguoiLon = 'Số người lớn phải ≥ 1'
@@ -148,12 +201,20 @@ const validateForm = () => {
   if (!form.dienTich || form.dienTich < 10)
     errors.dienTich = 'Diện tích tối thiểu 10m²'
 
-  if (!form.giaNiemYet || form.giaNiemYet <= 0)
-    errors.giaNiemYet = 'Giá niêm yết phải > 0'
+  // ===== VALIDATE GIÁ =====
+
+  if (!form.giaNiemYet || form.giaNiemYet <= 0) {
+    errors.giaNiemYet = 'Giá niêm yết phải lớn hơn 0'
+  }
+
+  if (form.giaCuoiTuan && form.giaCuoiTuan < form.giaNiemYet) {
+    errors.giaCuoiTuan = 'Giá cuối tuần không được nhỏ hơn giá niêm yết'
+  }
 
   if (!isEditMode.value && form.images.length === 0) {
     errors.images = 'Vui lòng tải lên ít nhất 1 hình ảnh'
   }
+
   return Object.keys(errors).length === 0
 }
 
@@ -185,7 +246,9 @@ const submitVariant = async () => {
   fd.append('DienTich', form.dienTich)
   fd.append('GiaNiemYet', form.giaNiemYet)
   fd.append('GiaCuoiTuan', form.giaCuoiTuan)
-
+  removedImages.value.forEach(url =>
+    fd.append('RemovedImages', url)
+  )
   form.priceRanges.forEach((p, index) => {
     fd.append(`PriceRanges[${index}].MaThietLapGia`, p.maThietLapGia || 0)
     fd.append(`PriceRanges[${index}].LoaiGia`, p.loaiGia)
@@ -196,9 +259,9 @@ const submitVariant = async () => {
     fd.append(`PriceRanges[${index}].MacDinh`, p.macDinh ?? false)
   })
   for (let pair of fd.entries()) {
-  console.log(pair[0] + ':', pair[1])
-}
-
+    console.log(pair[0] + ':', pair[1])
+  }
+  
   form.tienIchIds.forEach(id => fd.append('TienIchIds', id))
   form.images.forEach(file => fd.append('Images', file))
 
@@ -208,13 +271,13 @@ const submitVariant = async () => {
         `${API}/api/admin/QuanLyPhongBienThe/${selectedVariant.value.maBienThePhong}`,
         fd
       )
-      alert('Cập nhật biến thể thành công!')
+      alert('Cập nhật loại phòng thành công!')
     } else {
       await axios.post(
         `${API}/api/admin/QuanLyPhongBienThe`,
         fd
       )
-      alert('Tạo biến thể thành công!')
+      alert('Tạo loại phòng thành công!')
       closeCreateModal()
     }
   } catch (err) {
@@ -321,6 +384,7 @@ const closeEditRoomModal = () => {
   const modalEl = document.getElementById('editRoomModal')
   bootstrap.Modal.getInstance(modalEl)?.hide()
 }
+const removedImages = ref([])
 const openEditModal = async (v) => {
   isEditMode.value = true
 
@@ -355,14 +419,15 @@ const openEditModal = async (v) => {
       tienIchIds: data.tienIchIds,
       images: [] // reset file upload
     })
-
-    // 🔥 HIỆN ẢNH CŨ
-    previewImages.value = data.imageUrls ?? []
+    previewImages.value = (data.imageUrls ?? []).map(url => ({
+      url,
+      isOld: true
+    }))
 
     selectedVariant.value = v
   } catch (err) {
     console.error(err)
-    alert('Không tải được dữ liệu biến thể')
+    alert('Không tải được dữ liệu loại phòng')
   }
 }
 const dangDungGiaThuong = computed(() => {
@@ -402,10 +467,10 @@ const confirmDelete = async () => {
 
     variantToDelete.value = null
 
-    alert('Xóa biến thể phòng thành công!')
+    alert('Xóa loại phòng thành công!')
   } catch (err) {
     console.error(err)
-    alert('Xóa thất bại! Biến thể đang được sử dụng.')
+    alert('Xóa thất bại! loại phòng đang được sử dụng.')
   }
 }
 
@@ -551,7 +616,7 @@ const formatPrice = (val) => val?.toLocaleString('vi-VN')
     <div class="d-flex justify-content-between align-items-center mb-4">
       <div>
         <h4 class="fw-bold mb-0">Quản lý Phòng</h4>
-        <small class="text-secondary">Biến thể phòng, tiện ích & bảng giá</small>
+        <small class="text-secondary">Loại phòng, tiện ích & bảng giá</small>
       </div>
       <button
         class="btn btn-success fw-bold"
@@ -559,7 +624,7 @@ const formatPrice = (val) => val?.toLocaleString('vi-VN')
         data-bs-toggle="modal"
         data-bs-target="#variantModal"
       >
-        <i class='bx bx-plus me-1'></i> Thêm biến thể
+        <i class='bx bx-plus me-1'></i> Thêm loại phòng
       </button>
 
     </div>
@@ -573,7 +638,7 @@ const formatPrice = (val) => val?.toLocaleString('vi-VN')
               <i class="bx bx-grid-alt"></i>
             </div>
             <div>
-              <div class="stat-label">Biến thể</div>
+              <div class="stat-label">Loại phòng</div>
               <div class="stat-value">{{ dashboard.tongBienThe }}</div>
             </div>
           </div>
@@ -631,7 +696,7 @@ const formatPrice = (val) => val?.toLocaleString('vi-VN')
             type="text"
             v-model="keyword"
             class="form-control search-input"
-            placeholder="Tìm kiếm biến thể phòng..."
+            placeholder="Tìm kiếm loại phòng..."
           >
         </div>
       </div>
@@ -814,7 +879,7 @@ const formatPrice = (val) => val?.toLocaleString('vi-VN')
       <div class="modal-header bg-dark-blue text-white py-3">
         <h5 class="modal-title fs-6">
           <i class='bx bx-bed me-2'></i>
-          {{ isEditMode ? 'Chỉnh sửa biến thể phòng' : 'Tạo biến thể phòng mới' }}
+          {{ isEditMode ? 'Chỉnh sửa loại phòng' : 'Tạo loại phòng mới' }}
         </h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
       </div>
@@ -825,9 +890,9 @@ const formatPrice = (val) => val?.toLocaleString('vi-VN')
 
           <!-- Loại phòng -->
           <div class="col-md-6">
-            <label class="form-label small fw-bold">Loại phòng *</label>
+            <label class="form-label small fw-bold">Loại hạng phòng *</label>
             <select class="form-select custom-input" :class="{ 'is-invalid': errors.maLp }" v-model="form.maLp">
-              <option value="">Chọn loại phòng...</option>
+              <option value="">Chọn loại hạng phòng...</option>
               <option v-for="lp in dashboard.dsLoaiPhong" :key="lp.maLp" :value="lp.maLp">
                 {{ lp.tenLoai }}
               </option>
@@ -839,7 +904,7 @@ const formatPrice = (val) => val?.toLocaleString('vi-VN')
 
           <!-- Tên biến thể -->
           <div class="col-md-6">
-            <label class="form-label small fw-bold">Tên biến thể *</label>
+            <label class="form-label small fw-bold">Tên loại phòng *</label>
             <input type="text" class="form-control custom-input"
                    v-model="form.tenBienThe"
                    :class="{ 'is-invalid': errors.tenBienThe }"
@@ -927,7 +992,12 @@ const formatPrice = (val) => val?.toLocaleString('vi-VN')
 
             <input type="number"
                   class="form-control custom-input fw-bold text-orange"
+                  :class="{ 'is-invalid': errors.giaNiemYet }"
                   v-model.number="form.giaNiemYet">
+
+            <div class="invalid-feedback">
+              {{ errors.giaNiemYet }}
+            </div>
 
             <!-- GIÁ CUỐI TUẦN -->
             <label class="form-label small fw-bold mt-3 d-flex justify-content-between">
@@ -943,7 +1013,12 @@ const formatPrice = (val) => val?.toLocaleString('vi-VN')
 
             <input type="number"
                   class="form-control custom-input fw-bold text-orange"
+                  :class="{ 'is-invalid': errors.giaCuoiTuan }"
                   v-model.number="form.giaCuoiTuan">
+
+            <div class="invalid-feedback">
+              {{ errors.giaCuoiTuan }}
+            </div>
           </div>
           <div class="col-12 mt-4">
             <div class="p-3 border rounded bg-light">
@@ -1045,7 +1120,7 @@ const formatPrice = (val) => val?.toLocaleString('vi-VN')
           <div class="d-flex flex-wrap gap-2 mt-2">
             <div v-for="(img, i) in previewImages" :key="i" class="position-relative">
               <img
-                :src="img"
+                :src="img.url"
                 class="rounded"
                 style="width:80px;height:80px;object-fit:cover;"
               >
@@ -1093,7 +1168,7 @@ const formatPrice = (val) => val?.toLocaleString('vi-VN')
             </div>
 
             <div class="mb-3">
-              <label class="form-label small fw-bold text-muted">Biến thể</label>
+              <label class="form-label small fw-bold text-muted">Loại phòng</label>
               <input
                 type="text"
                 class="form-control bg-light"
@@ -1149,23 +1224,47 @@ const formatPrice = (val) => val?.toLocaleString('vi-VN')
 
         <div class="mb-3">
           <label>Mô tả</label>
-          <input type="text" class="form-control" v-model="tempPrice.moTa">
+          <input type="text"
+                class="form-control"
+                :class="{ 'is-invalid': priceErrors.moTa }"
+                v-model="tempPrice.moTa">
+          <div class="invalid-feedback">
+            {{ priceErrors.moTa }}
+          </div>
         </div>
 
         <div class="row">
           <div class="col-md-6">
             <label>Từ ngày</label>
-            <input type="date" class="form-control" v-model="tempPrice.ngayBatDau">
+            <input type="date"
+                  class="form-control"
+                  :class="{ 'is-invalid': priceErrors.ngayBatDau }"
+                  v-model="tempPrice.ngayBatDau">
+            <div class="invalid-feedback">
+              {{ priceErrors.ngayBatDau }}
+            </div>
           </div>
+
           <div class="col-md-6">
             <label>Đến ngày</label>
-            <input type="date" class="form-control" v-model="tempPrice.ngayKetThuc">
+            <input type="date"
+                  class="form-control"
+                  :class="{ 'is-invalid': priceErrors.ngayKetThuc }"
+                  v-model="tempPrice.ngayKetThuc">
+            <div class="invalid-feedback">
+              {{ priceErrors.ngayKetThuc }}
+            </div>
           </div>
         </div>
-
         <div class="mt-3">
           <label>Giá</label>
-          <input type="number" class="form-control" v-model.number="tempPrice.gia">
+          <input type="text"
+                class="form-control"
+                :class="{ 'is-invalid': priceErrors.gia }"
+                v-model="tempPrice.gia">
+          <div class="invalid-feedback">
+            {{ priceErrors.gia }}
+          </div>
         </div>
       </div>
 
@@ -1180,8 +1279,6 @@ const formatPrice = (val) => val?.toLocaleString('vi-VN')
   </div>
 </div>
 
-
-
 <div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered" style="max-width: 400px;">
     <div class="modal-content border-0 shadow-lg">
@@ -1191,7 +1288,7 @@ const formatPrice = (val) => val?.toLocaleString('vi-VN')
         </div>
         <h5 class="fw-bold">Xác nhận xóa?</h5>
         <p class="text-secondary small">
-          Bạn có chắc chắn muốn xóa biến thể phòng này? Hành động này không thể hoàn tác và sẽ xóa tất cả các phòng thuộc biến thể này.
+          Bạn có chắc chắn muốn xóa loại phòng này? Hành động này không thể hoàn tác và sẽ xóa tất cả các phòng thuộc loại phòng này.
         </p>
         <div class="d-flex gap-2 mt-4">
           <button class="btn btn-light flex-grow-1" data-bs-dismiss="modal">Hủy bỏ</button>
@@ -1376,6 +1473,213 @@ const formatPrice = (val) => val?.toLocaleString('vi-VN')
 </template>
 
 <style>
+/* ============================= */
+/* FIX TRÀN NGANG TOÀN TRANG */
+/* ============================= */
+html, body {
+  overflow-x: hidden;
+}
+
+/* ============================= */
+/* TAB LOẠI PHÒNG CUỘN NGANG */
+/* ============================= */
+.d-flex.gap-2.mb-4 {
+  overflow-x: auto;
+  white-space: nowrap;
+  padding-bottom: 10px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.btn-tab {
+  flex: 0 0 auto;
+}
+
+/* ============================= */
+/* FIX CARD KHÔNG BỂ MOBILE */
+/* ============================= */
+.room-variant-card {
+  background: white;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+  display: flex;
+  flex-direction: column;
+  height: auto; /* 🔥 bỏ height:100% gây bể */
+}
+
+/* ============================= */
+/* FIX IMAGE */
+/* ============================= */
+.room-preview-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  background-color: #f5f5f5;
+}
+
+/* ============================= */
+/* FIX ROOM LIST SCROLL */
+/* ============================= */
+.room-list-scroll {
+  max-height: 300px;
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
+/* ============================= */
+/* MOBILE RESPONSIVE */
+/* ============================= */
+@media (max-width: 768px) {
+
+  /* Card spacing đẹp hơn */
+  .card-body-content {
+    padding: 15px;
+  }
+
+  /* Ảnh nhỏ lại */
+  .room-preview-icon {
+    height: 140px;
+  }
+
+  /* Giá nhỏ lại */
+  .room-price {
+    font-size: 16px;
+  }
+
+  /* Stat card gọn lại */
+  .stat-card {
+    padding: 12px;
+    gap: 10px;
+  }
+
+  .stat-value {
+    font-size: 16px;
+  }
+
+  /* Modal không tràn */
+  .modal-dialog {
+    margin: 0.5rem;
+    max-width: calc(100% - 1rem) !important;
+  }
+
+  /* 🔥 FIX HOVER KHÔNG HIỆN NÚT TRÊN MOBILE */
+  .room-actions-hidden {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  /* Nút bấm to hơn cho tay */
+  .btn-room-edit,
+  .btn-room-delete {
+    width: 32px;
+    height: 32px;
+  }
+
+}
+
+/* ============================= */
+/* HOVER DESKTOP */
+/* ============================= */
+.room-item-row {
+  position: relative;
+  transition: all 0.2s;
+}
+
+.room-item-row:hover {
+  background: #f1f5f9 !important;
+}
+
+.room-actions-hidden {
+  opacity: 0;
+  transform: translateX(10px);
+  transition: all 0.2s ease;
+  display: flex;
+  gap: 4px;
+}
+
+.room-item-row:hover .room-actions-hidden {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* ============================= */
+/* BUTTON STYLE GIỮ NGUYÊN */
+/* ============================= */
+.btn-room-edit {
+  background: #e0f2fe;
+  color: #0369a1;
+  border: none;
+  border-radius: 4px;
+}
+
+.btn-room-delete {
+  background: #fee2e2;
+  color: #b91c1c;
+  border: none;
+  border-radius: 4px;
+}
+/* 1. Cho phép thanh Tab loại phòng cuộn ngang trên mobile thay vì xuống dòng */
+.d-flex.gap-2.mb-4 {
+  overflow-x: auto;
+  white-space: nowrap;
+  padding-bottom: 10px;
+  -webkit-overflow-scrolling: touch; /* Cuộn mượt trên mobile */
+}
+
+.btn-tab {
+  flex: 0 0 auto; /* Ngăn các tab bị co lại */
+}
+
+/* 2. Điều chỉnh kích thước Modal để không bị tràn màn hình nhỏ */
+@media (max-width: 576px) {
+  .modal-dialog {
+    margin: 0.5rem;
+    max-width: calc(100% - 1rem) !important;
+  }
+  
+  .stat-card {
+    padding: 12px;
+    gap: 10px;
+  }
+  
+  .stat-value {
+    font-size: 16px;
+  }
+  
+  .room-price {
+    font-size: 16px;
+  }
+}
+
+/* 3. Tối ưu lại Room Card trên màn hình nhỏ */
+.room-variant-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.room-preview-icon {
+  height: 160px; /* Tăng chiều cao ảnh một chút để dễ nhìn trên mobile */
+}
+
+/* 4. Đảm bảo ảnh không bị méo */
+.room-preview-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* Chuyển từ contain sang cover để ảnh đầy khung hình đẹp hơn */
+}
+
+/* 5. Cải thiện trải nghiệm bấm nút trên mobile (Touch Target) */
+.btn-room-edit, .btn-room-delete, .btn-room-view {
+  width: 32px;  /* Tăng nhẹ kích thước để dễ bấm bằng tay */
+  height: 32px;
+}
+
+/* 6. Fix lỗi Modal bị khuất khi bàn phím ảo hiện lên trên Android */
+.modal-content {
+  max-height: 90vh;
+  overflow-y: auto;
+}
 #priceRangeModal {
   z-index: 5000;
 }

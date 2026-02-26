@@ -26,14 +26,15 @@ const iconMap = {
   'tv-icon': 'fa-tv'
 }
 
-const selectedVariant = computed(() => {
-  return bienThePhong.value?.find(
-    bt => bt.maBienThePhong === selectedVariantId.value
-  )
-})
+// const selectedVariant = computed(() => {
+//   return bienThePhong.value?.find(
+//     bt => bt.maBienThePhong === selectedVariantId.value
+//   )
+// })
+const selectedVariant = ref(null)
 function chonBienThe(bt) {
   if (bt.soPhongCon === 0) return
-  selectedVariantId.value = bt.maBienThePhong
+  selectedVariant.value = bt
 }
 const getDiscountedPrice = (variant) => {
   if (!variant) return null;
@@ -51,28 +52,26 @@ const changeImage = (img) => {
 }
 onMounted(async () => {
   const res = await axios.get(`${API}/api/ChiTietPhong/${roomId}`)
+
   room.value = res.data.chiTiet
-  bienTheNgauNhien.value = res.data.bienTheNgauNhien
   tienIch.value = res.data.chiTiet.tienIch
-  bienThePhong.value = res.data?.bienTheKhac ?? []
-  if (bienThePhong.value.length > 0) {
-    selectedVariantId.value = bienThePhong.value[0].maBienThePhong
-  }
-  const exist = bienThePhong.value.find(
+  bienTheNgauNhien.value = res.data.bienTheNgauNhien ?? []
+
+  // GHÉP chiTiet vào danh sách biến thể
+  bienThePhong.value = [
+    res.data.chiTiet,
+    ...(res.data.bienTheKhac ?? [])
+  ]
+
+  // CHỌN ĐÚNG biến thể theo URL
+  selectedVariant.value = bienThePhong.value.find(
     bt => bt.maBienThePhong == roomId
-  )
-  if (exist) {
-    selectedVariantId.value = exist.maBienThePhong
-  } else if (bienThePhong.value.length > 0) {
-    selectedVariantId.value = bienThePhong.value[0].maBienThePhong
-  }
-  initSelectedVariant(roomId)
-  console.log("So tre em" + selectedVariant.value.soTreEm)
-  console.log("So tre em" + selectedVariant.value.soNguoiToiDa)
+  ) || bienThePhong.value[0]
+
+  loading.value = false
 })
 const canBook = computed(() => {
-  return selectedVariant.value
-    && selectedVariant.value.soPhongCon > 0
+  return selectedVariant.value?.soPhongCon > 0
 })
 const initSelectedVariant = (roomId) => {
   if (!bienThePhong.value.length) return
@@ -91,16 +90,22 @@ watch(
   () => route.params.id,
   async (newId) => {
     loading.value = true
-    const res = await axios.get(`${API}/api/ChiTietPhong/${newId}`)
-    room.value = res.data.chiTiet
-    bienTheNgauNhien.value = res.data.bienTheNgauNhien
-    tienIch.value = res.data.chiTiet.tienIch
-    bienThePhong.value = res.data?.bienTheKhac ?? []
 
-    if (bienThePhong.value.length > 0) {
-      selectedVariantId.value = bienThePhong.value[0].maBienThePhong
-    }
-    initSelectedVariant(newId)
+    const res = await axios.get(`${API}/api/ChiTietPhong/${newId}`)
+
+    room.value = res.data.chiTiet
+    tienIch.value = res.data.chiTiet.tienIch
+    bienTheNgauNhien.value = res.data.bienTheNgauNhien ?? []
+
+    bienThePhong.value = [
+      res.data.chiTiet,
+      ...(res.data.bienTheKhac ?? [])
+    ]
+
+    selectedVariant.value = bienThePhong.value.find(
+      bt => bt.maBienThePhong == newId
+    ) || bienThePhong.value[0]
+
     loading.value = false
   }
 )
@@ -305,8 +310,14 @@ const goBooking = () => {
                       </div>
                     </div>
 
-                    <input type="radio" class="form-check-input mt-1" :checked="selectedVariantId === bt.maBienThePhong"
-                      :disabled="bt.soPhongCon === 0" />
+                    <input
+                      type="radio"
+                      class="form-check-input mt-1"
+                      name="variant"
+                      :value="bt"
+                      v-model="selectedVariant"
+                      :disabled="bt.soPhongCon === 0"
+                    />
                   </div>
 
                   <div class="mt-3 d-flex justify-content-between align-items-end">
@@ -989,5 +1000,56 @@ const goBooking = () => {
 .main-button a:hover {
   transform: translateY(-3px);
   box-shadow: 0 15px 30px rgba(243, 85, 37, 0.45);
+}
+/* ===== MOBILE FIX ===== */
+@media (max-width: 992px) {
+
+  .variant-box {
+    position: static !important;
+    top: auto !important;
+    max-height: none !important;
+    padding: 16px;
+  }
+
+  .variant-footer {
+    position: static;
+    box-shadow: none;
+  }
+
+}
+
+@media (max-width: 768px) {
+
+  .main-image {
+    min-height: 250px;
+  }
+
+  .main-room-image {
+    min-height: 250px;
+  }
+
+  .thumbnail-img {
+    width: 70px;
+    height: 55px;
+  }
+
+  .amenity-grid {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  }
+
+  .info-card {
+    position: static;
+    margin-top: 20px;
+  }
+
+  .properties-box .item .thumb {
+    height: 180px;
+  }
+
+  .room-info-row {
+    flex-direction: column;
+    gap: 6px;
+  }
+
 }
 </style>

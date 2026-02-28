@@ -112,13 +112,13 @@
       </div>
 
       <div class="d-flex gap-2 mt-4">
-        <button class="btn btn-success px-4" @click="handleConfirm">
-          <i class="fa fa-check me-2"></i> Xác nhận
-        </button>
-        <button class="btn btn-primary px-4" @click="handlePrint">
-          <i class="fa fa-print me-2"></i> In hóa đơn
-        </button>
-      </div>
+  <button class="btn btn-success px-4" @click="handleConfirm">
+    <i class="fa fa-home me-2"></i> Về trang chủ
+  </button>
+  <button class="btn btn-primary px-4" @click="handlePrint">
+    <i class="fa fa-print me-2"></i> In hóa đơn
+  </button>
+</div>
     </div>
   </div>
 </template>

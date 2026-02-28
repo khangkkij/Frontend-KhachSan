@@ -2,24 +2,60 @@
   <div class="staff-manager-container">
 
     <div class="card card-custom mb-4">
-      <div class="card-body d-flex justify-content-between align-items-center row gap-3 gap-md-0">
-        <div class="col-md-4">
-          <h5 class="card-title fw-bold text-primary mb-0">
-            <i class='bx bx-user-pin me-2'></i>Quản lý Nhân sự
-          </h5>
-        </div>
-        <div class="col-md-8">
-          <div class="d-flex align-items-center justify-content-md-end gap-3">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center row gap-3 gap-md-0 mb-3">
+          <div class="col-md-4">
+            <h5 class="card-title fw-bold text-primary mb-0">
+              <i class='bx bx-user-pin me-2'></i>Quản lý Nhân sự
+            </h5>
+          </div>
+          <div class="col-md-8">
+            <div class="d-flex align-items-center justify-content-md-end gap-3">
+              <div class="input-group input-group-custom flex-grow-1" style="max-width: 350px;">
+                <span class="input-group-text"><i class="bx bx-search"></i></span>
+                <input type="text" class="form-control" placeholder="Tìm Tên, Mã NV, Email, Username..."
+                  v-model="searchQuery" />
+              </div>
 
-            <div class="input-group input-group-custom flex-grow-1" style="max-width: 300px;">
-              <span class="input-group-text"><i class="bx bx-search"></i></span>
-              <input type="text" class="form-control" placeholder="Tìm kiếm..." v-model="searchQuery" />
+              <button class="btn btn-primary btn-add-new shadow-sm" @click="openModal('add')">
+                <i class="bx bx-plus me-1"></i> Thêm nhân sự
+              </button>
             </div>
+          </div>
+        </div>
 
-            <button class="btn btn-primary btn-add-new shadow-sm" @click="openModal('add')">
-              <i class="bx bx-plus me-1"></i> Thêm nhân sự
+       <div class="row g-3 border-top pt-3">
+          <div class="col-md-3">
+            <label class="form-label text-muted small mb-1">Chức vụ</label>
+            <select v-model="filterRole" class="form-select form-select-sm">
+              <option value="">-- Tất cả chức vụ --</option>
+              <option v-for="role in RoleList" :key="role.maChucVu" :value="role.maChucVu">
+                {{ role.tenChucVu }}
+              </option>
+            </select>
+          </div>
+
+          <div class="col-md-3">
+            <label class="form-label text-muted small mb-1">Ngày vào làm</label>
+            <input type="date" v-model="filterDate" class="form-control form-control-sm" />
+          </div>
+
+          <div class="col-md-4">
+            <label class="form-label text-muted small mb-1">Sắp xếp theo</label>
+            <select v-model="sortOption" class="form-select form-select-sm">
+              <option value="id_asc">Mã NV: Tăng dần</option>
+              <option value="id_desc">Mã NV: Giảm dần</option>
+              <option value="name_asc">Tên: A - Z</option>
+              <option value="name_desc">Tên: Z - A</option>
+            </select>
+          </div>
+
+          <div class="col-md-2 d-flex align-items-end">
+            <button class="btn btn-outline-secondary btn-sm w-100 h-px-30" @click="resetFilters">
+              <i class="bx bx-refresh me-1"></i> Làm mới
             </button>
           </div>
+        </div>
         </div>
       </div>
     </div>
@@ -226,7 +262,7 @@
       </div>
     </div>
 
-  </div>
+
 </template>
 
 <script setup>
@@ -281,9 +317,69 @@ onMounted(fetchStaff);
 
 // --- LOGIC ---
 const filteredStaff = computed(() => {
-  if (!searchQuery.value) return staffList.value;
-  const q = searchQuery.value.toLowerCase();
-  return staffList.value.filter(s => s.hoTenNv && s.hoTenNv.toLowerCase().includes(q));
+  let result = staffList.value;
+
+  // 1. Tìm kiếm theo tên (Search Query)
+  if (searchQuery.value) {
+    // .trim() để xóa khoảng trắng thừa ở 2 đầu
+    const q = searchQuery.value.toLowerCase().trim(); 
+    
+    result = result.filter(s => {
+      // Ép kiểu Mã NV về chuỗi để tìm kiếm
+      const maNvStr = s.maNv ? s.maNv.toString() : '';
+      
+      // Kiểm tra xem chuỗi tìm kiếm có nằm trong bất kỳ trường nào không
+      const matchName = s.hoTenNv && s.hoTenNv.toLowerCase().includes(q);
+      const matchId = maNvStr.includes(q);
+      const matchEmail = s.email && s.email.toLowerCase().includes(q);
+      const matchUsername = s.tenDangNhap && s.tenDangNhap.toLowerCase().includes(q);
+
+      // Trả về true nếu khớp ít nhất 1 trong 4 điều kiện trên
+      return matchName || matchId || matchEmail || matchUsername;
+    });
+  }
+
+  // 2. Lọc theo chức vụ
+  if (filterRole.value !== '') {
+    result = result.filter(s => s.maChucVu === filterRole.value);
+  }
+
+  // 3. LỌC THEO NGÀY VÀO LÀM (Chính xác ngày)
+  if (filterDate.value) {
+    result = result.filter(s => {
+      if (!s.ngayVaoLam) return false;
+      
+      // Xử lý múi giờ an toàn: Chuyển ngày của DB thành định dạng YYYY-MM-DD
+      const staffDate = new Date(s.ngayVaoLam);
+      const year = staffDate.getFullYear();
+      const month = String(staffDate.getMonth() + 1).padStart(2, '0');
+      const day = String(staffDate.getDate()).padStart(2, '0');
+      
+      const formattedStaffDate = `${year}-${month}-${day}`;
+      
+      // So sánh trực tiếp với giá trị của input type="date"
+      return formattedStaffDate === filterDate.value;
+    });
+  }
+
+  // 4. Sắp xếp danh sách
+  // Tạo bản sao bằng slice() trước khi sort để tránh lỗi mutate array state trong Vue
+  result = result.slice().sort((a, b) => {
+    switch (sortOption.value) {
+      case 'id_asc':
+        return a.maNv - b.maNv;
+      case 'id_desc':
+        return b.maNv - a.maNv;
+      case 'name_asc':
+        return getFirstName(a.hoTenNv).localeCompare(getFirstName(b.hoTenNv), 'vi');
+      case 'name_desc':
+        return getFirstName(b.hoTenNv).localeCompare(getFirstName(a.hoTenNv), 'vi');
+      default:
+        return 0;
+    }
+  });
+
+  return result;
 });
 
 const handleSave = async () => {
@@ -508,6 +604,29 @@ const validateForm = () => {
 
   return isValid;
 };
+
+// --- THÊM STATE CHO LỌC VÀ SẮP XẾP ---
+const filterRole = ref('');
+const filterDate = ref('');
+const sortOption = ref('id_asc'); // Mặc định sắp xếp Mã NV tăng dần
+
+const resetFilters = () => {
+  searchQuery.value = '';
+  filterRole.value = '';
+  filterDate.value = '';
+  sortOption.value = 'id_asc'; // Đưa sắp xếp về mặc định
+};
+
+// --- LOGIC ---
+
+// Hàm phụ hỗ trợ lấy "Tên" cuối cùng trong "Họ và tên" để sắp xếp A-Z chuẩn Việt Nam
+const getFirstName = (fullName) => {
+  if (!fullName) return '';
+  const parts = fullName.trim().split(' ');
+  return parts[parts.length - 1]; // Lấy chữ cuối cùng
+};
+
+// Cập nhật hàm tính toán danh sách đã lọc & sắp xếp
 
 
 </script>
@@ -798,8 +917,10 @@ const validateForm = () => {
   border-radius: 0.5rem;
   box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
   animation: slideIn 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
-  max-height: 90vh;  /* Giới hạn chiều cao tối đa là 90% màn hình */
-  overflow-y: auto;  /* Nếu nội dung dài hơn thì hiện thanh cuộn */
+  max-height: 90vh;
+  /* Giới hạn chiều cao tối đa là 90% màn hình */
+  overflow-y: auto;
+  /* Nếu nội dung dài hơn thì hiện thanh cuộn */
 }
 
 .modal-header {

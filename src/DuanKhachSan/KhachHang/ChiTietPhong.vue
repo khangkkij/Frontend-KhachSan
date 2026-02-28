@@ -296,7 +296,6 @@ const goBooking = () => {
                   <div class="d-flex justify-content-between align-items-start">
                     <div>
                       <h6 class="fw-bold mb-2">{{ bt.tenBienThe }}</h6>
-
                       <div class="d-flex gap-3 mb-2 text-secondary small">
                         <span><i class="bi bi-people me-1"></i>{{ bt.soNguoiToiDa }} người</span>
                         <span><i class="bi bi-layers me-1"></i>{{ bt.dienTich }} m²</span>
@@ -354,8 +353,8 @@ const goBooking = () => {
         </div>
       </div>
     </div>
-    <div v-if="selectedVariantId">
-    <DanhGiaPhong :roomId="selectedVariantId" />
+    <div v-if="selectedVariant">
+    <DanhGiaPhong :roomId="selectedVariant" />
 </div>
     <div class="related-rooms section mt-5">
       <div class="container">

@@ -26,6 +26,14 @@
         <router-link to="/NhanVien/service-manager" class="menu-item" active-class="active">
           <i class="bx bx-food-menu icon"></i> Gọi dịch vụ
         </router-link>
+
+        <router-link to="/NhanVien/HoaDon" class="menu-item" active-class="active">
+          <i class="bx bx-receipt icon"></i> Hóa đơn
+        </router-link>
+        <div class="menu-header">HỆ THỐNG</div>
+        <a href="#" @click.prevent="handleLogout" class="menu-item text-danger-custom">
+          <i class="bx bx-log-out-circle icon"></i> Đăng xuất
+        </a>
       </nav>
     </aside>
 
@@ -52,7 +60,51 @@
 </template>
 
 <script setup>
-// Logic giữ nguyên
+import { useRouter } from 'vue-router';
+import axios from 'axios';
+import Swal from 'sweetalert2';
+
+const router = useRouter();
+const API = import.meta.env.VITE_API_URL || 'https://localhost:7023';
+
+const handleLogout = async () => {
+  // Xác nhận trước khi đăng xuất
+  const result = await Swal.fire({
+    title: 'Xác nhận đăng xuất?',
+    text: "Phiên làm việc của bạn sẽ kết thúc tại đây.",
+    icon: 'question',
+    showCancelButton: true,
+    confirmButtonColor: '#696cff',
+    cancelButtonColor: '#d33',
+    confirmButtonText: 'Đồng ý',
+    cancelButtonText: 'Hủy'
+  });
+
+  if (result.isConfirmed) {
+    try {
+      // 1. Gọi API để Server xóa Cookie AuthToken
+      await axios.post(`${API}/api/LoginAdmin/logout`, {}, { withCredentials: true });
+    } catch (err) {
+      console.error("Lỗi khi gọi API logout:", err);
+    } finally {
+      // 2. Luôn dọn dẹp LocalStorage dù API có lỗi hay không
+      localStorage.removeItem('userRole');
+      localStorage.removeItem('userName');
+      localStorage.removeItem('isLoggedIn');
+
+      // 3. Thông báo và đẩy về trang login admin
+      await Swal.fire({
+        icon: 'success',
+        title: 'Thành công',
+        text: 'Bạn đã đăng xuất khỏi hệ thống.',
+        timer: 1500,
+        showConfirmButton: false
+      });
+
+      router.push('/admin/login');
+    }
+  }
+};
 </script>
 
 <style scoped>
@@ -225,5 +277,18 @@
 .container-p-y {
   padding-top: 0.5rem;
   padding-bottom: 1.5rem;
+}
+
+.text-danger-custom {
+  color: #ff3e1d !important; /* Màu đỏ của template Bootstrap/Admin */
+  margin-top: auto; /* Đẩy nút xuống dưới cùng nếu muốn */
+}
+
+.text-danger-custom:hover {
+  background: rgba(255, 62, 29, 0.08) !important;
+}
+
+.text-danger-custom .icon {
+  color: #ff3e1d;
 }
 </style>

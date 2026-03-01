@@ -20,29 +20,29 @@ const bedType = ref("*")
 const guests = ref(null)
 const kid = ref(null)
 const minArea = ref(null)
+const loaiPhong = ref([])
 
 onMounted(async () => {
-  // --- LOGIC HỨNG DỮ LIỆU TỪ URL (Hiếu add để hỗ trợ cho form tìm kiếm bên trang chủ) ---
-  const q = route.query;
+  const q = route.query
 
-  if (q.keyword) keyword.value = q.keyword;
-  if (q.minPrice) minPrice.value = Number(q.minPrice);
-  if (q.maxPrice) maxPrice.value = Number(q.maxPrice);
-  if (q.onlyAvailable === 'true') onlyAvailable.value = true;
-  if (q.kid) kid.value = Number(q.kid);
-  if (q.guests) guests.value = Number(q.guests);
-  if (q.minArea) minArea.value = Number(q.minArea);
-  // -----------------------------------------------------
+  if (q.keyword) keyword.value = q.keyword
+  if (q.minPrice) minPrice.value = Number(q.minPrice)
+  if (q.maxPrice) maxPrice.value = Number(q.maxPrice)
+  if (q.onlyAvailable === 'true') onlyAvailable.value = true
+  if (q.kid) kid.value = Number(q.kid)
+  if (q.guests) guests.value = Number(q.guests)
+  if (q.minArea) minArea.value = Number(q.minArea)
 
   try {
-    const res = await axios.get(`${API}/api/DanhSachPhong`);
-    dsPhong.value = res.data;
+    const res = await axios.get(`${API}/api/DanhSachPhong`)
+    dsPhong.value = res.data.danhSach
+    loaiPhong.value = res.data.loaiPhong
   } catch (err) {
-    console.error("Lỗi Load phòng: ", err);
+    console.error("Lỗi Load phòng: ", err)
   } finally {
-    loading.value = false;
+    loading.value = false
   }
-});
+})
 
 
 const totalPages = computed(() => {
@@ -88,19 +88,6 @@ const goPage = (page) => {
   if (page === '...' || page < 1 || page > totalPages.value) return
   currentPage.value = page
 }
-onMounted(async () => {
-  try {
-    const res = await axios.get(`${API}/api/DanhSachPhong`);
-    dsPhong.value = res.data;
-    console.log("ds type:", typeof res.data);
-    console.log("is array:", Array.isArray(res.data));
-    console.log("item đầu tiên:", res.data[0]);
-  } catch (err) {
-    console.error("Lỗi Load phòng: ", err);
-  } finally {
-    loading.value = false;
-  }
-});
 const getFinalPrice = (room) => {
   if (room.phanTramGiam > 0) {
     return room.giaGoc * (100 - room.phanTramGiam) / 100
@@ -134,7 +121,7 @@ const filteredRooms = computed(() => {
     result = result.filter(r => r.soNguoiLon >= guests.value)
   }
   if (kid.value !== null) {
-    result = result.filter(r => r.soTreEm >= guests.value)
+    result = result.filter(r => r.soTreEm >= kid.value)
   }
   if (minArea.value !== null) {
     result = result.filter(r => r.dienTich >= minArea.value)
@@ -240,31 +227,32 @@ watch(
         </div>
 
         <ul class="properties-filter">
-          <li>
-            <a
-              href="javascript:void(0)"
-              :class="{ is_active: filter === '*' }"
-              @click="filter = '*'"
-              >Tất cả</a
-            >
-          </li>
-          <li>
-            <a
-              href="javascript:void(0)"
-              :class="{ is_active: filter === 'Standard' }"
-              @click="filter = 'Standard'"
-              >Tiêu chuẩn</a
-            >
-          </li>
-          <li>
-            <a
-              href="javascript:void(0)"
-              :class="{ is_active: filter === 'Deluxe' }"
-              @click="filter = 'Deluxe'"
-              >Cao cấp</a
-            >
-          </li>
-        </ul>
+  <!-- TẤT CẢ -->
+  <li>
+    <a
+      href="javascript:void(0)"
+      :class="{ is_active: filter === '*' }"
+      @click="filter = '*'"
+    >
+      Tất cả
+    </a>
+  </li>
+
+  <!-- LOẠI PHÒNG ĐỘNG -->
+  <li
+    v-for="lp in loaiPhong"
+    :key="lp.maLp"
+  >
+    <a
+      href="javascript:void(0)"
+      :class="{ is_active: filter === lp.tenLoai }"
+      @click="filter = lp.tenLoai"
+    >
+      {{ lp.tenLoai.replace('Phòng ', '') }}
+    </a>
+  </li>
+</ul>
+
 
         <div class="row properties-box">
           <div
@@ -340,6 +328,7 @@ watch(
               <div class="main-button">
                 <router-link
                   :to="room.soPhongCon > 0 ? `/phong/${room.maBienThePhong}` : ''"
+                  @click="console.log('Mã phòng:', room.maBienThePhong)"
                   class="btn-book"
                   :class="{ disabled: room.soPhongCon === 0 }"
                   :aria-disabled="room.soPhongCon === 0"
@@ -530,5 +519,34 @@ input::-webkit-inner-spin-button {
   pointer-events: none;
   background: none;
 }
+/* ===== MOBILE FIX ===== */
+@media (max-width: 768px) {
 
+  .properties-box .item .thumb {
+    height: 180px;
+  }
+
+  .properties-box .item {
+    padding: 14px;
+  }
+
+  .room-info-row {
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .room-info-row div {
+    margin: 0 !important;
+  }
+
+  .main-button a,
+  .btn-book {
+    width: 100%;
+  }
+
+  .category {
+    font-size: 12px;
+  }
+
+}
 </style>

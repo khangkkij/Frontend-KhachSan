@@ -1,39 +1,40 @@
 <template>
-  <div class="container-fluid py-4 bg-light-gray min-vh-100">
-    <!-- Header chung -->
-    <div class="mb-4">
-      <h2 class="fw-extra-bold mb-1">Quản lý Danh mục</h2>
-      <p class="text-muted mb-0">
-        Thiết lập các loại phòng và tiện ích trong hệ thống
-      </p>
-    </div>
+  <div class="container-fluid py-4 bg-corporate min-vh-100">
+    <div class="container">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+          <h2 class="fw-bold text-dark mb-1">Quản lý Danh mục</h2>
+          <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+              <li class="breadcrumb-item small text-muted">Hệ thống</li>
+              <li class="breadcrumb-item small text-muted active">Cấu hình chung</li>
+            </ol>
+          </nav>
+        </div>
+      </div>
 
-    <!-- Tabs -->
-    <ul class="nav nav-pills mb-4 gap-2">
-      <li class="nav-item">
+      <div class="corporate-tabs mb-4">
         <button
-          class="nav-link"
+          class="tab-item"
           :class="{ active: activeTab === 'loaiphong' }"
           @click="activeTab = 'loaiphong'"
         >
-          <i class="bi bi-house-door me-1"></i> Loại phòng
+          <i class="bi bi-house-door me-2"></i>Hạng phòng
         </button>
-      </li>
-
-      <li class="nav-item">
         <button
-          class="nav-link"
+          class="tab-item"
           :class="{ active: activeTab === 'tienich' }"
           @click="activeTab = 'tienich'"
         >
-          <i class="bi bi-stars me-1"></i> Tiện ích
+          <i class="bi bi-stars me-2"></i>Tiện ích
         </button>
-      </li>
-    </ul>
+      </div>
 
-    <!-- Nội dung -->
-    <TabLoaiPhong v-if="activeTab === 'loaiphong'" />
-    <TabTienIch v-if="activeTab === 'tienich'" />
+      <div class="content-wrapper animate__animated animate__fadeIn">
+        <TabLoaiPhong v-if="activeTab === 'loaiphong'" />
+        <TabTienIch v-if="activeTab === 'tienich'" />
+      </div>
+    </div>
   </div>
 </template>
 
@@ -44,3 +45,59 @@ import TabTienIch from './TabTienIch.vue'
 
 const activeTab = ref('loaiphong')
 </script>
+
+<style scoped>
+.bg-corporate { background-color: #f8f9fa; }
+
+.corporate-tabs {
+  display: flex;
+  gap: 30px;
+  border-bottom: 2px solid #dee2e6;
+}
+
+.tab-item {
+  padding: 12px 5px;
+  border: none;
+  background: none;
+  color: #6c757d;
+  font-weight: 600;
+  position: relative;
+  transition: all 0.3s;
+}
+
+.tab-item.active {
+  color: #0d6efd;
+}
+
+.tab-item.active::after {
+  content: "";
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background-color: #0d6efd;
+}
+
+.tab-item:hover { color: #0d6efd; }
+/* ===== MOBILE FIX ===== */
+@media (max-width: 768px) {
+
+  .corporate-tabs {
+    overflow-x: auto;
+    white-space: nowrap;
+    gap: 15px;
+  }
+
+  .tab-item {
+    flex: 0 0 auto;
+    font-size: 14px;
+  }
+
+  .container {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+}
+</style>

@@ -113,7 +113,6 @@
                         data-bs-interval="3500">
                         <div class="welcome-overlay">
                             <h3>Trở thành thành viên<br>Luxury Club</h3>
-                            <p>Nhận ưu đãi độc quyền & trải nghiệm tuyệt vời</p>
                         </div>
                         <div class="carousel-inner h-100">
                             <div class="carousel-item active h-100">

@@ -78,7 +78,8 @@
           <div class="card border-0 shadow-sm p-3 mb-3">
             <div class="row g-0">
               <div class="col-4">
-                <img :src="room.image || fallbackImage" class="img-fluid rounded-start h-100 object-fit-cover" alt="Room">
+                <img :src="room.image || fallbackImage" class="img-fluid rounded-start h-100 object-fit-cover"
+                  alt="Room">
               </div>
               <div class="col-8">
                 <div class="card-body p-2">
@@ -112,13 +113,13 @@
       </div>
 
       <div class="d-flex gap-2 mt-4">
-  <button class="btn btn-success px-4" @click="handleConfirm">
-    <i class="fa fa-home me-2"></i> Về trang chủ
-  </button>
-  <button class="btn btn-primary px-4" @click="handlePrint">
-    <i class="fa fa-print me-2"></i> In hóa đơn
-  </button>
-</div>
+        <button class="btn btn-success px-4" @click="handleConfirm">
+          <i class="fa fa-check me-2"></i> Xác nhận & Nhận mã QR
+        </button>
+        <button class="btn btn-primary px-4" @click="handlePrint">
+          <i class="fa fa-print me-2"></i> In hóa đơn
+        </button>
+      </div>
     </div>
   </div>
 </template>
@@ -191,15 +192,53 @@ const handlePrint = () => {
   window.print();
 };
 
-const handleConfirm = () => {
-  Swal.fire({
-    title: 'Thành công!',
-    text: 'Đã cập nhật trạng thái thanh toán.',
-    icon: 'success',
-    confirmButtonText: 'Đóng'
-  }).then(() => {
-    router.push('/');
-  });
+const handleConfirm = async () => {
+  const maDatPhong = localStorage.getItem('maDatPhong');
+
+  if (!maDatPhong) {
+    Swal.fire('Lỗi', 'Không tìm thấy thông tin đặt phòng trong hệ thống.', 'error');
+    return;
+  }
+
+  try {
+    // Hiển thị loading trong khi gửi mail
+    Swal.fire({
+      title: 'Đang gửi mã QR...',
+      text: 'Hệ thống đang gửi thông tin nhận phòng đến Gmail của bạn.',
+      allowOutsideClick: false,
+      didOpen: () => Swal.showLoading()
+    });
+
+    // Gọi API gửi Email kèm mã QR từ Backend
+    const res = await axios.post(`${API}/api/QRcode/send-confirmation/${maDatPhong}`);
+
+    if (res.data.success) {
+      Swal.fire({
+        title: 'Thành công!',
+        text: 'Mã QR đã được gửi về Gmail. Vui lòng kiểm tra hộp thư khi đến nhận phòng.',
+        icon: 'success',
+        confirmButtonText: 'Về trang chủ'
+      }).then(() => {
+        // Xóa sạch dữ liệu sau khi hoàn tất
+        localStorage.removeItem('maDatPhong');
+        localStorage.removeItem('booking_room');
+        localStorage.removeItem('booking_customer');
+        localStorage.removeItem('booking_payment');
+        localStorage.removeItem('booking_rooms');
+        router.push('/');
+      });
+    } else {
+      throw new Error(res.data.message);
+    }
+  } catch (error) {
+    console.error('Lỗi gửi QR:', error);
+    Swal.fire({
+      title: 'Thông báo',
+      text: 'Đặt phòng thành công nhưng hệ thống gặp sự cố khi gửi Email. Bạn vui lòng chụp màn hình hóa đơn này!',
+      icon: 'warning',
+      confirmButtonText: 'Đã hiểu'
+    }).then(() => router.push('/'));
+  }
 };
 
 const createOrGetInvoice = async (maDatPhong) => {
@@ -209,7 +248,7 @@ const createOrGetInvoice = async (maDatPhong) => {
     });
     const data = res?.data || {};
     if (data.maHd != null) {
-      invoiceCode.value = `HD${data.maHd}`;  
+      invoiceCode.value = `HD${data.maHd}`;
     }
     if (!payment.value.totalAmount && data.tongTienPhaiTra != null) {
       payment.value.totalAmount = Number(data.tongTienPhaiTra);
@@ -297,14 +336,53 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.text-orange { color: #f35525 !important; }
-.confirm-page { background-color: #f8f7f9; min-height: 100vh; }
+.text-orange {
+  color: #f35525 !important;
+}
 
-.step-item { display: flex; align-items: center; color: #999; font-weight: 600; margin: 0 10px; position: relative; font-size: 14px; }
-.step-item.active { color: #f35525; }
-.step-num { background: #eee; border-radius: 50%; width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; margin-right: 8px; font-size: 12px; }
-.step-item.active .step-num { background: #f35525; color: white; }
-.progress-line { flex-grow: 1; height: 2px; background: #ddd; max-width: 50px; margin: 0 5px; }
+.confirm-page {
+  background-color: #f8f7f9;
+  min-height: 100vh;
+}
+
+.step-item {
+  display: flex;
+  align-items: center;
+  color: #999;
+  font-weight: 600;
+  margin: 0 10px;
+  position: relative;
+  font-size: 14px;
+}
+
+.step-item.active {
+  color: #f35525;
+}
+
+.step-num {
+  background: #eee;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 8px;
+  font-size: 12px;
+}
+
+.step-item.active .step-num {
+  background: #f35525;
+  color: white;
+}
+
+.progress-line {
+  flex-grow: 1;
+  height: 2px;
+  background: #ddd;
+  max-width: 50px;
+  margin: 0 5px;
+}
 
 .success-icon {
   width: 44px;

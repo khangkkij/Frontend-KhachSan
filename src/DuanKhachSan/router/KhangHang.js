@@ -25,6 +25,7 @@ import XacThucGamil from '@/DuanKhachSan/KhachHang/XacThucGamil.vue'
 import LichSuDanhGia from  '@/DuanKhachSan/KhachHang/Profile/LichSuDanhGia.vue'
 
 // 3. Import Admin
+
 import LayoutAdmin from '@/DuanKhachSan/Admin/LayoutAdmin.vue'
 import Dashboard from '@/DuanKhachSan/Admin/Dashboard.vue'
 import QuanLyDanhMuc from '@/DuanKhachSan/Admin/QuanLyDanhMuc.vue'
@@ -37,6 +38,7 @@ import QuanLyHoaDon from '@/DuanKhachSan/Admin/QuanLyHoaDon.vue'
 import CheckIn from '@/DuanKhachSan/Admin/CheckIn.vue'
 import CheckOut from '@/DuanKhachSan/Admin/CheckOut.vue'
 import QuanLyDanhGia from '@/DuanKhachSan/Admin/QuanLyDanhGia.vue'
+import Loginadmin from '@/DuanKhachSan/Admin/Loginadmin.vue'
 //4. Import NhanVien
 import LayoutNhanVien from '@/DuanKhachSan/NhanVien/LayoutNhanVien.vue';
 import DashboardNhanVien from '@/DuanKhachSan/NhanVien/Views/Dashboard.vue';
@@ -75,6 +77,11 @@ const router = createRouter({
     }, // <--- Dấu phẩy ngăn cách giữa object Khách Hàng và Admin
 
     // --- ROUTE ADMIN (Phải nằm trong mảng routes) ---
+    {
+          path: '/admin/login',
+          name: 'admin-login',
+          component: Loginadmin
+        },
     {
       path: '/admin',
       component: LayoutAdmin,
@@ -133,7 +140,8 @@ const router = createRouter({
           path: 'danh-gia',
           name: 'admin-danh-gia',
           component: QuanLyDanhGia
-        }
+        },
+        
       ]
     },
     // --- ROUTE NHÂN VIÊN (Phải nằm trong mảng routes) ---
@@ -151,4 +159,38 @@ const router = createRouter({
   ]
 })
 
+
+router.beforeEach((to, from, next) => {
+  const userRole = localStorage.getItem('userRole');
+  const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+
+  // ƯU TIÊN 1: Nếu đang ở trang login admin hoặc từ trang login admin gửi yêu cầu
+  // thì KHÔNG làm gì cả, cho phép đứng yên tại chỗ
+  if (to.path === '/admin/login' || to.name === 'admin-login') {
+    return next(); 
+  }
+
+  // ƯU TIÊN 2: Kiểm tra vùng Admin
+  if (to.path.startsWith('/admin')) {
+    if (isLoggedIn && userRole === 'Admin') {
+      return next();
+    } else {
+      // ÉP BUỘC quay về login admin, không được đi đâu khác
+      return next('/admin/login');
+    }
+  }
+
+  // ƯU TIÊN 3: Kiểm tra vùng Nhân viên
+  if (to.path.startsWith('/NhanVien')) {
+    if (isLoggedIn && (userRole === 'Staff' || userRole === 'Admin')) {
+      return next();
+    } else {
+      return next('/admin/login');
+    }
+  }
+
+  // ƯU TIÊN 4: Các trang khách hàng (Chỉ chạy khi không thuộc 3 cái trên)
+  // Nếu bạn đang ở /admin/login mà nhập sai, nó sẽ KHÔNG bao giờ chạy xuống tới đây
+  next();
+});
 export default router

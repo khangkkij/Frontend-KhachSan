@@ -32,13 +32,15 @@ import QuanLyDanhMuc from '@/DuanKhachSan/Admin/QuanLyDanhMuc.vue'
 import QuanLyPhong from '@/DuanKhachSan/Admin/QuanLyPhong.vue'
 import QuanLyVoucher from '@/DuanKhachSan/Admin/QuanLyVoucher.vue'
 import QuanLyNhanSu from '@/DuanKhachSan/Admin/QuanLyNhanSu.vue'
-import QuanLyDichVu from '@/DuanKhachSan/Admin/QuanLyDichVu.vue'
 import QuanLyKhachHang from '@/DuanKhachSan/Admin/QuanLyKhachHang.vue'
 import QuanLyHoaDon from '@/DuanKhachSan/Admin/QuanLyHoaDon.vue'
 import CheckIn from '@/DuanKhachSan/Admin/CheckIn.vue'
 import CheckOut from '@/DuanKhachSan/Admin/CheckOut.vue'
 import QuanLyDanhGia from '@/DuanKhachSan/Admin/QuanLyDanhGia.vue'
 import Loginadmin from '@/DuanKhachSan/Admin/Loginadmin.vue'
+import QuanLyDichVu from '@/DuanKhachSan/Admin/QuanLyDichVu.vue'
+import QuanLySale from '../Admin/QuanLySale.vue'
+import QuanLyDatDichVu from '../Admin/QuanLyDatDichVu.vue'
 //4. Import NhanVien
 import LayoutNhanVien from '@/DuanKhachSan/NhanVien/LayoutNhanVien.vue';
 import DashboardNhanVien from '@/DuanKhachSan/NhanVien/Views/Dashboard.vue';
@@ -115,6 +117,17 @@ const router = createRouter({
           path: 'dich-vu',
           name: 'admin-dich-vu',
           component: QuanLyDichVu
+        },
+        {
+          path: 'Sale',
+          name: 'QuanLySale',
+          component: QuanLySale
+          
+        },
+         {
+          path: 'dat-dich-vu',
+          name: 'QuanLyDatDichVu',
+          component: QuanLyDatDichVu
         },
         {
           path: 'khach-hang',

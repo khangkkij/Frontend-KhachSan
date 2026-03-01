@@ -41,7 +41,7 @@
                 <div class="fw-bold">{{ customer.email || '---' }}</div>
               </div>
               <div class="col-md-6">
-                <div class="text-muted small">Ngày tạo hóa đơn</div>
+                <div class="text-muted small">Ngày đặt phòng</div>
                 <div class="fw-bold">{{ createdAtDisplay }}</div>
               </div>
             </div>
@@ -59,16 +59,16 @@
                 <div class="fw-bold">{{ paymentMethodLabel }}</div>
               </div>
               <div class="col-md-6">
-                <div class="text-muted small">Tổng tiền</div>
+                <div class="text-muted small">Tổng hóa đơn (Đã giảm)</div>
                 <div class="fw-bold">{{ formatCurrency(payment.totalAmount) }}</div>
               </div>
               <div class="col-md-6">
                 <div class="text-muted small">Đã thanh toán</div>
-                <div class="fw-bold text-orange">{{ formatCurrency(payment.paidAmount) }}</div>
+                <div class="fw-bold text-success">{{ formatCurrency(payment.paidAmount) }}</div>
               </div>
-              <div class="col-md-6" v-if="payment.option === 'deposit'">
-                <div class="text-muted small">Còn lại</div>
-                <div class="fw-bold">{{ formatCurrency(payment.remainingAmount) }}</div>
+              <div class="col-md-6" v-if="payment.remainingAmount > 0">
+                <div class="text-muted small">Còn lại (Thanh toán tại quầy)</div>
+                <div class="fw-bold text-orange">{{ formatCurrency(payment.remainingAmount) }}</div>
               </div>
             </div>
           </div>
@@ -83,9 +83,7 @@
               <div class="col-8">
                 <div class="card-body p-2">
                   <h6 class="fw-bold mb-1">{{ room.name || '---' }}</h6>
-                  <div class="small text-muted" v-if="room.variantName">
-                    {{ room.variantName }}
-                  </div>
+                  <div class="small text-muted" v-if="room.variantName">{{ room.variantName }}</div>
                   <div class="small mt-1" v-if="room.pricePerNight">
                     <span class="text-muted">Giá / đêm:</span>
                     <span class="fw-bold text-orange">{{ formatCurrency(room.pricePerNight) }}</span>
@@ -99,10 +97,10 @@
             </div>
           </div>
 
-          <div class="card border-0 shadow-sm p-3">
+          <div class="card border-0 shadow-sm p-3 bg-light">
             <div class="d-flex justify-content-between align-items-center">
-              <span class="fw-bold">Tổng cộng</span>
-              <span class="fw-bold text-orange">{{ formatCurrency(payment.totalAmount) }}</span>
+              <span class="fw-bold">TỔNG CỘNG</span>
+              <span class="h4 fw-bold mb-0 text-orange">{{ formatCurrency(payment.totalAmount) }}</span>
             </div>
             <div class="text-muted small mt-1" v-if="room.nights">
               Dựa trên {{ room.nights }} đêm · {{ totalRoomCount }} phòng
@@ -111,12 +109,12 @@
         </div>
       </div>
 
-      <div class="d-flex gap-2 mt-4">
-        <button class="btn btn-success px-4" @click="handleConfirm">
-          <i class="fa fa-check me-2"></i> Xác nhận
+      <div class="d-flex gap-2 mt-4 no-print">
+        <button class="btn btn-success px-5 fw-bold" @click="handleConfirm">
+          <i class="fa fa-check me-2"></i> HOÀN TẤT
         </button>
-        <button class="btn btn-primary px-4" @click="handlePrint">
-          <i class="fa fa-print me-2"></i> In hóa đơn
+        <button class="btn btn-outline-primary px-4" @click="handlePrint">
+          <i class="fa fa-print me-2"></i> IN HÓA ĐƠN
         </button>
       </div>
     </div>
@@ -135,163 +133,91 @@ const API = import.meta.env.VITE_API_URL;
 const fallbackImage = '/assets/images/property-01.jpg';
 const invoiceCode = ref('---');
 
-const room = ref({
-  name: '',
-  variantName: '',
-  image: '',
-  pricePerNight: null,
-  nights: null,
-  quantity: 1
-});
+const room = ref({ name: '', variantName: '', image: '', pricePerNight: null, nights: null, quantity: 1 });
 const bookingRooms = ref([]);
-
-const customer = ref({
-  name: '',
-  email: '',
-  phone: ''
-});
+const customer = ref({ name: '', email: '', phone: '' });
 
 const payment = ref({
   option: 'deposit',
   method: 'vnpay',
   totalAmount: 0,
-  depositAmount: 0,
-  remainingAmount: 0,
   paidAmount: 0,
+  remainingAmount: 0,
   createdAt: null
 });
 
-const formatCurrency = (amount) => {
-  return Number(amount || 0).toLocaleString('vi-VN') + ' ₫';
-};
+const formatCurrency = (amount) => Number(amount || 0).toLocaleString('vi-VN') + ' ₫';
 
-const paymentLabel = computed(() => {
-  return payment.value.option === 'deposit' ? 'Đặt cọc 30%' : 'Thanh toán 100%';
-});
+const paymentLabel = computed(() => payment.value.option === 'deposit' ? 'Đặt cọc 30%' : 'Thanh toán 100%');
+const totalRoomCount = computed(() => bookingRooms.value.length ? bookingRooms.value.reduce((s, i) => s + Number(i.quantity || 0), 0) : Number(room.value.quantity || 1));
+const paymentMethodLabel = computed(() => payment.value.method === 'momo' ? 'MoMo' : 'VNPay');
+const createdAtDisplay = computed(() => payment.value.createdAt ? new Date(payment.value.createdAt).toLocaleString('vi-VN') : '---');
 
-const totalRoomCount = computed(() => {
-  if (bookingRooms.value.length) {
-    return bookingRooms.value.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
-  }
-  return Number(room.value.quantity || 1);
-});
-
-const paymentMethodLabel = computed(() => {
-  if (payment.value.method === 'momo') return 'MoMo';
-  if (payment.value.method === 'visa') return 'Visa / MasterCard';
-  return 'VNPay';
-});
-
-const createdAtDisplay = computed(() => {
-  if (!payment.value.createdAt) return '---';
-  return new Date(payment.value.createdAt).toLocaleString('vi-VN');
-});
-
-const handlePrint = () => {
-  window.print();
-};
+const handlePrint = () => window.print();
 
 const handleConfirm = () => {
   Swal.fire({
     title: 'Thành công!',
-    text: 'Đã cập nhật trạng thái thanh toán.',
+    text: 'Cảm ơn bạn đã tin tưởng Luxury Hotel.',
     icon: 'success',
-    confirmButtonText: 'Đóng'
+    confirmButtonText: 'Về trang chủ'
   }).then(() => {
+    // Xóa sạch bộ nhớ tạm để tránh sai lệch tiền cho lần sau
+    localStorage.removeItem('booking_room');
+    localStorage.removeItem('booking_customer');
+    localStorage.removeItem('booking_payment');
+    localStorage.removeItem('booking_rooms');
+    localStorage.removeItem('maDatPhong');
     router.push('/');
   });
 };
 
-const createOrGetInvoice = async (maDatPhong) => {
-  try {
-    const res = await axios.post(`${API}/api/DatPhong/xac-nhan/${maDatPhong}`, null, {
-      withCredentials: true
-    });
-    const data = res?.data || {};
-    if (data.maHd != null) {
-      invoiceCode.value = `HD${data.maHd}`;  
-    }
-    if (!payment.value.totalAmount && data.tongTienPhaiTra != null) {
-      payment.value.totalAmount = Number(data.tongTienPhaiTra);
-    }
-  } catch (error) {
-    console.warn('Không tạo được hóa đơn:', error);
-  }
-};
-
 const fetchInvoice = async (maDatPhong) => {
   try {
-    const res = await axios.get(`${API}/api/DatPhong/hoa-don/${maDatPhong}`, {
-      withCredentials: true
-    });
+    const res = await axios.get(`${API}/api/DatPhong/hoa-don/${maDatPhong}`, { withCredentials: true });
     const data = res?.data || {};
-    if (data.maHd != null) {
-      invoiceCode.value = `HD${data.maHd}`;
+    
+    // Gán mã hóa đơn
+    invoiceCode.value = data.maHd ? `HD${data.maHd}` : '---';
+    payment.value.createdAt = data.ngayTao;
+
+    // QUAN TRỌNG: Lấy số tiền thực tế đã được trừ voucher từ Backend
+    payment.value.totalAmount = Number(data.tongTienPhaiTra || 0);
+    
+    // Tính toán số tiền đã trả và còn lại dựa trên lựa chọn ban đầu
+    if (payment.value.option === 'deposit') {
+      payment.value.paidAmount = Math.round(payment.value.totalAmount * 0.3);
+      payment.value.remainingAmount = payment.value.totalAmount - payment.value.paidAmount;
+    } else {
+      payment.value.paidAmount = payment.value.totalAmount;
+      payment.value.remainingAmount = 0;
     }
-    if (data.ngayTao) {
-      payment.value.createdAt = data.ngayTao;
-    }
-    if (!payment.value.totalAmount && data.tongTienPhaiTra != null) {
-      payment.value.totalAmount = Number(data.tongTienPhaiTra);
-    }
-    if (!room.value.nights && data.soDem != null) {
-      room.value.nights = data.soDem;
-    }
+
+    if (data.soDem) room.value.nights = data.soDem;
   } catch (error) {
-    console.warn('Không tải được hóa đơn:', error);
+    console.warn('Lỗi tải hóa đơn:', error);
   }
 };
 
 onMounted(() => {
+  // Đồng bộ thông báo thành công từ URL thanh toán
   if (route.query.status === 'success') {
-    Swal.fire({
-      title: 'Thành công!',
-      text: 'Thanh toán thành công!',
-      icon: 'success',
-      confirmButtonText: 'Đóng'
-    }).then(() => {
-      router.replace({ path: '/xac-nhan-dat-phong' });
-    });
+    Swal.fire({ title: 'Thành công!', text: 'Thanh toán thành công!', icon: 'success', timer: 2000 });
   }
+
+  // Load dữ liệu tạm để hiển thị nhanh
   const rawRoom = localStorage.getItem('booking_room');
   const rawCustomer = localStorage.getItem('booking_customer');
   const rawPayment = localStorage.getItem('booking_payment');
-  const rawRooms = localStorage.getItem('booking_rooms');
   const maDatPhong = localStorage.getItem('maDatPhong');
 
-  if (rawRoom) {
-    try {
-      Object.assign(room.value, JSON.parse(rawRoom));
-    } catch (error) {
-      console.warn('Không đọc được dữ liệu phòng:', error);
-    }
-  }
-  if (rawCustomer) {
-    try {
-      Object.assign(customer.value, JSON.parse(rawCustomer));
-    } catch (error) {
-      console.warn('Không đọc được dữ liệu khách:', error);
-    }
-  }
-  if (rawPayment) {
-    try {
-      Object.assign(payment.value, JSON.parse(rawPayment));
-    } catch (error) {
-      console.warn('Không đọc được dữ liệu thanh toán:', error);
-    }
-  }
-  if (rawRooms) {
-    try {
-      const parsed = JSON.parse(rawRooms);
-      if (Array.isArray(parsed)) {
-        bookingRooms.value = parsed;
-      }
-    } catch (error) {
-      console.warn('Không đọc được danh sách phòng:', error);
-    }
-  }
+  if (rawRoom) Object.assign(room.value, JSON.parse(rawRoom));
+  if (rawCustomer) Object.assign(customer.value, JSON.parse(rawCustomer));
+  if (rawPayment) Object.assign(payment.value, JSON.parse(rawPayment));
+
+  // Lấy dữ liệu hóa đơn "chuẩn" từ Backend
   if (maDatPhong) {
-    createOrGetInvoice(maDatPhong).then(() => fetchInvoice(maDatPhong));
+    fetchInvoice(maDatPhong);
   }
 });
 </script>
@@ -299,22 +225,11 @@ onMounted(() => {
 <style scoped>
 .text-orange { color: #f35525 !important; }
 .confirm-page { background-color: #f8f7f9; min-height: 100vh; }
-
-.step-item { display: flex; align-items: center; color: #999; font-weight: 600; margin: 0 10px; position: relative; font-size: 14px; }
+.step-item { display: flex; align-items: center; color: #999; font-weight: 600; margin: 0 10px; font-size: 14px; }
 .step-item.active { color: #f35525; }
 .step-num { background: #eee; border-radius: 50%; width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; margin-right: 8px; font-size: 12px; }
 .step-item.active .step-num { background: #f35525; color: white; }
 .progress-line { flex-grow: 1; height: 2px; background: #ddd; max-width: 50px; margin: 0 5px; }
-
-.success-icon {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  background: #e7f7ef;
-  color: #1f8b4c;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 20px;
-}
+.success-icon { width: 44px; height: 44px; border-radius: 50%; background: #e7f7ef; color: #1f8b4c; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+@media print { .no-print { display: none !important; } }
 </style>

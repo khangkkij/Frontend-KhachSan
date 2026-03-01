@@ -24,16 +24,20 @@ axios.defaults.withCredentials = true; // Cho phép gửi nhận Cookie
 axios.interceptors.response.use(
     response => response,
     error => {
-        // Bỏ qua 401 từ các request 'silent' (heartbeat)
         const isSilent = error.config && error.config.headers && error.config.headers['x-silent'] === '1';
-        // Nếu Server trả về 401 (do hàm check-session báo hết hạn) và không phải request silent
-        if (error.response && error.response.status === 401 && !isSilent) {
+        
+        // Kiểm tra xem lỗi có phải từ API đăng nhập Admin không
+        const isLoginAdminAPI = error.config && error.config.url && error.config.url.includes('/api/LoginAdmin/login');
+
+        if (error.response && error.response.status === 401 && !isSilent && !isLoginAdminAPI) {
             localStorage.removeItem("accessToken");
             localStorage.removeItem("user_info");
             localStorage.removeItem("isLoggedIn");
 
-            // Đẩy ra trang đăng nhập
-            window.location.href = "/dang-nhap";
+            // Chỉ chuyển hướng nếu KHÔNG phải đang ở trang login Admin
+            if (!window.location.pathname.includes('/admin/login')) {
+                window.location.href = "/dang-nhap";
+            }
         }
         return Promise.reject(error);
     }

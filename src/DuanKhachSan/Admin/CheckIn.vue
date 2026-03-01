@@ -18,6 +18,15 @@
               placeholder="Nhập SĐT, mã đặt phòng, tên khách..."
               :disabled="isWalkIn"
             />
+            <button 
+              v-if="!isWalkIn"
+              class="btn btn-outline-primary border-0" 
+              type="button" 
+              @click="openScanner"
+              title="Quét mã QR"
+            >
+              <i class="bx bx-qr-scan fs-4"></i>
+            </button>
           </div>
           <div class="form-check form-switch">
             <input
@@ -28,6 +37,21 @@
             />
             <label class="form-check-label" for="walkInSwitch">Walk-in</label>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="showScannerModal" class="scanner-overlay">
+      <div class="scanner-box card shadow-lg">
+        <div class="card-header d-flex justify-content-between align-items-center bg-primary text-white">
+          <h6 class="mb-0 text-white fw-bold"><i class="bx bx-qr-scan me-2"></i>Quét mã QR nhận phòng</h6>
+          <button type="button" class="btn-close btn-close-white" @click="closeScanner"></button>
+        </div>
+        <div class="card-body p-0">
+          <div id="qr-reader"></div>
+        </div>
+        <div class="card-footer text-center bg-light p-2">
+          <small class="text-muted italic">Căn chỉnh mã QR vào giữa khung hình</small>
         </div>
       </div>
     </div>
@@ -272,8 +296,10 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, watch, onMounted } from 'vue';
+import { ref, reactive, computed, watch, onMounted, onUnmounted } from 'vue';
 import axios from 'axios';
+import { Html5QrcodeScanner } from "html5-qrcode";
+import Swal from 'sweetalert2';
 
 const searchQuery = ref('');
 const isWalkIn = ref(false);
@@ -304,6 +330,10 @@ const walkInDates = reactive({
   ngayTra: ''
 });
 
+// Scanner Refs
+const showScannerModal = ref(false);
+let html5QrcodeScanner = null;
+
 const bookings = ref([]);
 const walkInRooms = ref([]);
 
@@ -332,8 +362,57 @@ const fetchAvailableRooms = async () => {
   }
 };
 
+// Logic Quét QR
+const openScanner = () => {
+  showScannerModal.value = true;
+  setTimeout(() => {
+    html5QrcodeScanner = new Html5QrcodeScanner(
+      "qr-reader", 
+      { fps: 15, qrbox: { width: 250, height: 250 } },
+      false
+    );
+    html5QrcodeScanner.render(onScanSuccess, (err) => {});
+  }, 300);
+};
+
+const onScanSuccess = async (decodedText) => {
+  const maDatPhong = decodedText.replace('#', '').trim();
+  closeScanner();
+
+  try {
+    Swal.fire({ title: 'Đang tải...', didOpen: () => Swal.showLoading() });
+    
+    // Gọi API lấy thông tin đơn và danh sách phòng trống
+    const res = await axios.get(`${API_BASE}/api/admin/QRnhanphong/scan/${maDatPhong}`);
+    
+    if (res.data) {
+      searchQuery.value = maDatPhong;
+      
+      // Quan trọng: Gán dữ liệu vào selectedBooking thông qua hàm có sẵn
+      selectBooking(res.data); 
+      
+      Swal.fire('Thành công', `Đã tìm thấy đơn của khách ${res.data.tenKhach}`, 'success');
+    }
+  } catch (error) {
+    const msg = error.response?.data?.message || "Lỗi hệ thống";
+    Swal.fire('Lỗi', msg, 'error');
+  }
+};
+
+const closeScanner = () => {
+  if (html5QrcodeScanner) {
+    html5QrcodeScanner.clear().catch(() => {});
+    html5QrcodeScanner = null;
+  }
+  showScannerModal.value = false;
+};
+
 onMounted(async () => {
   await fetchBookings();
+});
+
+onUnmounted(() => {
+  closeScanner();
 });
 
 const filteredBookings = computed(() => {
@@ -459,11 +538,8 @@ const selectBooking = (booking) => {
   actionMessage.value = '';
   errorMessage.value = '';
 
-  // 1. Tính toán số tiền đã thanh toán
   const paid = getBookingDepositAmount(booking);
   alreadyPaidAmount.value = paid;
-
-  // 2. Gán giá trị đó xuống ô input (thay vì gán bằng 0)
   depositAmount.value = paid; 
 
   selectedRoomId.value = null;
@@ -686,5 +762,29 @@ watch(isWalkIn, (val) => {
 .empty-state i {
   font-size: 24px;
   color: #696cff;
+}
+
+.scanner-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.75);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.scanner-box {
+  width: 90%;
+  max-width: 450px;
+  border-radius: 12px;
+}
+
+#qr-reader {
+  width: 100% !important;
+  border: none !important;
 }
 </style>

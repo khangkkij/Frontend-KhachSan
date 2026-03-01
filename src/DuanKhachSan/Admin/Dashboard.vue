@@ -181,10 +181,18 @@ const getStatusText = (s) => {
 
 const viewDetail = async (id) => {
   try {
-    const res = await axios.get(`${API}/api/DatPhong/lich-su/${id}`, { withCredentials: true });
-    selectedOrder.value = res.data;
+    // SỬA TẠI ĐÂY: Gọi API ThongKe thay vì DatPhong để lấy đúng cấu trúc dữ liệu cho Modal
+    const res = await axios.get(`${API}/api/ThongKe/order-detail/${id}`, { withCredentials: true });
+    
+    // Gán dữ liệu trả về vào selectedOrder
+    selectedOrder.value = res.data; 
+    
+    // Mở Modal
     showModal.value = true;
-  } catch (e) { alert("Lỗi tải chi tiết"); }
+  } catch (e) { 
+    console.error(e);
+    alert("Không thể tải chi tiết đơn hàng này."); 
+  }
 };
 
 const fetchData = async () => {

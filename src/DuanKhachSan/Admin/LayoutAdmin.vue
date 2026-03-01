@@ -45,9 +45,13 @@
           <i class="bx bx-receipt icon"></i> Hóa đơn
         </router-link>
 
-        <router-link to="/admin/dich-vu" class="menu-item" active-class="active">
+              <router-link to="/admin/dich-vu" class="menu-item" active-class="active">
           <i class="bx bx-cube icon"></i> Dịch vụ
         </router-link>
+            <router-link to="/admin/dat-dich-vu" class="menu-item" active-class="active">
+          <i class="bx bx-cube icon"></i> Đặt dịch vụ
+        </router-link>
+
         <router-link to="/admin/danh-gia" class="menu-item" active-class="active">
           <i class="bx bx-cube icon"></i> Đánh giá
         </router-link>
@@ -57,7 +61,7 @@
           <i class="bx bx-gift icon"></i> Voucher
         </router-link>
 
-        <router-link to="/admin/sale" class="menu-item" active-class="active">
+      <router-link to="/admin/sale" class="menu-item" active-class="active">
           <i class="bx bx-purchase-tag-alt icon"></i> Sale
         </router-link>
         <div class="menu-header">HỆ THỐNG</div>

@@ -1,158 +1,377 @@
-<template>
-  <div class="service-manager">
+<script setup>
+import { ref, reactive, onMounted } from 'vue';
+import Swal from 'sweetalert2';
+import axios from 'axios';
+import * as bootstrap from 'bootstrap'; 
+
+// URL API 
+const API_URL = `${import.meta.env.VITE_API_URL}/api/DichVu`; 
+const API_IMG_URL = `${import.meta.env.VITE_API_URL}/anhDichVu/`; 
+
+const searchQuery = ref('');
+const filterStatus = ref('all');
+const services = ref([]); 
+
+const selectedFile = ref(null); 
+const previewImage = ref(null); 
+
+// Object Thêm mới
+const newService = reactive({
+    tenDichVu: '',
+    gia: '',
+    hinhAnh: '',
+    trangThai: true
+});
+
+// Object Sửa
+const selectedService = ref({
+    maDichVu: 0,
+    tenDichVu: '',
+    gia: 0,
+    hinhAnh: '',
+    trangThai: true
+});
+
+onMounted(() => {
+    fetchServices();
+});
+
+const getDisplayImage = (imgName) => {
+    if (!imgName) return 'https://via.placeholder.com/150';
+    if (imgName.startsWith('blob:') || imgName.startsWith('http')) return imgName;
+    return API_IMG_URL + imgName;
+};
+
+// --- XỬ LÝ KHI CHỌN FILE TỪ MÁY ---
+const onFileChange = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+        selectedFile.value = file;
+        // Tạo link ảo để xem trước ảnh ngay lập tức
+        previewImage.value = URL.createObjectURL(file);
+    }
+};
+
+// --- API ACTIONS ---
+
+// 1. Lấy danh sách
+const fetchServices = async () => {
+    try {
+        const response = await axios.get(API_URL);
+        services.value = response.data;
+    } catch (error) {
+        console.error("Lỗi tải dữ liệu:", error);
+    }
+};
+
+// 2. Thêm mới (Dùng FormData)
+const handleCreate = async () => {
+    if (!newService.tenDichVu || !newService.gia) {
+        Swal.fire({ icon: 'error', text: 'Vui lòng nhập tên và giá dịch vụ!' });
+        return;
+    }
+
+    try {
+        // Tạo FormData để gửi file + dữ liệu
+        const formData = new FormData();
+        formData.append('tenDichVu', newService.tenDichVu);
+        formData.append('gia', parseFloat(newService.gia));
+        formData.append('trangThai', newService.trangThai);
+        if (selectedFile.value) {
+            formData.append('upLoadImage', selectedFile.value); 
+        }
+
+        await axios.post(API_URL, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
+
+        await fetchServices(); 
+        
+        const modalEl = document.getElementById('createServiceModal');
+        const modalInstance = bootstrap.Modal.getInstance(modalEl);
+        if (modalInstance) modalInstance.hide();
+
+        Swal.fire({ icon: 'success', title: 'Thêm thành công!', confirmButtonColor: '#c5a47e' });
+
+    } catch (error) {
+        console.error(error);
+        Swal.fire('Lỗi', 'Không thêm được dịch vụ', 'error');
+    }
+}
+
+// 3. Cập nhật (Dùng FormData)
+const handleUpdate = async () => {
+    try {
+        const id = selectedService.value.maDichVu;
+        
+        const formData = new FormData();
+        formData.append('maDichVu', id);
+        formData.append('tenDichVu', selectedService.value.tenDichVu);
+        formData.append('gia', parseFloat(selectedService.value.gia));
+        formData.append('trangThai', selectedService.value.trangThai);
+
+        // Gửi file mới nếu có chọn
+        if (selectedFile.value) {
+            formData.append('upLoadImage', selectedFile.value);
+        }
+
+        await axios.put(`${API_URL}/${id}`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
+
+        const index = services.value.findIndex(s => s.maDichVu === id);
+        // Note: Logic update UI client-side này chỉ đúng nếu BE trả về object đã update. 
+        // Tạm thời reload lại list cho chắc ăn hình ảnh mới cập nhật
+        await fetchServices();
+
+        const modalEl = document.getElementById('editServiceModal');
+        const modalInstance = bootstrap.Modal.getInstance(modalEl);
+        if (modalInstance) modalInstance.hide();
+
+        Swal.fire({ icon: 'success', title: 'Cập nhật thành công!', confirmButtonColor: '#c5a47e' });
+
+    } catch (error) {
+        console.error(error);
+        Swal.fire('Lỗi', 'Không cập nhật được', 'error');
+    }
+}
+
+// 4. Xóa
+const handleDelete = (id) => {
+    Swal.fire({
+        title: 'Xóa dịch vụ?',
+        text: "Hành động này không thể hoàn tác!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#c5a47e',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Xóa ngay',
+        cancelButtonText: 'Hủy'
+    }).then(async (result) => {
+        if (result.isConfirmed) {
+            try {
+                await axios.delete(`${API_URL}/${id}`);
+                services.value = services.value.filter(s => s.maDichVu !== id);
+                Swal.fire({ icon: 'success', title: 'Đã xóa!', confirmButtonColor: '#c5a47e' });
+            } catch (error) {
+                console.error(error);
+                Swal.fire('Lỗi', 'Không xóa được dịch vụ', 'error');
+            }
+        }
+    });
+}
+
+// --- HELPERS ---
+const formatCurrency = (val) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val);
+
+const getStatusBadge = (status) => {
+    if (status === true) return { class: 'badge bg-label-success', text: 'Đang hoạt động' };
+    return { class: 'badge bg-label-secondary', text: 'Ngưng hoạt động' };
+};
+
+// --- MODAL ACTIONS ---
+const openCreateModal = () => {
+    // Reset form
+    newService.tenDichVu = '';
+    newService.gia = '';
+    newService.hinhAnh = '';
+    newService.trangThai = true;
     
-    <div class="card mb-4">
-      <div class="card-body d-flex justify-content-between align-items-center row gap-3 gap-md-0">
-        <div class="col-md-4">
-          <h5 class="card-title mb-0">Quản lý Dịch vụ & Menu</h5>
-        </div>
-        <div class="col-md-8">
-          <div class="d-flex align-items-center justify-content-md-end gap-3">
-            <div class="input-group input-group-merge" style="max-width: 300px;">
-              <span class="input-group-text"><i class="bx bx-search"></i></span>
-              <input type="text" class="form-control" placeholder="Tìm tên dịch vụ..." v-model="searchQuery" />
-            </div>
-            <button class="btn btn-primary" @click="openModal('add')">
-              <i class="bx bx-plus me-1"></i> Thêm dịch vụ
-            </button>
-          </div>
-        </div>
+    // Reset file upload
+    selectedFile.value = null;
+    previewImage.value = null;
+
+    const modal = new bootstrap.Modal(document.getElementById('createServiceModal'));
+    modal.show();
+}
+
+const openEditModal = (service) => {
+    // Clone data
+    selectedService.value = { ...service };
+    
+    // Reset file upload mới
+    selectedFile.value = null;
+    // Set ảnh preview là ảnh hiện tại từ server
+    previewImage.value = getDisplayImage(service.hinhAnh);
+
+    const modal = new bootstrap.Modal(document.getElementById('editServiceModal'));
+    modal.show();
+}
+</script>
+
+<template>
+  <div class="luxury-container container-xxl flex-grow-1 container-p-y">
+    
+    <div class="d-flex justify-content-between align-items-center mb-4 pt-2">
+      <div>
+        <h4 class="fw-bold luxury-title mb-1">Quản Lý Dịch Vụ</h4>
+        <small class="text-muted">Danh sách các dịch vụ & tiện ích cung cấp</small>
       </div>
+      <button class="btn btn-gold shadow-sm" @click="openCreateModal">
+        <i class='bx bx-plus me-1'></i> Thêm dịch vụ mới
+      </button>
     </div>
 
-    <div class="card">
-      <div class="table-responsive text-nowrap">
-        
-        <div v-if="isLoading" class="text-center py-5">
-            <div class="spinner-border text-primary" role="status"></div>
-            <p class="mt-2 text-muted">Đang tải dữ liệu...</p>
+    <div class="card luxury-card">
+      <div class="card-header bg-white border-bottom-0 d-flex gap-3 py-3">
+        <div class="input-group input-group-merge luxury-search" style="max-width: 300px;">
+          <span class="input-group-text border-0 ps-3 bg-transparent"><i class="bx bx-search text-muted"></i></span>
+          <input type="text" class="form-control border-0 bg-transparent shadow-none" placeholder="Tìm tên dịch vụ..." v-model="searchQuery" />
         </div>
+        <div class="ms-auto d-flex gap-2">
+           <select class="form-select border-0 bg-light" style="width: 170px;" v-model="filterStatus">
+             <option value="all">Tất cả </option>
+             <option value="true">Đang hoạt động</option>
+             <option value="false">Ngưng hoạt động</option>
+           </select>
+        </div>
+      </div>
 
-        <table v-else class="table table-hover">
-          <thead>
+      <div class="table-responsive text-nowrap">
+        <table class="table table-hover luxury-table align-middle">
+          <thead class="table-light">
             <tr>
-              <th>Hình ảnh</th>
-              <th>Tên Dịch vụ</th>
-              <th>Danh mục</th>
-              <th>Đơn giá</th>
-              <th>Trạng thái</th>
-              <th>Tác vụ</th>
+              <th class="ps-4">Hình ảnh</th>
+              <th>Tên dịch vụ</th>
+              <th class="text-end">Đơn giá</th>
+              <th class="text-center">Trạng thái</th>
+              <th class="text-end pe-4">Hành động</th>
             </tr>
           </thead>
           <tbody class="table-border-bottom-0">
-            <tr v-for="item in filteredServices" :key="item.maDichVu">
-              
-              <td>
-                <div class="avatar avatar-lg">
-                    <img v-if="item.hinhAnh" :src="item.hinhAnh" alt="Service" class="rounded" style="object-fit: cover;" />
-                    <span v-else class="avatar-initial rounded bg-label-secondary">
-                        <i class='bx bx-image-alt'></i>
-                    </span>
+            <tr v-for="service in services" :key="service.maDichVu">
+              <td class="ps-4">
+                <div class="service-img-container shadow-sm">
+                    <img :src="getDisplayImage(service.hinhAnh)" class="rounded" style="width: 60px; height: 60px; object-fit: cover;">
                 </div>
               </td>
 
               <td>
-                <strong>{{ item.tenDichVu }}</strong>
-                <div class="small text-muted text-truncate" style="max-width: 200px;">
-                    {{ item.moTa || 'Không có mô tả' }}
+                <div class="d-flex flex-column">
+                  <span class="fw-bold text-dark fs-6">{{ service.tenDichVu }}</span>
+                  <small class="text-muted">Mã DV: #{{ service.maDichVu }}</small>
                 </div>
               </td>
 
-              <td>
-                <span class="badge bg-label-info">{{ item.loaiDichVu }}</span>
+              <td class="text-end">
+                 <span class="fw-bold text-gold fs-6">{{ formatCurrency(service.gia) }}</span>
               </td>
 
-              <td>
-                <span class="fw-bold text-primary">{{ formatCurrency(item.donGia) }}</span>
-              </td>
-
-              <td>
-                <span class="badge" :class="item.trangThai ? 'bg-label-success' : 'bg-label-secondary'">
-                  {{ item.trangThai ? 'Đang kinh doanh' : 'Ngưng phục vụ' }}
+              <td class="text-center">
+                <span :class="getStatusBadge(service.trangThai).class">
+                  {{ getStatusBadge(service.trangThai).text }}
                 </span>
               </td>
 
-              <td>
-                <button class="btn btn-sm btn-icon btn-outline-secondary me-2" @click="openModal('edit', item)">
-                  <i class="bx bx-edit-alt"></i>
+              <td class="text-end pe-4">
+                <button class="btn btn-sm btn-icon btn-outline-secondary me-1" @click="openEditModal(service)" title="Chỉnh sửa">
+                    <i class='bx bx-edit-alt'></i>
                 </button>
-                <button class="btn btn-sm btn-icon btn-outline-danger" @click="confirmDelete(item)">
-                  <i class="bx bx-trash"></i>
+                <button class="btn btn-sm btn-icon btn-outline-danger" @click="handleDelete(service.maDichVu)" title="Xóa">
+                    <i class='bx bx-trash'></i>
                 </button>
               </td>
             </tr>
           </tbody>
         </table>
       </div>
+      <div class="card-footer bg-white border-top-0 d-flex justify-content-end py-3"></div>
     </div>
 
-    <div v-if="showModal" class="modal-backdrop-custom">
-      <div class="modal-dialog-custom">
-        <div class="modal-content">
-          <div class="modal-header bg-body-tertiary">
-            <h5 class="modal-title">{{ isEditMode ? 'Cập nhật dịch vụ' : 'Thêm dịch vụ mới' }}</h5>
-            <button type="button" class="btn-close-custom" @click="closeModal"><i class='bx bx-x'></i></button>
-          </div>
-          
-          <div class="modal-body">
-            <form @submit.prevent="handleSave">
-              <div class="row g-3">
-                
-                <div class="col-12">
-                  <label class="form-label">Tên dịch vụ <span class="text-danger">*</span></label>
-                  <input v-model="formData.tenDichVu" type="text" class="form-control" required placeholder="Ví dụ: Mì bò trứng, Giặt ủi...">
-                </div>
-
-                <div class="col-md-6">
-                  <label class="form-label">Danh mục</label>
-                  <select v-model="formData.loaiDichVu" class="form-select">
-                    <option value="Đồ ăn">Đồ ăn</option>
-                    <option value="Nước uống">Nước uống</option>
-                    <option value="Tiện ích">Tiện ích (Giặt, Thuê xe...)</option>
-                    <option value="Khác">Khác</option>
-                  </select>
-                </div>
-                
-                <div class="col-md-6">
-                  <label class="form-label">Đơn giá (VNĐ) <span class="text-danger">*</span></label>
-                  <input v-model.number="formData.donGia" type="number" class="form-control" required min="0">
-                </div>
-
-                <div class="col-12">
-                     <label class="form-label">Link Hình ảnh</label>
-                     <div class="input-group">
-                        <span class="input-group-text"><i class='bx bx-link'></i></span>
-                        <input v-model="formData.hinhAnh" type="text" class="form-control" placeholder="https://...">
-                     </div>
-                     <div v-if="formData.hinhAnh" class="mt-2 text-center">
-                        <img :src="formData.hinhAnh" alt="Preview" class="rounded border p-1" style="height: 80px; object-fit: cover;">
-                     </div>
-                </div>
-
-                <div class="col-12">
-                    <label class="form-label">Mô tả chi tiết</label>
-                    <textarea v-model="formData.moTa" class="form-control" rows="3"></textarea>
-                </div>
-
-                <div class="col-12">
-                    <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox" id="statusSwitch" v-model="formData.trangThai">
-                        <label class="form-check-label" for="statusSwitch">
-                            {{ formData.trangThai ? 'Đang kinh doanh (Hiện trên menu)' : 'Tạm ngưng phục vụ' }}
-                        </label>
+    <div class="modal fade" id="createServiceModal" tabindex="-1">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content luxury-modal">
+            <div class="modal-header border-bottom-0">
+                <h5 class="modal-title fw-bold text-dark">Thêm Dịch Vụ Mới</h5>
+                <button class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form>
+                    <div class="mb-3 text-center">
+                        <div class="d-flex justify-content-center mb-2">
+                             <div class="img-preview-box rounded-3 border d-flex align-items-center justify-content-center bg-light" style="width: 120px; height: 120px; overflow: hidden;">
+                                 <img v-if="previewImage" :src="previewImage" class="w-100 h-100" style="object-fit: cover;">
+                                 <div v-else class="text-center text-muted">
+                                     <i class='bx bx-image-add fs-1'></i>
+                                     <div style="font-size: 10px;">Chưa chọn ảnh</div>
+                                 </div>
+                             </div>
+                        </div>
+                        <input type="file" class="form-control form-control-sm" accept="image/*" @change="onFileChange">
                     </div>
-                </div>
 
-              </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Tên dịch vụ</label>
+                        <input type="text" class="form-control" placeholder="Nhập tên dịch vụ" v-model="newService.tenDichVu">
+                    </div>
 
-              <div class="mt-4 d-flex justify-content-end gap-2">
-                <button type="button" class="btn btn-outline-secondary" @click="closeModal">Đóng</button>
-                <button type="submit" class="btn btn-primary" :disabled="isSubmitting">
-                    {{ isSubmitting ? 'Đang lưu...' : 'Lưu thông tin' }}
-                </button>
-              </div>
-            </form>
-          </div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Đơn giá (VNĐ)</label>
+                            <input type="number" class="form-control" placeholder="0" v-model="newService.gia">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Trạng thái</label>
+                            <select class="form-select" v-model="newService.trangThai">
+                                <option :value="true">Đang hoạt động</option>
+                                <option :value="false">Ngưng hoạt động</option>
+                            </select>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer border-top-0">
+                <button class="btn btn-light" data-bs-dismiss="modal">Hủy</button>
+                <button class="btn btn-gold" @click="handleCreate">Xác nhận thêm</button>
+            </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal fade" id="editServiceModal" tabindex="-1">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content luxury-modal">
+            <div class="modal-header border-bottom-0">
+                <h5 class="modal-title fw-bold text-gold">Cập nhật dịch vụ</h5>
+                <button class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form>
+                    <div class="d-flex align-items-center mb-3 p-2 border rounded bg-light">
+                        <img :src="previewImage || 'https://via.placeholder.com/80'" class="rounded-3 shadow-sm me-3" width="70" height="70" style="object-fit:cover">
+                        <div class="flex-grow-1">
+                             <label class="form-label small text-uppercase fw-bold text-muted mb-1">Đổi hình ảnh</label>
+                             <input type="file" class="form-control form-control-sm" accept="image/*" @change="onFileChange">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Tên dịch vụ</label>
+                        <input type="text" class="form-control" v-model="selectedService.tenDichVu">
+                    </div>
+                    
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Đơn giá</label>
+                            <div class="input-group">
+                                <input type="number" class="form-control text-end fw-bold text-gold" v-model="selectedService.gia">
+                                <span class="input-group-text bg-white">đ</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Trạng thái</label>
+                            <select class="form-select" v-model="selectedService.trangThai">
+                                <option :value="true">Đang hoạt động</option>
+                                <option :value="false">Ngưng hoạt động</option>
+                            </select>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer border-top-0">
+                <button class="btn btn-light" data-bs-dismiss="modal">Đóng</button>
+                <button class="btn btn-gold" @click="handleUpdate">Lưu thay đổi</button>
+            </div>
         </div>
       </div>
     </div>
@@ -160,127 +379,25 @@
   </div>
 </template>
 
-<script setup>
-import { ref, computed, reactive, onMounted } from 'vue';
-import axios from 'axios';
-
-// --- CẤU HÌNH API (Lưu ý thay Port cho đúng) ---
-const API_URL = `${import.meta.env.VITE_API_URL}/api/admin/DichVu`;
-
-const serviceList = ref([]);
-const isLoading = ref(false);
-const isSubmitting = ref(false);
-const searchQuery = ref('');
-const showModal = ref(false);
-const isEditMode = ref(false);
-
-// Form Data Model
-const formData = reactive({
-  maDichVu: 0,
-  tenDichVu: '',
-  loaiDichVu: 'Đồ ăn',
-  donGia: 0,
-  hinhAnh: '',
-  moTa: '',
-  trangThai: true // true: Đang bán, false: Ngưng
-});
-
-// --- API FETCH ---
-const fetchServices = async () => {
-    try {
-        isLoading.value = true;
-        const response = await axios.get(API_URL);
-        serviceList.value = response.data;
-    } catch (error) {
-        console.error("Lỗi tải dịch vụ:", error);
-    } finally {
-        isLoading.value = false;
-    }
-};
-
-onMounted(() => { fetchServices(); });
-
-// --- FILTER ---
-const filteredServices = computed(() => {
-  if (!searchQuery.value) return serviceList.value;
-  const lowerQuery = searchQuery.value.toLowerCase();
-  return serviceList.value.filter(s => 
-    s.tenDichVu.toLowerCase().includes(lowerQuery)
-  );
-});
-
-// --- CRUD ACTIONS ---
-const handleSave = async () => {
-    isSubmitting.value = true;
-    try {
-        const payload = { ...formData };
-        
-        if (isEditMode.value) {
-            // PUT
-            await axios.put(`${API_URL}/${payload.maDichVu}`, payload);
-            alert("Cập nhật thành công!");
-        } else {
-            // POST
-            delete payload.maDichVu; // Để Server tự sinh ID
-            await axios.post(API_URL, payload);
-            alert("Thêm mới thành công!");
-        }
-        await fetchServices();
-        closeModal();
-    } catch (error) {
-        console.error("Lỗi lưu:", error);
-        alert("Có lỗi xảy ra: " + (error.response?.data?.message || error.message));
-    } finally {
-        isSubmitting.value = false;
-    }
-};
-
-const confirmDelete = async (item) => {
-    if(confirm(`Bạn có chắc muốn xóa dịch vụ "${item.tenDichVu}"?`)) {
-        try {
-            await axios.delete(`${API_URL}/${item.maDichVu}`);
-            alert("Đã xóa!");
-            fetchServices();
-        } catch (error) {
-             alert("Lỗi khi xóa (Có thể dịch vụ đã có trong hóa đơn cũ)!");
-        }
-    }
-};
-
-// --- HELPER UI ---
-const openModal = (mode, item = null) => {
-  isEditMode.value = mode === 'edit';
-  if (isEditMode.value && item) {
-    Object.assign(formData, item);
-  } else {
-    // Reset form
-    formData.maDichVu = 0;
-    formData.tenDichVu = '';
-    formData.loaiDichVu = 'Đồ ăn';
-    formData.donGia = 0;
-    formData.hinhAnh = '';
-    formData.moTa = '';
-    formData.trangThai = true;
-  }
-  showModal.value = true;
-};
-
-const closeModal = () => { showModal.value = false; };
-
-const formatCurrency = (value) => {
-    if (!value) return '0 đ';
-    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
-};
-</script>
-
 <style scoped>
-/* CSS Modal Custom */
-.modal-backdrop-custom { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); display: flex; justify-content: center; align-items: center; z-index: 1050; animation: fadeIn 0.2s; }
-.modal-dialog-custom { background: #fff; width: 100%; max-width: 600px; border-radius: 0.5rem; box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.15); animation: slideIn 0.2s; }
-@keyframes slideIn { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-.modal-header { padding: 1rem 1.5rem; border-bottom: 1px solid #d9dee3; display: flex; justify-content: space-between; align-items: center; }
-.modal-body { padding: 1.5rem; }
-.btn-close-custom { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #a1acb8; }
-.avatar-lg { width: 3.5rem; height: 3.5rem; }
+/* STYLE GIỮ NGUYÊN */
+:root { --gold-primary: #c5a47e; --gold-hover: #b08d65; --dark-text: #2c2c2c; }
+.luxury-container { font-family: 'Montserrat', sans-serif; }
+.luxury-title { font-family: 'Playfair Display', serif; color: #2c2c2c; letter-spacing: 0.5px; }
+.luxury-card { border: none; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.04); overflow: hidden; }
+.btn-gold { background-color: #c5a47e; color: white; border: none; padding: 0.5rem 1.2rem; border-radius: 6px; transition: all 0.3s; }
+.btn-gold:hover { background-color: #b08d65; color: white; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(197, 164, 126, 0.4); }
+.bg-gold { background-color: #c5a47e !important; color: white; }
+.text-gold { color: #c5a47e !important; }
+.bg-gold-subtle { background-color: rgba(197, 164, 126, 0.15) !important; }
+.luxury-search { background-color: #f8f9fa; border-radius: 50px; padding: 2px; border: 1px solid transparent; transition: all 0.3s; }
+.luxury-search:focus-within { border-color: #c5a47e; background-color: #fff; box-shadow: 0 0 0 3px rgba(197, 164, 126, 0.1); }
+.luxury-table thead th { font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; font-size: 0.75rem; color: #888; border-bottom: 2px solid #f0f0f0; }
+.luxury-table tbody tr { transition: background-color 0.2s; }
+.luxury-table tbody tr:hover { background-color: #fdfcfb; }
+.service-img-container { padding: 3px; background: #fff; border: 1px solid #eee; border-radius: 8px; width: fit-content; }
+.luxury-modal { border: none; border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,0.1); }
+.badge { padding: 0.5em 0.8em; font-weight: 500; letter-spacing: 0.3px; border-radius: 6px; }
+.bg-label-success { background-color: #e8fadf !important; color: #71dd37 !important; }
+.bg-label-secondary { background-color: #ebeef0 !important; color: #8592a3 !important; }
 </style>

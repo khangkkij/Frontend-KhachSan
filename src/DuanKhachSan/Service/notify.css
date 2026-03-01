@@ -1,0 +1,55 @@
+
+
+
+.notyf {
+    padding: 40px;
+}
+
+.notyf__toast {
+    border-radius: 14px;
+    box-shadow: 0 14px 40px rgba(0,0,0,.12);
+    border: 1px solid rgba(201,162,77,.45);
+    background: #fff;
+    color: #1a1a1a;
+    max-width: 480px;
+}
+
+.notyf__wrapper {
+    padding: 14px 18px;
+}
+
+.notyf__message {
+    font-size: 12.5px;
+    line-height: 1.5;
+    color: #6b6b6b;
+}
+
+/* ===== REMOVE DEFAULT ICON ===== */
+.notyf__icon {
+    display: none;
+}
+
+/* ===== TITLE STYLE ===== */
+.notyf__message::before {
+    content: attr(data-title);
+    display: block;
+    font-family: 'Georgia', serif;
+    font-size: 13.5px;
+    letter-spacing: .4px;
+    margin-bottom: 4px;
+    color: #c9a24d;
+}
+
+/* ===== ERROR ===== */
+.notyf__toast--error {
+    border-color: rgba(178,74,74,.45);
+}
+
+.notyf__toast--error .notyf__message::before {
+    color: #b24a4a;
+}
+
+/* ===== SUCCESS ===== */
+.notyf__toast--success {
+    border-color: rgba(201,162,77,.45);
+}

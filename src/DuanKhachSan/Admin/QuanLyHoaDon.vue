@@ -73,7 +73,7 @@
               </td>
             </tr>
 
-            <tr v-else v-for="invoice in filteredInvoices" :key="invoice.maHD">
+            <tr v-else v-for="invoice in paginatedInvoices" :key="invoice.maHD">
               <td class="ps-4">
                 <span class="badge bg-label-primary fw-bold rounded-pill px-3">#{{ invoice.maHD }}</span>
               </td>
@@ -141,7 +141,35 @@
             </tr>
           </tbody>
         </table>
+        <div class="card-footer bg-white border-top d-flex flex-wrap justify-content-between align-items-center py-3 px-4 rounded-bottom" v-if="totalPages > 0">
+      <span class="text-muted small mb-2 mb-md-0">
+        Hiển thị <span class="fw-bold text-dark">{{ (currentPage - 1) * itemsPerPage + 1 }}</span> - 
+        <span class="fw-bold text-dark">{{ Math.min(currentPage * itemsPerPage, filteredInvoices.length) }}</span> 
+        trong tổng số <span class="fw-bold text-primary">{{ filteredInvoices.length }}</span> hóa đơn
+      </span>
+      
+      <nav aria-label="Page navigation">
+        <ul class="pagination pagination-sm mb-0 shadow-sm custom-pagination">
+          <li class="page-item" :class="{ disabled: currentPage === 1 }">
+            <button class="page-link" @click="changePage(currentPage - 1)">
+              <i class='bx bx-chevron-left'></i>
+            </button>
+          </li>
+          
+          <li class="page-item" v-for="page in totalPages" :key="page" :class="{ active: currentPage === page }">
+            <button class="page-link fw-bold" @click="changePage(page)">{{ page }}</button>
+          </li>
+          
+          <li class="page-item" :class="{ disabled: currentPage === totalPages }">
+            <button class="page-link" @click="changePage(currentPage + 1)">
+              <i class='bx bx-chevron-right'></i>
+            </button>
+          </li>
+        </ul>
+      </nav>
+    </div>
       </div>
+      
     </div>
 
     <div v-if="showModal" class="modal-backdrop-custom" @click.self="closeModal">
@@ -337,7 +365,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, nextTick } from 'vue';
+import { ref, computed, onMounted, nextTick,watch } from 'vue';
 import axios from 'axios';
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
@@ -351,6 +379,9 @@ const searchQuery = ref('');
 const filterDate = ref('');
 const showModal = ref(false);
 const selectedInvoice = ref(null);
+
+const currentPage = ref(1);
+const itemsPerPage = ref(10); // Hiển thị 10 hóa đơn / 1 trang
 
 const fetchInvoices = async () => {
   isLoading.value = true;
@@ -373,6 +404,30 @@ const filteredInvoices = computed(() => {
   if (filterDate.value) result = result.filter(i => i.ngayTao && i.ngayTao.startsWith(filterDate.value));
   return result;
 });
+
+// === THÊM LOGIC TÍNH PHÂN TRANG TỪ ĐÂY ===
+// Tính tổng số trang
+const totalPages = computed(() => Math.ceil(filteredInvoices.value.length / itemsPerPage.value));
+
+// Lấy ra danh sách hóa đơn theo trang hiện tại
+const paginatedInvoices = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage.value;
+  const end = start + itemsPerPage.value;
+  return filteredInvoices.value.slice(start, end);
+});
+
+// Hàm chuyển trang
+const changePage = (page) => {
+  if (page >= 1 && page <= totalPages.value) {
+    currentPage.value = page;
+  }
+};
+
+// Reset về trang 1 nếu người dùng thay đổi bộ lọc tìm kiếm hoặc ngày
+watch([searchQuery, filterDate], () => {
+  currentPage.value = 1;
+});
+// === KẾT THÚC THÊM ===
 
 // --- LOGIC MODAL & IN ---
 const openInvoiceDetail = (invoice) => { selectedInvoice.value = invoice; showModal.value = true; };
@@ -486,6 +541,11 @@ const calculatePhuThu = (invoice) => {
     
     return phuThu > 0 ? phuThu : 0; // Tránh số âm do sai số
 };
+
+
+
+
+
 </script>
 
 <style scoped>
@@ -872,5 +932,32 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
+}
+
+/* TÙY CHỈNH PAGINATION */
+.custom-pagination .page-link {
+  color: #696cff;
+  border: 1px solid #e7e7ff;
+  margin: 0 2px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.custom-pagination .page-link:hover {
+  background-color: #e7e7ff;
+  color: #696cff;
+}
+
+.custom-pagination .page-item.active .page-link {
+  background: linear-gradient(135deg, #696cff 0%, #4346e6 100%);
+  color: white;
+  border-color: transparent;
+  box-shadow: 0 2px 4px rgba(105, 108, 255, 0.3);
+}
+
+.custom-pagination .page-item.disabled .page-link {
+  color: #a1acb8;
+  background-color: #f5f5f9;
+  border-color: #f5f5f9;
 }
 </style>

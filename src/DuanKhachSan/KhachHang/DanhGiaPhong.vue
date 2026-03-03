@@ -56,6 +56,11 @@ const getAvatarUrl = (avatarName, userName) => {
   return `${API_URL}/images/${avatarName}`;
 };
 
+const getReviewImageUrl = (imgName) => {
+  if (!imgName) return null;
+  return `${API_URL}/uploads/reviews/${imgName}`;
+};
+
 const formatDate = (dateString) => {
   if (!dateString) return '';
   try {
@@ -191,8 +196,21 @@ const changePage = (page) => {
                 {{ review.noiDung }}
               </div>
 
-              <div v-if="review.phanHoi" class="mt-3 ms-4 p-3 bg-light rounded-3 border-start border-3 border-primary">
-                <div class="fw-bold text-primary small mb-1"><i class="fa fa-reply me-1"></i> Phản hồi từ khách sạn
+              <div v-if="review.hinhAnh" class="review-images mt-3">
+                <img :src="getReviewImageUrl(review.hinhAnh)" class="img-thumbnail rounded-3"
+                  style="max-width: 200px; cursor: pointer;"
+                  @click="window.open(getReviewImageUrl(review.hinhAnh), '_blank')" alt="Ảnh đánh giá">
+              </div>
+
+              <div v-if="review.phanHoi"
+                class="hotel-reply mt-4 ms-4 p-3 bg-light rounded-3 border-start border-3 border-primary">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <div class="fw-bold text-primary small">
+                    <i class="fa fa-reply me-1"></i> Phản hồi từ khách sạn
+                  </div>
+                  <small v-if="review.ngayPhanHoi" class="text-muted fst-italic">
+                    {{ formatDate(review.ngayPhanHoi) }}
+                  </small>
                 </div>
                 <div class="small text-dark">{{ review.phanHoi }}</div>
               </div>
@@ -208,7 +226,7 @@ const changePage = (page) => {
                 </li>
                 <li v-for="page in totalPages" :key="page" class="page-item" :class="{ active: currentPage === page }">
                   <button class="page-link rounded-circle mx-1 border-0 fw-bold" @click="changePage(page)">{{ page
-                    }}</button>
+                  }}</button>
                 </li>
                 <li class="page-item" :class="{ disabled: currentPage === totalPages }">
                   <button class="page-link rounded-circle mx-1 border-0" @click="changePage(currentPage + 1)"><i
@@ -316,13 +334,15 @@ const changePage = (page) => {
 .star-rating-container {
   position: relative;
   display: inline-block;
-  font-size: 1.25rem; /* Điều chỉnh kích thước sao ở đây */
+  font-size: 1.25rem;
+  /* Điều chỉnh kích thước sao ở đây */
   line-height: 1;
 }
 
 /* Lớp sao nền (xám nhạt) */
 .stars-back {
-  color: #e9ecef; /* Màu xám */
+  color: #e9ecef;
+  /* Màu xám */
 }
 
 /* Lớp sao chính (cam) */
@@ -331,14 +351,41 @@ const changePage = (page) => {
   top: 0;
   left: 0;
   white-space: nowrap;
-  overflow: hidden; /* Cắt phần thừa */
-  color: #f35525; /* Màu cam chủ đạo */
-  transition: width 0.5s ease; /* Hiệu ứng mượt khi load */
+  overflow: hidden;
+  /* Cắt phần thừa */
+  color: #f35525;
+  /* Màu cam chủ đạo */
+  transition: width 0.5s ease;
+  /* Hiệu ứng mượt khi load */
 }
 
 /* Đảm bảo các icon sao nằm ngang hàng ngay ngắn */
-.stars-back i, .stars-front i {
-  margin: 0 2px; /* Khoảng cách giữa các ngôi sao */
+.stars-back i,
+.stars-front i {
+  margin: 0 2px;
+  /* Khoảng cách giữa các ngôi sao */
+}
+.review-images img {
+    transition: transform 0.3s ease;
+    border: 1px solid #eee;
+}
+
+.review-images img:hover {
+    transform: scale(1.05);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.hotel-reply {
+    position: relative;
+    background-color: #f1f8ff !important; /* Đổi màu nền phản hồi nhẹ nhàng hơn */
+}
+
+.border-primary {
+    border-color: #f35525 !important; /* Sử dụng màu cam chủ đạo của bạn cho border phản hồi */
+}
+
+.text-primary {
+    color: #f35525 !important;
 }
 /* --------------------------- */
 </style>

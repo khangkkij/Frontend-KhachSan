@@ -53,7 +53,7 @@
         </router-link>
 
         <router-link to="/admin/danh-gia" class="menu-item" active-class="active">
-          <i class="bx bx-cube icon"></i> Đánh giá
+          <i class="bx bx-comment-detail icon"></i> Đánh giá
         </router-link>
         <div class="menu-header">KHUYẾN MÃI</div>
 

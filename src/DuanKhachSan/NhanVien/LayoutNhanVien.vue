@@ -15,10 +15,12 @@
 
         <div class="menu-header">VẬN HÀNH</div>
 
-        <router-link to="/NhanVien/room-manager" class="menu-item" active-class="active">
-          <i class="bx bx-building-house icon"></i> Sơ đồ phòng
+        <router-link to="/NhanVien/Checkin" class="menu-item" active-class="active">
+           <i class="bx bx-log-in icon"></i> Check-in
         </router-link>
-
+        <router-link to="/NhanVien/CheckOut" class="menu-item" active-class="active">
+            <i class="bx bx-log-out icon"></i> Check-out
+        </router-link>
         <router-link to="/NhanVien/user-manager" class="menu-item" active-class="active">
           <i class="bx bx-group icon"></i> Khách hàng
         </router-link>
@@ -29,6 +31,9 @@
 
         <router-link to="/NhanVien/HoaDon" class="menu-item" active-class="active">
           <i class="bx bx-receipt icon"></i> Hóa đơn
+        </router-link>
+        <router-link to="/NhanVien/DanhGia" class="menu-item" active-class="active">
+          <i class="bx bx-comment-detail icon"></i>Đánh giá
         </router-link>
         <div class="menu-header">HỆ THỐNG</div>
         <a href="#" @click.prevent="handleLogout" class="menu-item text-danger-custom">

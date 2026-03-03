@@ -132,7 +132,7 @@ const goBooking = () => {
     name: room.value.tenLoai,
     variantName: selectedVariant.value.tenBienThe,
     maBienThePhong: selectedVariant.value.maBienThePhong,
-    image: imageName ? `${API}/images/${imageName}` : '',
+    image: imageName ? `${API}/${imageName}` : '',
     pricePerNight: getDiscountedPrice(selectedVariant.value),
     discountPercent: selectedVariant.value.phanTramGiam || 0
   };

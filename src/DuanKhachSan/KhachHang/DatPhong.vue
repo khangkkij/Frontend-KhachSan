@@ -512,9 +512,12 @@ const mapRoomItem = (item) => {
 };
 
 const resolveRoomImage = (imagePath) => {
-    if (!imagePath) return '';
-    if (String(imagePath).startsWith('http')) return imagePath;
-    return `${API}/images/${imagePath}`;
+    if (!imagePath) return fallbackImage;
+    const value = String(imagePath);
+    if (value.startsWith('http://') || value.startsWith('https://')) return value;
+    // Backend lưu DuongDan dạng "uploads/variants/xxx.jpg" dưới wwwroot,
+    // nên chỉ cần nối thẳng với API gốc.
+    return `${API}/${value}`;
 };
 
 const formatRating = (value) => Number(value || 0).toFixed(1);
@@ -544,7 +547,7 @@ const applyRoomFromItem = (item) => {
             : Number(giaGoc);
     }
     if (anhDaiDien) {
-        bookingRoom.value.image = `${API}/images/${anhDaiDien}`;
+        bookingRoom.value.image = resolveRoomImage(anhDaiDien);
     }
     if (soPhongCon != null) {
         bookingRoom.value.soPhongCon = soPhongCon;
@@ -833,7 +836,7 @@ onMounted(() => {
                 if (!bookingRoom.value.image) {
                     const img = anhDaiDien || danhSachAnh[0];
                     if (img) {
-                        bookingRoom.value.image = `${API}/images/${img}`;
+                        bookingRoom.value.image = resolveRoomImage(img);
                     }
                 }
                 if (!bookingRoom.value.soPhongCon && soPhongCon != null) {

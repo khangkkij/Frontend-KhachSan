@@ -9,12 +9,7 @@
           <div class="d-flex align-items-center justify-content-md-end gap-3">
             <div class="input-group input-group-merge" style="max-width: 320px;">
               <span class="input-group-text"><i class="bx bx-search"></i></span>
-              <input
-                type="text"
-                class="form-control"
-                placeholder="Tìm theo tên, email, SĐT..."
-                v-model="searchQuery"
-              />
+              <input type="text" class="form-control" placeholder="Tìm theo tên, email, SĐT..." v-model="searchQuery" />
             </div>
             <button class="btn btn-primary" @click="openModal('add')">
               <i class="bx bx-plus me-1"></i> Thêm khách hàng
@@ -51,13 +46,8 @@
               <td>
                 <div class="d-flex align-items-center">
                   <div class="avatar avatar-sm me-3">
-                    <img
-                      v-if="customer.hinhAnh"
-                      :src="customer.hinhAnh"
-                      alt="Avatar"
-                      class="rounded-circle"
-                      style="object-fit: cover;"
-                    />
+                    <img v-if="customer.hinhAnh" :src="getAvatarUrl(customer.hinhAnh)" alt="Avatar"
+                      class="rounded-circle" style="object-fit: cover;" />
                     <span v-else class="avatar-initial rounded-circle bg-label-primary">
                       {{ getInitials(customer.hoVaTen) }}
                     </span>
@@ -69,7 +59,8 @@
               <td>
                 <div class="d-flex flex-column">
                   <span class="fw-semibold"><i class="bx bx-envelope me-1"></i>{{ customer.email || '---' }}</span>
-                  <small class="text-muted" v-if="customer.sdt"><i class="bx bx-phone me-1"></i>{{ customer.sdt }}</small>
+                  <small class="text-muted" v-if="customer.sdt"><i class="bx bx-phone me-1"></i>{{ customer.sdt
+                    }}</small>
                   <small class="text-muted fst-italic" v-else>(Chưa có SĐT)</small>
                 </div>
               </td>
@@ -148,13 +139,9 @@
 
                 <div class="col-md-6">
                   <label class="form-label">Mật khẩu</label>
-                  <input
-                    v-model="formData.matKhau"
-                    type="password"
-                    class="form-control"
+                  <input v-model="formData.matKhau" type="password" class="form-control"
                     :placeholder="isEditMode ? 'Để trống nếu không đổi' : 'Nhập mật khẩu...'"
-                    @input="errors.matKhau = ''"
-                  >
+                    @input="errors.matKhau = ''">
                   <small class="text-danger" v-if="errors.matKhau">{{ errors.matKhau }}</small>
                 </div>
 
@@ -200,6 +187,7 @@ import { ref, computed, reactive, onMounted } from 'vue';
 import axios from 'axios';
 
 const API_URL = `${import.meta.env.VITE_API_URL}/api/admin/KhachHang`;
+const API_ROOT = import.meta.env.VITE_API_URL.replace('/api', '');
 
 const customers = ref([]);
 const isLoading = ref(false);
@@ -424,6 +412,22 @@ const getStatusClass = (status) => {
   return 'bg-label-warning';
 };
 
+const getAvatarUrl = (raw) => {
+  if (!raw) return null;
+
+  const value = String(raw);
+
+  // Trường hợp Admin lưu base64 trực tiếp
+  if (value.startsWith('data:image')) return value;
+
+  // Trường hợp đã là URL đầy đủ
+  if (value.startsWith('http://') || value.startsWith('https://')) return value;
+
+  // Trường hợp khách đổi avatar từ trang Hồ sơ: DB chỉ lưu tên file (vd: user_2.png)
+  const fileName = value.split('/').pop();
+  return `${API_ROOT}/USER_IMG/${fileName}`;
+};
+
 const formatDate = (dateString) => {
   if (!dateString) return '---';
   return new Date(dateString).toLocaleDateString('vi-VN');
@@ -431,18 +435,108 @@ const formatDate = (dateString) => {
 </script>
 
 <style scoped>
-.modal-backdrop-custom { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); display: flex; justify-content: center; align-items: center; z-index: 1050; animation: fadeIn 0.2s; }
-.modal-dialog-custom { background: #fff; width: 100%; max-width: 700px; border-radius: 0.5rem; box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.15); animation: slideIn 0.2s; }
-@keyframes slideIn { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-.modal-header { padding: 1rem 1.5rem; border-bottom: 1px solid #d9dee3; display: flex; justify-content: space-between; align-items: center; }
-.modal-body { padding: 1.5rem; }
-.btn-close-custom { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #a1acb8; }
-.avatar-initial { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 0.9rem; }
-.avatar-sm { width: 36px; height: 36px; }
-.avatar-sm img { width: 100%; height: 100%; }
-.status-badge { font-weight: 600; padding: 6px 10px; }
-.badge.bg-label-success { background-color: #e7f7ef !important; color: #1f8b4c !important; }
-.badge.bg-label-danger { background-color: #fdeaea !important; color: #d12f2f !important; }
-.badge.bg-label-warning { background-color: #fff4e5 !important; color: #b36100 !important; }
+.modal-backdrop-custom {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1050;
+  animation: fadeIn 0.2s;
+}
+
+.modal-dialog-custom {
+  background: #fff;
+  width: 100%;
+  max-width: 700px;
+  border-radius: 0.5rem;
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+  animation: slideIn 0.2s;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.modal-header {
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #d9dee3;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-body {
+  padding: 1.5rem;
+}
+
+.btn-close-custom {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #a1acb8;
+}
+
+.avatar-initial {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.avatar-sm {
+  width: 36px;
+  height: 36px;
+}
+
+.avatar-sm img {
+  width: 100%;
+  height: 100%;
+}
+
+.status-badge {
+  font-weight: 600;
+  padding: 6px 10px;
+}
+
+.badge.bg-label-success {
+  background-color: #e7f7ef !important;
+  color: #1f8b4c !important;
+}
+
+.badge.bg-label-danger {
+  background-color: #fdeaea !important;
+  color: #d12f2f !important;
+}
+
+.badge.bg-label-warning {
+  background-color: #fff4e5 !important;
+  color: #b36100 !important;
+}
 </style>

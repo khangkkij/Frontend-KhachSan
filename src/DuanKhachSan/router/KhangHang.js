@@ -46,7 +46,9 @@ import LayoutNhanVien from '@/DuanKhachSan/NhanVien/LayoutNhanVien.vue';
 import DashboardNhanVien from '@/DuanKhachSan/NhanVien/Views/Dashboard.vue';
 import RoomManager from '@/DuanKhachSan/NhanVien/Views/RoomManager.vue';
 import ServiceManager from '@/DuanKhachSan/NhanVien/Views/ServiceManager.vue';
-
+import Checkin from '@/DuanKhachSan/NhanVien/Views/CheckIn.vue';
+import Checkout from '@/DuanKhachSan/NhanVien/Views/CheckOut.vue';
+import DanhGia from '@/DuanKhachSan/NhanVien/Views/QuanLyDanhGia.vue';
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
@@ -166,7 +168,10 @@ const router = createRouter({
       { path: 'room-manager', component: RoomManager },
       { path: 'service-manager', component: ServiceManager },
       { path: 'user-manager', component: QuanLyKhachHang},
-      { path: 'HoaDon', component: QuanLyHoaDon}
+      { path: 'HoaDon', component: QuanLyHoaDon},
+      {path: 'Checkin', component: Checkin},
+      { path :'CheckOut', component: Checkout},
+      { path : 'DanhGia', component: DanhGia}
     ]
   }
   ]

@@ -1,7 +1,8 @@
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'; 
 import api from '../Service/api';
 import notify from '../Service/notify';
+import signalrService from '../Service/signalrService';
 
 const rooms = ref([]);
 const orders = ref([]);
@@ -28,6 +29,11 @@ const tableSearchQuery = ref("");
 const tableStatusFilter = ref("");
 const tableCurrentPage = ref(1);
 const tableItemsPerPage = ref(5); 
+
+
+const reloadDataFromSignalR = async () => {
+    await callService();
+};
 
 const callService = async () => {
   try {
@@ -373,9 +379,19 @@ const saveAllEdits = async () => {
 onMounted(() => {
   callService();
   fetchServicesMenu();
+  
+  // GẮN LISTENER SIGNALR LÊN ĐÂY
+  signalrService.registerListener(reloadDataFromSignalR); 
 });
-</script>
 
+onUnmounted(() => {
+  // NHỚ HUỶ LISTENER KHI RỜI TRANG, không là nó call API nát server
+  signalrService.removeListener(reloadDataFromSignalR);
+});
+
+
+
+</script>
 <template>
   <div class="container-xxl flex-grow-1 container-p-y">
 

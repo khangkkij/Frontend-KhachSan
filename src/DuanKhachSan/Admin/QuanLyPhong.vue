@@ -152,16 +152,22 @@ const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp']
 const handleUploadImages = (e) => {
   const files = Array.from(e.target.files)
   delete errors.images
+
   for (const file of files) {
     if (!ALLOWED_TYPES.includes(file.type)) {
       errors.images = 'Chỉ chấp nhận ảnh JPG, PNG, WEBP'
       return
     }
   }
+
   files.forEach(file => {
-    previewImages.value.push(URL.createObjectURL(file))
+    previewImages.value.push({
+      url: URL.createObjectURL(file),
+      isOld: false
+    })
     form.images.push(file)
   })
+
   e.target.value = ''
 }
 const removeImage = (index) => {
@@ -272,6 +278,7 @@ const submitVariant = async () => {
         fd
       )
       alert('Cập nhật loại phòng thành công!')
+      closeCreateModal()
     } else {
       await axios.post(
         `${API}/api/admin/QuanLyPhongBienThe`,
@@ -281,10 +288,9 @@ const submitVariant = async () => {
       closeCreateModal()
     }
   } catch (err) {
-    console.error(err)
-    const msg =
-    err.response?.data ||'Có lỗi xảy ra, vui lòng thử lại!'
-    alert(msg)
+    console.log("FULL ERROR:", err)
+    console.log("DATA:", err.response?.data)
+    alert(JSON.stringify(err.response?.data))
   }
   await loadVariants()
 }
@@ -626,7 +632,6 @@ const formatPrice = (val) => val?.toLocaleString('vi-VN')
       >
         <i class='bx bx-plus me-1'></i> Thêm loại phòng
       </button>
-
     </div>
 
     <div class="row g-3 mb-4">
@@ -822,7 +827,14 @@ const formatPrice = (val) => val?.toLocaleString('vi-VN')
               <div v-show="!isCollapsed(v.maBienThePhong)" class="rooms-container-animate room-list-scroll">
                 <div class="room-no-item room-item-row" v-for="r in v.phongs" :key="r.no">
                   <div class="d-flex align-items-center gap-2">
-                    <span class="room-number">{{ r.soPhong }}</span>
+                    <div class="room-info">
+                      <div class="room-number">
+                        {{ r.soPhong }}
+                      </div>
+                      <div class="room-id">
+                        #{{ r.maPhong }}
+                      </div>
+                    </div>
 
                     <span
                       @click="toggleRoomStatus(v.maBienThePhong, r.soPhong)"
@@ -831,9 +843,7 @@ const formatPrice = (val) => val?.toLocaleString('vi-VN')
                     >
                       {{ roomStatus(r.trangThai).text }}
                     </span>
-                  </div>
-
-                   
+                  </div>           
                   <div class="room-actions-hidden">
                     <button
                       class="btn-room-view"
@@ -1473,6 +1483,32 @@ const formatPrice = (val) => val?.toLocaleString('vi-VN')
 </template>
 
 <style>
+.room-info {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+
+.room-number {
+  font-weight: 600;
+  font-size: 15px;
+  color: #222;
+}
+
+.room-id {
+  font-size: 11px;
+  color: #888;
+  letter-spacing: 0.5px;
+}
+.room-id {
+  font-size: 10px;
+  background: #f3f4f6;
+  padding: 2px 6px;
+  border-radius: 6px;
+  color: #555;
+  display: inline-block;
+  margin-top: 2px;
+}
 /* ============================= */
 /* FIX TRÀN NGANG TOÀN TRANG */
 /* ============================= */

@@ -18,7 +18,7 @@ import 'boxicons/css/boxicons.css'
 // Scrollbar đẹp (Tùy chọn)
 import 'perfect-scrollbar/css/perfect-scrollbar.css'
 import axios from 'axios';
-
+import signalRService from './DuanKhachSan/Service/signalrService.js';
 axios.defaults.withCredentials = true; // Cho phép gửi nhận Cookie
 
 axios.interceptors.response.use(
@@ -47,4 +47,6 @@ axios.interceptors.response.use(
 
 const app = createApp(App);
 app.use(router);
-app.mount('#app')
+app.mount('#app');
+
+signalRService.startConnection();

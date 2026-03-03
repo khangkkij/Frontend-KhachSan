@@ -1,340 +1,138 @@
 <template>
-  <div class="row">
-    <div class="col-lg-8 mb-4 order-0">
-      <div class="card">
-        <div class="d-flex align-items-end row">
-          <div class="col-sm-7">
-            <div class="card-body">
-              <h5 class="card-title text-primary">Xin chào Admin! 🎉</h5>
-              <p class="mb-4">
-                Bạn đã bán được nhiều hơn <span class="fw-bold">72%</span> so với hôm qua. Hãy kiểm tra huy hiệu mới trong hồ sơ của bạn.
-              </p>
-
-              <a href="javascript:;" class="btn btn-sm btn-outline-primary">Xem huy hiệu</a>
-            </div>
-          </div>
-          <div class="col-sm-5 text-center text-sm-left">
-            <div class="card-body pb-0 px-0 px-md-4">
-              <div style="height: 140px; display: flex; align-items: center; justify-content: center; color: #ccc;">
-                  <i class="bx bx-user" style="font-size: 50px;"></i>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="col-lg-4 col-md-4 order-1">
-      <div class="row">
-        <div class="col-lg-6 col-md-12 col-6 mb-4">
-          <div class="card">
-            <div class="card-body">
-              <div class="card-title d-flex align-items-start justify-content-between">
-                <div class="avatar flex-shrink-0">
-                  <span class="avatar-initial rounded bg-label-success"><i class="bx bx-chart"></i></span>
-                </div>
-                <div class="dropdown">
-                  <button class="btn p-0" type="button" id="cardOpt3" data-bs-toggle="dropdown">
-                    <i class="bx bx-dots-vertical-rounded"></i>
-                  </button>
-                  <div class="dropdown-menu dropdown-menu-end" aria-labelledby="cardOpt3">
-                    <a class="dropdown-item" href="javascript:void(0);">Xem thêm</a>
-                    <a class="dropdown-item" href="javascript:void(0);">Xóa</a>
-                  </div>
-                </div>
-              </div>
-              <span class="fw-semibold d-block mb-1">Lợi nhuận</span>
-              <h3 class="card-title mb-2">$12,628</h3>
-              <small class="text-success fw-semibold"><i class="bx bx-up-arrow-alt"></i> +72.80%</small>
-            </div>
-          </div>
-        </div>
-        <div class="col-lg-6 col-md-12 col-6 mb-4">
-          <div class="card">
-            <div class="card-body">
-              <div class="card-title d-flex align-items-start justify-content-between">
-                <div class="avatar flex-shrink-0">
-                  <span class="avatar-initial rounded bg-label-info"><i class="bx bx-wallet"></i></span>
-                </div>
-                <div class="dropdown">
-                  <button class="btn p-0" type="button" id="cardOpt6" data-bs-toggle="dropdown">
-                    <i class="bx bx-dots-vertical-rounded"></i>
-                  </button>
-                  <div class="dropdown-menu dropdown-menu-end" aria-labelledby="cardOpt6">
-                    <a class="dropdown-item" href="javascript:void(0);">Xem thêm</a>
-                    <a class="dropdown-item" href="javascript:void(0);">Xóa</a>
-                  </div>
-                </div>
-              </div>
-              <span>Doanh số</span>
-              <h3 class="card-title text-nowrap mb-1">$4,679</h3>
-              <small class="text-success fw-semibold"><i class="bx bx-up-arrow-alt"></i> +28.42%</small>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="col-12 col-lg-8 order-2 order-md-3 order-lg-2 mb-4">
-      <div class="card">
-        <div class="row row-bordered g-0">
-          <div class="col-md-8">
-            <h5 class="card-header m-0 me-2 pb-3">Tổng Doanh Thu</h5>
-            <div id="totalRevenueChart" class="px-2"></div>
-          </div>
+  <div class="container-xxl flex-grow-1 container-p-y">
+    <div class="card mb-4 border-0 shadow-sm">
+      <div class="card-body">
+        <div class="row g-3 align-items-end">
           <div class="col-md-4">
-            <div class="card-body">
-              <div class="text-center">
-                <div class="dropdown">
-                  <button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                    2024
-                  </button>
-                  <div class="dropdown-menu dropdown-menu-end">
-                    <a class="dropdown-item" href="javascript:void(0);">2023</a>
-                    <a class="dropdown-item" href="javascript:void(0);">2022</a>
-                  </div>
-                </div>
-              </div>
+            <label class="form-label fw-bold small">KHOẢNG THỜI GIAN</label>
+            <div class="input-group">
+              <input type="date" v-model="filter.fromDate" class="form-control" />
+              <span class="input-group-text">→</span>
+              <input type="date" v-model="filter.toDate" class="form-control" />
             </div>
-            <div id="growthChart"></div>
-            <div class="text-center fw-semibold pt-3 mb-2">Tăng trưởng 62%</div>
-
-            <div class="d-flex px-xxl-4 px-lg-2 p-4 gap-xxl-3 gap-lg-1 gap-3 justify-content-between">
-              <div class="d-flex">
-                <div class="me-2">
-                  <span class="badge bg-label-primary p-2"><i class="bx bx-dollar text-primary"></i></span>
-                </div>
-                <div class="d-flex flex-column">
-                  <small>2024</small>
-                  <h6 class="mb-0">$32.5k</h6>
-                </div>
-              </div>
-              <div class="d-flex">
-                <div class="me-2">
-                  <span class="badge bg-label-info p-2"><i class="bx bx-wallet text-info"></i></span>
-                </div>
-                <div class="d-flex flex-column">
-                  <small>2023</small>
-                  <h6 class="mb-0">$41.2k</h6>
-                </div>
-              </div>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label fw-bold small">TRẠNG THÁI ĐƠN</label>
+            <select v-model="filter.status" class="form-select border-primary-subtle">
+              <option value="all">Tất cả trạng thái</option>
+              <option value="ChoNhanPhong">Chờ nhận phòng</option>
+              <option value="DaThanhToan">Hoàn thành</option> <option value="DangO">Đang ở</option>
+              <option value="Huy">Đã hủy</option>
+            </select>
+          </div>
+          <div class="col-md-5">
+            <label class="form-label fw-bold small">TÌM MÃ ĐƠN/HD</label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="bx bx-search"></i></span>
+              <input type="text" v-model="searchQuery" class="form-control" placeholder="BK19 hoặc HD5" />
+              <button class="btn btn-primary px-3" @click="fetchData">TÌM</button>
             </div>
           </div>
         </div>
       </div>
     </div>
 
-    <div class="col-12 col-md-8 col-lg-4 order-3 order-md-2">
-      <div class="row">
-        <div class="col-6 mb-4">
-          <div class="card">
-            <div class="card-body">
-              <div class="card-title d-flex align-items-start justify-content-between">
-                <div class="avatar flex-shrink-0">
-                  <span class="avatar-initial rounded bg-label-danger"><i class="bx bxl-paypal"></i></span>
-                </div>
-              </div>
-              <span class="d-block mb-1">Thanh toán</span>
-              <h3 class="card-title text-nowrap mb-2">$2,456</h3>
-              <small class="text-danger fw-semibold"><i class="bx bx-down-arrow-alt"></i> -14.82%</small>
-            </div>
-          </div>
-        </div>
-        <div class="col-6 mb-4">
-          <div class="card">
-            <div class="card-body">
-              <div class="card-title d-flex align-items-start justify-content-between">
-                <div class="avatar flex-shrink-0">
-                  <span class="avatar-initial rounded bg-label-primary"><i class="bx bx-credit-card"></i></span>
-                </div>
-              </div>
-              <span class="fw-semibold d-block mb-1">Giao dịch</span>
-              <h3 class="card-title mb-2">$14,857</h3>
-              <small class="text-success fw-semibold"><i class="bx bx-up-arrow-alt"></i> +28.14%</small>
-            </div>
-          </div>
-        </div>
-        
-        <div class="col-12 mb-4">
-          <div class="card">
-            <div class="card-body">
-              <div class="d-flex justify-content-between flex-sm-row flex-column gap-3">
-                <div class="d-flex flex-sm-column flex-row align-items-start justify-content-between">
-                  <div class="card-title">
-                    <h5 class="text-nowrap mb-2">Báo cáo hồ sơ</h5>
-                    <span class="badge bg-label-warning rounded-pill">Năm 2024</span>
-                  </div>
-                  <div class="mt-sm-auto">
-                    <small class="text-success text-nowrap fw-semibold"><i class="bx bx-chevron-up"></i> 68.2%</small>
-                    <h3 class="mb-0">$84,686k</h3>
-                  </div>
-                </div>
-                <div id="profileReportChart"></div>
-              </div>
-            </div>
+    <div class="row mb-4">
+      <div class="col-md-4 mb-3">
+        <div class="card bg-primary text-white border-0 shadow-sm">
+          <div class="card-body d-flex justify-content-between">
+            <div><p class="mb-1 opacity-75">Doanh Thu Thực Tế</p><h3 class="fw-bold mb-0">{{ formatCurrency(stats.summary.totalRevenue) }}</h3></div>
+            <i class="bx bx-wallet fs-1 opacity-25"></i>
           </div>
         </div>
       </div>
-    </div>
-  </div>
-
-  <div class="row">
-    <div class="col-md-6 col-lg-4 col-xl-4 order-0 mb-4">
-      <div class="card h-100">
-        <div class="card-header d-flex align-items-center justify-content-between pb-0">
-          <div class="card-title mb-0">
-            <h5 class="m-0 me-2">Thống kê Đơn hàng</h5>
-            <small class="text-muted">42.82k Tổng đơn</small>
+      <div class="col-md-4 mb-3">
+        <div class="card bg-info text-white border-0 shadow-sm">
+          <div class="card-body d-flex justify-content-between">
+            <div><p class="mb-1 opacity-75">Số Lượng Đơn</p><h3 class="fw-bold mb-0">{{ stats.summary.totalOrders }} đơn</h3></div>
+            <i class="bx bx-shopping-bag fs-1 opacity-25"></i>
           </div>
         </div>
-        <div class="card-body">
-          <div class="d-flex justify-content-between align-items-center mb-3">
-            <div class="d-flex flex-column align-items-center gap-1">
-              <h2 class="mb-2">8,258</h2>
-              <span>Tổng đơn</span>
-            </div>
-            <div id="orderStatisticsChart"></div>
-          </div>
-          <ul class="p-0 m-0">
-            <li class="d-flex mb-4 pb-1">
-              <div class="avatar flex-shrink-0 me-3">
-                <span class="avatar-initial rounded bg-label-primary"><i class="bx bx-mobile-alt"></i></span>
-              </div>
-              <div class="d-flex w-100 flex-wrap align-items-center justify-content-between gap-2">
-                <div class="me-2">
-                  <h6 class="mb-0">Điện tử</h6>
-                  <small class="text-muted">Mobile, Earbuds, TV</small>
-                </div>
-                <div class="user-progress">
-                  <small class="fw-semibold">82.5k</small>
-                </div>
-              </div>
-            </li>
-            <li class="d-flex mb-4 pb-1">
-              <div class="avatar flex-shrink-0 me-3">
-                <span class="avatar-initial rounded bg-label-success"><i class="bx bx-closet"></i></span>
-              </div>
-              <div class="d-flex w-100 flex-wrap align-items-center justify-content-between gap-2">
-                <div class="me-2">
-                  <h6 class="mb-0">Thời trang</h6>
-                  <small class="text-muted">Áo, Quần, Giày</small>
-                </div>
-                <div class="user-progress">
-                  <small class="fw-semibold">23.8k</small>
-                </div>
-              </div>
-            </li>
-            <li class="d-flex mb-4 pb-1">
-              <div class="avatar flex-shrink-0 me-3">
-                <span class="avatar-initial rounded bg-label-info"><i class="bx bx-home-alt"></i></span>
-              </div>
-              <div class="d-flex w-100 flex-wrap align-items-center justify-content-between gap-2">
-                <div class="me-2">
-                  <h6 class="mb-0">Nội thất</h6>
-                  <small class="text-muted">Trang trí, Bàn ăn</small>
-                </div>
-                <div class="user-progress">
-                  <small class="fw-semibold">849k</small>
-                </div>
-              </div>
-            </li>
-          </ul>
+      </div>
+      <div class="col-md-4 mb-3">
+        <div class="card bg-success text-white border-0 shadow-sm text-center">
+          <div class="card-body"><p class="mb-1 opacity-75">Tăng Trưởng Hệ Thống</p><h3 class="fw-bold mb-0">+15.8%</h3></div>
         </div>
       </div>
     </div>
 
-    <div class="col-md-6 col-lg-4 order-1 mb-4">
-      <div class="card h-100">
-        <div class="card-header">
-          <ul class="nav nav-pills" role="tablist">
-            <li class="nav-item">
-              <button type="button" class="nav-link active" role="tab" data-bs-toggle="tab" data-bs-target="#navs-tabs-line-card-income">
-                Thu nhập
-              </button>
-            </li>
-            <li class="nav-item">
-              <button type="button" class="nav-link" role="tab">Chi phí</button>
-            </li>
-            <li class="nav-item">
-              <button type="button" class="nav-link" role="tab">Lợi nhuận</button>
-            </li>
-          </ul>
+    <div class="row mb-4">
+      <div class="col-lg-8">
+        <div class="card h-100 border-0 shadow-sm">
+          <h5 class="card-header fw-bold border-bottom">Doanh Thu Theo Tháng</h5>
+          <div class="card-body">
+            <apexchart v-if="renderChart" type="bar" height="350" :options="revOptions" :series="revSeries"></apexchart>
+            <div v-else class="text-center py-5 text-muted">Đang tải biểu đồ...</div>
+          </div>
         </div>
-        <div class="card-body px-0">
-          <div class="tab-content p-0">
-            <div class="tab-pane fade show active" id="navs-tabs-line-card-income" role="tabpanel">
-              <div class="d-flex p-4 pt-3">
-                <div class="avatar flex-shrink-0 me-3">
-                  <span class="avatar-initial rounded bg-label-secondary"><i class="bx bx-wallet"></i></span>
-                </div>
-                <div>
-                  <small class="text-muted d-block">Tổng số dư</small>
-                  <div class="d-flex align-items-center">
-                    <h6 class="mb-0 me-1">$459.10</h6>
-                    <small class="text-success fw-semibold"><i class="bx bx-chevron-up"></i> 42.9%</small>
-                  </div>
-                </div>
-              </div>
-              <div id="incomeChart"></div>
-            </div>
+      </div>
+      <div class="col-lg-4">
+        <div class="card h-100 border-0 shadow-sm">
+          <h5 class="card-header fw-bold border-bottom">Thị Phần Loại Phòng</h5>
+          <div class="card-body d-flex flex-column align-items-center justify-content-center">
+            <apexchart v-if="renderChart" type="donut" width="100%" :options="donutOptions" :series="donutSeries"></apexchart>
           </div>
         </div>
       </div>
     </div>
 
-    <div class="col-md-6 col-lg-4 order-2 mb-4">
-      <div class="card h-100">
-        <div class="card-header d-flex align-items-center justify-content-between">
-          <h5 class="card-title m-0 me-2">Giao dịch</h5>
+    <div class="card border-0 shadow-sm">
+      <div class="table-responsive text-nowrap">
+        <table class="table table-hover align-middle">
+          <thead class="table-light">
+            <tr>
+              <th>Mã Đơn / HD</th>
+              <th>Khách Hàng</th>
+              <th>Ngày Đặt</th>
+              <th>Số Tiền</th>
+              <th class="text-center">Trạng Thái</th>
+              <th class="text-center">Thao Tác</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="order in stats.recentOrders" :key="order.maDatPhong">
+              <td><span class="fw-bold">#BK{{ order.maDatPhong }}</span><div v-if="order.maHd" class="small text-muted">Mã HD: {{ order.maHd }}</div></td>
+              <td>{{ order.tenKhach }}</td>
+              <td>{{ new Date(order.ngayDat).toLocaleDateString('vi-VN') }}</td>
+              <td class="text-primary fw-bold">{{ formatCurrency(order.tongTien) }}</td>
+              <td class="text-center">
+                <span :class="getStatusBadge(order.trangThai)">{{ getStatusText(order.trangThai) }}</span>
+              </td>
+              <td class="text-center">
+                <button class="btn btn-sm btn-icon btn-outline-primary" @click="viewDetail(order.maDatPhong)"><i class="bx bx-show-alt"></i></button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div v-if="showModal" class="modal-overlay" @click.self="showModal = false">
+      <div class="modal-content animate__animated animate__fadeInDown">
+        <div class="modal-header border-bottom pb-3">
+          <h5 class="fw-bold mb-0">Chi Tiết #BK{{ selectedOrder.maDatPhong }}</h5>
+          <button class="btn-close" @click="showModal = false"></button>
         </div>
-        <div class="card-body">
-          <ul class="p-0 m-0">
-            <li class="d-flex mb-4 pb-1">
-              <div class="avatar flex-shrink-0 me-3">
-                <span class="avatar-initial rounded bg-label-danger"><i class="bx bxl-paypal"></i></span>
+        <div class="modal-body py-4" v-if="selectedOrder.maDatPhong">
+          <div class="row g-4">
+            <div class="col-md-6 border-end">
+              <h6 class="fw-bold text-primary mb-3">Khách Hàng</h6>
+              <p class="mb-1"><strong>Họ tên:</strong> {{ selectedOrder.hoVaTen }}</p>
+              <p class="mb-0"><strong>SĐT:</strong> {{ selectedOrder.sdt }}</p>
+            </div>
+            <div class="col-md-6">
+              <h6 class="fw-bold text-success mb-3">Thông Tin Phòng</h6>
+              <p class="mb-1"><strong>Loại:</strong> {{ selectedOrder.tenLoai }}</p>
+              <p class="mb-0"><strong>Số đêm:</strong> {{ selectedOrder.soDem }}</p>
+            </div>
+            <div class="col-12 bg-light p-3 rounded mt-3 text-center">
+              <div class="row">
+                <div class="col-4"><small class="d-block">Gốc</small><strong>{{ formatCurrency(selectedOrder.tongTienGoc) }}</strong></div>
+                <div class="col-4 text-danger"><small class="d-block">Giảm</small><strong>-{{ formatCurrency(selectedOrder.soTienGiam) }}</strong></div>
+                <div class="col-4 text-primary"><small class="d-block">Tổng thu</small><strong class="fs-5">{{ formatCurrency(selectedOrder.tongTienPhaiTra) }}</strong></div>
               </div>
-              <div class="d-flex w-100 flex-wrap align-items-center justify-content-between gap-2">
-                <div class="me-2">
-                  <small class="text-muted d-block mb-1">Paypal</small>
-                  <h6 class="mb-0">Chuyển tiền</h6>
-                </div>
-                <div class="user-progress d-flex align-items-center gap-1">
-                  <h6 class="mb-0">+82.6</h6>
-                  <span class="text-muted">USD</span>
-                </div>
-              </div>
-            </li>
-            <li class="d-flex mb-4 pb-1">
-              <div class="avatar flex-shrink-0 me-3">
-                 <span class="avatar-initial rounded bg-label-success"><i class="bx bx-wallet"></i></span>
-              </div>
-              <div class="d-flex w-100 flex-wrap align-items-center justify-content-between gap-2">
-                <div class="me-2">
-                  <small class="text-muted d-block mb-1">Ví điện tử</small>
-                  <h6 class="mb-0">Ăn uống</h6>
-                </div>
-                <div class="user-progress d-flex align-items-center gap-1">
-                  <h6 class="mb-0">+270.69</h6>
-                  <span class="text-muted">USD</span>
-                </div>
-              </div>
-            </li>
-             <li class="d-flex mb-4 pb-1">
-              <div class="avatar flex-shrink-0 me-3">
-                 <span class="avatar-initial rounded bg-label-info"><i class="bx bx-credit-card"></i></span>
-              </div>
-              <div class="d-flex w-100 flex-wrap align-items-center justify-content-between gap-2">
-                <div class="me-2">
-                  <small class="text-muted d-block mb-1">Thẻ tín dụng</small>
-                  <h6 class="mb-0">Mua sắm</h6>
-                </div>
-                <div class="user-progress d-flex align-items-center gap-1">
-                  <h6 class="mb-0">-838.71</h6>
-                  <span class="text-muted">USD</span>
-                </div>
-              </div>
-            </li>
-          </ul>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -342,11 +140,88 @@
 </template>
 
 <script setup>
-import { onMounted } from 'vue';
+import { ref, onMounted, computed, watch, nextTick } from 'vue';
+import axios from 'axios';
+import VueApexCharts from "vue3-apexcharts";
 
-// Logic JS giữ nguyên
+const apexchart = VueApexCharts;
+const API = import.meta.env.VITE_API_URL;
+
+const searchQuery = ref('');
+const renderChart = ref(false);
+const showModal = ref(false);
+const selectedOrder = ref({});
+const filter = ref({ fromDate: '2026-01-01', toDate: new Date().toISOString().substr(0, 10), status: 'all' });
+const stats = ref({ summary: { totalRevenue: 0, totalOrders: 0 }, revenueChart: [], roomTypeStats: [], recentOrders: [] });
+
+// WATCH: Tự động tải lại dữ liệu khi thay đổi bất kỳ bộ lọc nào
+watch([filter, searchQuery], () => fetchData(), { deep: true });
+
+const formatCurrency = (v) => Number(v || 0).toLocaleString('vi-VN') + ' ₫';
+
+// --- MAPPING TRẠNG THÁI CHUẨN SQL ---
+const getStatusBadge = (s) => {
+    const status = (s || '').toLowerCase().trim();
+    if (status.includes('huy')) return 'badge bg-label-danger';
+    if (status.includes('dathanhtoan') || status.includes('traphong')) return 'badge bg-label-success';
+    if (status.includes('chonhanphong')) return 'badge bg-label-warning';
+    if (status.includes('dango')) return 'badge bg-label-primary';
+    return 'badge bg-label-secondary';
+};
+
+const getStatusText = (s) => {
+    const status = (s || '').toLowerCase().trim();
+    if (status.includes('huy')) return 'Đã hủy';
+    // Đổi hiển thị sang Hoàn thành
+    if (status.includes('dathanhtoan') || status.includes('traphong')) return 'Hoàn thành';
+    if (status.includes('chonhanphong')) return 'Chờ nhận phòng';
+    if (status.includes('dango')) return 'Đang ở';
+    return 'Đang xử lý';
+};
+
+const viewDetail = async (id) => {
+  try {
+    // SỬA TẠI ĐÂY: Gọi API ThongKe thay vì DatPhong để lấy đúng cấu trúc dữ liệu cho Modal
+    const res = await axios.get(`${API}/api/ThongKe/order-detail/${id}`, { withCredentials: true });
+    
+    // Gán dữ liệu trả về vào selectedOrder
+    selectedOrder.value = res.data; 
+    
+    // Mở Modal
+    showModal.value = true;
+  } catch (e) { 
+    console.error(e);
+    alert("Không thể tải chi tiết đơn hàng này."); 
+  }
+};
+
+const fetchData = async () => {
+  renderChart.value = false; // Tạm tắt để ép re-render biểu đồ
+  try {
+    const res = await axios.get(`${API}/api/ThongKe/dashboard`, { params: { ...filter.value, searchCode: searchQuery.value } });
+    stats.value = res.data;
+    await nextTick(); // Chờ Vue cập nhật DOM rồi mới vẽ biểu đồ
+    if (stats.value.revenueChart.length > 0) renderChart.value = true;
+  } catch (e) { console.error(e); }
+};
+
+// Cấu hình Biểu đồ
+const revSeries = computed(() => [{ name: 'Doanh thu', data: stats.value.revenueChart.map(x => x.total) }]);
+const revOptions = computed(() => ({ chart: { type: 'bar', toolbar: { show: false } }, xaxis: { categories: stats.value.revenueChart.map(x => x.label) }, colors: ['#696cff'], plotOptions: { bar: { borderRadius: 5, columnWidth: '40%' } } }));
+const donutSeries = computed(() => stats.value.roomTypeStats.map(x => x.count));
+const donutOptions = computed(() => ({ labels: stats.value.roomTypeStats.map(x => x.label), colors: ['#696cff', '#03c3ec', '#71dd37', '#ffab00'] }));
+
+onMounted(fetchData);
 </script>
 
 <style scoped>
-/* CSS giữ nguyên */
+.modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1090; display: flex; align-items: center; justify-content: center; }
+.modal-content { background: #fff; width: 90%; max-width: 650px; border-radius: 12px; padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+.badge { padding: 8px 12px; font-weight: 600; font-size: 11px; border-radius: 5px; }
+.bg-label-success { background-color: #e8fadf; color: #71dd37; }
+.bg-label-danger { background-color: #ffe5e5; color: #ff3e1d; }
+.bg-label-warning { background-color: #fff2d6; color: #ffab00; }
+.bg-label-primary { background-color: #e7e7ff; color: #696cff; }
+.bg-label-secondary { background-color: #ebeef0; color: #8592a3; }
+.btn-icon { width: 32px; height: 32px; padding: 0; display: inline-flex; align-items: center; justify-content: center; }
 </style>

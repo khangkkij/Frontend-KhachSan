@@ -3,7 +3,9 @@
     <aside class="sidebar">
       <div class="logo-container">
         <svg class="logo-icon" viewBox="0 0 25 42" xmlns="http://www.w3.org/2000/svg">
-          <path d="M13.7918663,0.358365126 L3.39788168,7.44174259 C0.566865006,9.69408886 -0.379795268,12.4788597 0.557900856,15.7960551 C0.68998853,16.2305145 1.09562888,17.7872135 3.12357076,19.2293357 C3.8146334,19.7207684 5.32369333,20.3834223 7.65075054,21.2172976 L7.59773219,21.2525164 L2.63468769,24.5493413 C0.445452254,26.3002124 0.0884951797,28.5083815 1.56381646,31.1738486 C2.83770406,32.8170431 5.20850219,33.2640127 7.09180128,32.5391577 C8.347334,32.0559211 11.4559176,30.0011079 16.4175519,26.3747182 C18.0338572,24.4997857 18.6973423,22.4544883 18.4080071,20.2388261 C17.963753,17.5346866 16.1776345,15.5799961 13.0496516,14.3747546 L10.9194936,13.4715819 L18.6192054,7.984237 L13.7918663,0.358365126 Z" fill="currentColor"></path>
+          <path
+            d="M13.7918663,0.358365126 L3.39788168,7.44174259 C0.566865006,9.69408886 -0.379795268,12.4788597 0.557900856,15.7960551 C0.68998853,16.2305145 1.09562888,17.7872135 3.12357076,19.2293357 C3.8146334,19.7207684 5.32369333,20.3834223 7.65075054,21.2172976 L7.59773219,21.2525164 L2.63468769,24.5493413 C0.445452254,26.3002124 0.0884951797,28.5083815 1.56381646,31.1738486 C2.83770406,32.8170431 5.20850219,33.2640127 7.09180128,32.5391577 C8.347334,32.0559211 11.4559176,30.0011079 16.4175519,26.3747182 C18.0338572,24.4997857 18.6973423,22.4544883 18.4080071,20.2388261 C17.963753,17.5346866 16.1776345,15.5799961 13.0496516,14.3747546 L10.9194936,13.4715819 L18.6192054,7.984237 L13.7918663,0.358365126 Z"
+            fill="currentColor"></path>
         </svg>
         <span class="logo-text">LUXURY</span>
       </div>
@@ -43,19 +45,29 @@
           <i class="bx bx-receipt icon"></i> Hóa đơn
         </router-link>
 
-        <router-link to="/admin/dich-vu" class="menu-item" active-class="active">
+              <router-link to="/admin/dich-vu" class="menu-item" active-class="active">
           <i class="bx bx-cube icon"></i> Dịch vụ
         </router-link>
+            <router-link to="/admin/dat-dich-vu" class="menu-item" active-class="active">
+          <i class="bx bx-cube icon"></i> Đặt dịch vụ
+        </router-link>
 
+        <router-link to="/admin/danh-gia" class="menu-item" active-class="active">
+          <i class="bx bx-cube icon"></i> Đánh giá
+        </router-link>
         <div class="menu-header">KHUYẾN MÃI</div>
-        
+
         <router-link to="/admin/voucher" class="menu-item" active-class="active">
           <i class="bx bx-gift icon"></i> Voucher
         </router-link>
-        
-        <router-link to="/admin/sale" class="menu-item" active-class="active">
+
+      <router-link to="/admin/sale" class="menu-item" active-class="active">
           <i class="bx bx-purchase-tag-alt icon"></i> Sale
         </router-link>
+        <div class="menu-header">HỆ THỐNG</div>
+        <a href="#" @click.prevent="handleLogout" class="menu-item text-danger-custom">
+          <i class="bx bx-log-out-circle icon"></i> Đăng xuất
+        </a>
       </nav>
     </aside>
 
@@ -82,8 +94,51 @@
 </template>
 
 <script setup>
+import { useRouter } from 'vue-router';
+import axios from 'axios';
+import Swal from 'sweetalert2';
 
-// Logic giữ nguyên
+const router = useRouter();
+const API = import.meta.env.VITE_API_URL || 'https://localhost:7023';
+
+const handleLogout = async () => {
+  // Xác nhận trước khi đăng xuất
+  const result = await Swal.fire({
+    title: 'Xác nhận đăng xuất?',
+    text: "Phiên làm việc của bạn sẽ kết thúc tại đây.",
+    icon: 'question',
+    showCancelButton: true,
+    confirmButtonColor: '#696cff',
+    cancelButtonColor: '#d33',
+    confirmButtonText: 'Đồng ý',
+    cancelButtonText: 'Hủy'
+  });
+
+  if (result.isConfirmed) {
+    try {
+      // 1. Gọi API để Server xóa Cookie AuthToken
+      await axios.post(`${API}/api/LoginAdmin/logout`, {}, { withCredentials: true });
+    } catch (err) {
+      console.error("Lỗi khi gọi API logout:", err);
+    } finally {
+      // 2. Luôn dọn dẹp LocalStorage dù API có lỗi hay không
+      localStorage.removeItem('userRole');
+      localStorage.removeItem('userName');
+      localStorage.removeItem('isLoggedIn');
+
+      // 3. Thông báo và đẩy về trang login admin
+      await Swal.fire({
+        icon: 'success',
+        title: 'Thành công',
+        text: 'Bạn đã đăng xuất khỏi hệ thống.',
+        timer: 1500,
+        showConfirmButton: false
+      });
+
+      router.push('/admin/login');
+    }
+  }
+};
 </script>
 
 <style scoped>
@@ -151,23 +206,29 @@
   color: #566a7f;
   text-decoration: none;
   border-radius: 8px;
-  transition: all 0.2s ease-in-out; /* Thêm transition mượt hơn */
+  transition: all 0.2s ease-in-out;
+  /* Thêm transition mượt hơn */
   font-size: 0.95rem;
 }
 
 .menu-item:hover {
   background: rgba(67, 89, 113, 0.04);
-  color: #696cff; /* Hover đổi màu chữ một chút cho đẹp */
+  color: #696cff;
+  /* Hover đổi màu chữ một chút cho đẹp */
 }
 
 /* --- CLASS QUAN TRỌNG: KHI ĐƯỢC CHỌN (ACTIVE) --- */
 /* Class này sẽ tự động được thêm vào router-link khi đúng đường dẫn */
 .menu-item.active {
-  background: rgba(105, 108, 255, 0.16) !important; /* Màu nền tím nhạt */
-  color: #696cff !important; /* Màu chữ tím đậm */
+  background: rgba(105, 108, 255, 0.16) !important;
+  /* Màu nền tím nhạt */
+  color: #696cff !important;
+  /* Màu chữ tím đậm */
   font-weight: 600;
-  position: relative; /* Để có thể thêm hiệu ứng nếu muốn sau này */
+  position: relative;
+  /* Để có thể thêm hiệu ứng nếu muốn sau này */
 }
+
 /* Thêm vạch nhỏ bên phải để giống template xịn (tuỳ chọn) */
 .menu-item.active::after {
   content: '';
@@ -179,7 +240,8 @@
   background-color: #696cff;
   border-top-right-radius: 4px;
   border-bottom-right-radius: 4px;
-  display: none; /* Bỏ comment dòng này nếu muốn hiện vạch */
+  display: none;
+  /* Bỏ comment dòng này nếu muốn hiện vạch */
 }
 
 .menu-header {
@@ -256,5 +318,17 @@
 .container-p-y {
   padding-top: 0.5rem;
   padding-bottom: 1.5rem;
+}
+.text-danger-custom {
+  color: #ff3e1d !important; /* Màu đỏ của template Bootstrap/Admin */
+  margin-top: auto; /* Đẩy nút xuống dưới cùng nếu muốn */
+}
+
+.text-danger-custom:hover {
+  background: rgba(255, 62, 29, 0.08) !important;
+}
+
+.text-danger-custom .icon {
+  color: #ff3e1d;
 }
 </style>

@@ -2,235 +2,295 @@
   <div class="staff-manager-container">
 
     <div class="card card-custom mb-4">
-      <div class="card-body d-flex justify-content-between align-items-center row gap-3 gap-md-0">
-        <div class="col-md-4">
-          <h5 class="card-title fw-bold text-primary mb-0">
-            <i class='bx bx-user-pin me-2'></i>Quản lý Nhân sự
-          </h5>
-        </div>
-        <div class="col-md-8">
-          <div class="d-flex align-items-center justify-content-md-end gap-3">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center row gap-3 gap-md-0 mb-3">
+          <div class="col-md-4">
+            <h5 class="card-title fw-bold text-primary mb-0">
+              <i class='bx bx-user-pin me-2'></i>Quản lý Nhân sự
+            </h5>
+          </div>
+          <div class="col-md-8">
+            <div class="d-flex align-items-center justify-content-md-end gap-3">
+              <div class="input-group input-group-custom flex-grow-1" style="max-width: 350px;">
+                <span class="input-group-text"><i class="bx bx-search"></i></span>
+                <input type="text" class="form-control" placeholder="Tìm Tên, Mã NV, Email, Username..."
+                  v-model="searchQuery" />
+              </div>
 
-            <div class="input-group input-group-custom flex-grow-1" style="max-width: 300px;">
-              <span class="input-group-text"><i class="bx bx-search"></i></span>
-              <input type="text" class="form-control" placeholder="Tìm kiếm..." v-model="searchQuery" />
+              <button class="btn btn-primary btn-add-new shadow-sm" @click="openModal('add')">
+                <i class="bx bx-plus me-1"></i> Thêm nhân sự
+              </button>
             </div>
+          </div>
+        </div>
 
-            <button class="btn btn-primary btn-add-new shadow-sm" @click="openModal('add')">
-              <i class="bx bx-plus me-1"></i> Thêm nhân sự
+        <div class="row g-3 border-top pt-3">
+          <div class="col-md-3">
+            <label class="form-label text-muted small mb-1">Chức vụ</label>
+            <select v-model="filterRole" class="form-select form-select-sm">
+              <option value="">-- Tất cả chức vụ --</option>
+              <option v-for="role in RoleList" :key="role.maChucVu" :value="role.maChucVu">
+                {{ role.tenChucVu }}
+              </option>
+            </select>
+          </div>
+
+          <div class="col-md-3">
+            <label class="form-label text-muted small mb-1">Ngày vào làm</label>
+            <input type="date" v-model="filterDate" class="form-control form-control-sm" />
+          </div>
+
+          <div class="col-md-4">
+            <label class="form-label text-muted small mb-1">Sắp xếp theo</label>
+            <select v-model="sortOption" class="form-select form-select-sm">
+              <option value="id_asc">Mã NV: Tăng dần</option>
+              <option value="id_desc">Mã NV: Giảm dần</option>
+              <option value="name_asc">Tên: A - Z</option>
+              <option value="name_desc">Tên: Z - A</option>
+            </select>
+          </div>
+
+          <div class="col-md-2 d-flex align-items-end">
+            <button class="btn btn-outline-secondary btn-sm w-100 h-px-30" @click="resetFilters">
+              <i class="bx bx-refresh me-1"></i> Làm mới
             </button>
           </div>
         </div>
       </div>
     </div>
+  </div>
 
-    <div class="card card-custom">
-      <div class="table-responsive text-nowrap">
+  <div class="card card-custom">
+    <div class="table-responsive text-nowrap">
 
-        <div v-if="isLoading" class="loading-state">
-          <div class="spinner-border text-primary" role="status"></div>
-          <p>Đang tải dữ liệu...</p>
-        </div>
+      <div v-if="isLoading" class="loading-state">
+        <div class="spinner-border text-primary" role="status"></div>
+        <p>Đang tải dữ liệu...</p>
+      </div>
 
-        <table v-else class="table table-hover align-middle">
-          <thead class="table-light">
-            <tr>
-              <th class="ps-4">Nhân sự</th>
-              <th>Tài khoản</th>
-              <th>Chức vụ</th>
-              <th>Ngày vào làm</th>
-              <th>Trạng thái</th>
-              <th class="text-center">Tác vụ</th>
-            </tr>
-          </thead>
-          <tbody class="table-border-bottom-0">
-            <tr v-for="staff in filteredStaff" :key="staff.maNv">
+      <table v-else class="table table-hover align-middle">
+        <thead class="table-light">
+          <tr>
+            <th class="ps-4">Nhân sự</th>
+            <th>Tài khoản</th>
+            <th>Chức vụ</th>
+            <th>Ngày vào làm</th>
+            <th>Trạng thái</th>
+            <th class="text-center">Tác vụ</th>
+          </tr>
+        </thead>
+        <tbody class="table-border-bottom-0">
+          <tr v-for="staff in paginatedStaff" :key="staff.maNv">
 
-              <td class="ps-4">
-                <div class="d-flex align-items-center">
-                  <div class="avatar-wrapper me-3">
-                    <img v-if="staff.hinhAnh" :src="getFullImageUrl(staff.hinhAnh)" @error="handleImageError"
-                      alt="Avatar" class="avatar-img" />
-                    <img v-else :src="getDefaultImageUrl()" alt="Avatar" class="avatar-img" />
-                    <!-- <div v-else class="avatar-initial" :class="getRoleColorClass(staff.maChucVu)">
+            <td class="ps-4">
+              <div class="d-flex align-items-center">
+                <div class="avatar-wrapper me-3">
+                  <img v-if="staff.hinhAnh" :src="getFullImageUrl(staff.hinhAnh)" @error="handleImageError" alt="Avatar"
+                    class="avatar-img" />
+                  <img v-else :src="getDefaultImageUrl()" alt="Avatar" class="avatar-img" />
+                  <!-- <div v-else class="avatar-initial" :class="getRoleColorClass(staff.maChucVu)">
                       {{ getInitials(staff.hoTenNv) }}
                     </div> -->
-                  </div>
-                  <div class="d-flex flex-column">
-                    <span class="fw-bold text-heading">{{ staff.hoTenNv }}</span>
-                    <small class="text-muted">ID: #{{ staff.maNv }}</small>
-                  </div>
                 </div>
-              </td>
-
-              <td>
                 <div class="d-flex flex-column">
-                  <span class="fw-semibold text-primary"><i class='bx bx-user-circle me-1'></i>{{ staff.tenDangNhap
-                  }}</span>
-                  <small class="text-muted" v-if="staff.email">{{ staff.email }}</small>
-                  <small class="text-muted fst-italic" v-else>(Chưa có email)</small>
+                  <span class="fw-bold text-heading">{{ staff.hoTenNv }}</span>
+                  <small class="text-muted">ID: #{{ staff.maNv }}</small>
                 </div>
-              </td>
+              </div>
+            </td>
 
-              <td>
-                <span class="badge-custom" :class="getRoleColorClass(staff.maChucVu)">
-                  {{ getRoleName(staff.maChucVu) }}
-                </span>
-              </td>
+            <td>
+              <div class="d-flex flex-column">
+                <span class="fw-semibold text-primary"><i class='bx bx-user-circle me-1'></i>{{ staff.tenDangNhap
+                }}</span>
+                <small class="text-muted" v-if="staff.email">{{ staff.email }}</small>
+                <small class="text-muted fst-italic" v-else>(Chưa có email)</small>
+              </div>
+            </td>
 
-              <td>
-                <span class="text-muted"><i class='bx bx-calendar me-1'></i>{{ formatDate(staff.ngayVaoLam) }}</span>
-              </td>
+            <td>
+              <span class="badge-custom" :class="getRoleColorClass(staff.maChucVu)">
+                {{ getRoleName(staff.maChucVu) }}
+              </span>
+            </td>
 
-              <td>
-                <span class="badge-status" :class="getStatusClass(staff.trangThai)">
-                  <span class="dot"></span> {{ staff.trangThai }}
-                </span>
-              </td>
+            <td>
+              <span class="text-muted"><i class='bx bx-calendar me-1'></i>{{ formatDate(staff.ngayVaoLam) }}</span>
+            </td>
 
-              <td class="text-center">
-                <button class="btn-icon btn-edit me-2" @click="openModal('edit', staff)" title="Sửa">
-                  <i class="bx bx-edit-alt"></i>
-                </button>
+            <td>
+              <span class="badge-status" :class="getStatusClass(staff.trangThai)">
+                <span class="dot"></span> {{ staff.trangThai }}
+              </span>
+            </td>
+
+            <td class="text-center">
+              <button class="btn-icon btn-edit me-2" @click="openModal('edit', staff)" title="Sửa">
+                <i class="bx bx-edit-alt"></i>
+              </button>
 
 
-                <button v-if="staff.trangThai == `Hoạt động`" class="btn-icon btn-lock me-2" @click="toggleLock(staff)"
-                  title="Khóa/Mở khóa">
-                  <i class="bx bx-lock-alt"></i>
-                </button>
-                <button v-else class="btn-icon btn-lock me-2" @click="toggleLock(staff)" title="Khóa/Mở khóa">
-                  <i class="bx bx-lock-open-alt"></i>
-                </button>
+              <button v-if="staff.trangThai == `Hoạt động`" class="btn-icon btn-lock me-2" @click="toggleLock(staff)"
+                title="Khóa/Mở khóa">
+                <i class="bx bx-lock-alt"></i>
+              </button>
+              <button v-else class="btn-icon btn-lock me-2" @click="toggleLock(staff)" title="Khóa/Mở khóa">
+                <i class="bx bx-lock-open-alt"></i>
+              </button>
 
-                <button class="btn-icon btn-delete" @click="confirmDelete(staff)" title="Xóa">
-                  <i class="bx bx-trash"></i>
-                </button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+              <button class="btn-icon btn-delete" @click="confirmDelete(staff)" title="Xóa">
+                <i class="bx bx-trash"></i>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </div>
+    <div v-if="totalPages > 1" class="d-flex justify-content-between align-items-center p-3 border-top">
+      <div class="text-muted small">
+        Hiển thị trang {{ currentPage }} / {{ totalPages }} (Tổng: {{ filteredStaff.length }} nhân sự)
+      </div>
 
-    <div v-if="showModal" class="modal-backdrop-custom">
-      <div class="modal-dialog-custom">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title fw-bold">
-              <i class='bx' :class="isEditMode ? 'bx-edit' : 'bx-user-plus'"></i>
-              {{ isEditMode ? 'Cập nhật hồ sơ' : 'Thêm nhân sự mới' }}
-            </h5>
-            <button type="button" class="btn-close-custom" @click="closeModal"><i class='bx bx-x'></i></button>
-          </div>
+      <nav aria-label="Page navigation">
+        <ul class="pagination pagination-sm mb-0">
+          <li class="page-item" :class="{ disabled: currentPage === 1 }">
+            <button class="page-link" @click="changePage(currentPage - 1)">
+              <i class="bx bx-chevron-left"></i>
+            </button>
+          </li>
 
-          <div class="modal-body">
-            <form @submit.prevent="handleSave">
+          <li v-for="page in totalPages" :key="page" class="page-item" :class="{ active: currentPage === page }">
+            <button class="page-link" @click="changePage(page)">{{ page }}</button>
+          </li>
 
-              <div class="text-center mb-4">
-                <div class="position-relative d-inline-block">
-                  <img :src="previewImage || (formData.hinhAnh ? IMG_URL + formData.hinhAnh : getDefaultImageUrl())"
-                    @error="handleImageError" class="rounded-circle border shadow-sm object-fit-cover"
-                    style="width: 120px; height: 120px;" alt="Avatar" />
-                  <label for="fileInput" class="btn btn-sm btn-primary rounded-circle position-absolute bottom-0 end-0"
-                    style="width: 32px; height: 32px; padding: 0; display: flex; align-items: center; justify-content: center;">
-                    <i class='bx bx-camera'></i>
-                  </label>
-                  <input id="fileInput" type="file" class="d-none" accept="image/*" @change="handleFileChange" />
-                </div>
+          <li class="page-item" :class="{ disabled: currentPage === totalPages }">
+            <button class="page-link" @click="changePage(currentPage + 1)">
+              <i class="bx bx-chevron-right"></i>
+            </button>
+          </li>
+        </ul>
+      </nav>
+    </div>
+  </div>
+  <div v-if="showModal" class="modal-backdrop-custom">
+    <div class="modal-dialog-custom">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold">
+            <i class='bx' :class="isEditMode ? 'bx-edit' : 'bx-user-plus'"></i>
+            {{ isEditMode ? 'Cập nhật hồ sơ' : 'Thêm nhân sự mới' }}
+          </h5>
+          <button type="button" class="btn-close-custom" @click="closeModal"><i class='bx bx-x'></i></button>
+        </div>
+
+        <div class="modal-body">
+          <form @submit.prevent="handleSave">
+
+            <div class="text-center mb-4">
+              <div class="position-relative d-inline-block">
+                <img :src="previewImage || (formData.hinhAnh ? IMG_URL + formData.hinhAnh : getDefaultImageUrl())"
+                  @error="handleImageError" class="rounded-circle border shadow-sm object-fit-cover"
+                  style="width: 120px; height: 120px;" alt="Avatar" />
+                <label for="fileInput" class="btn btn-sm btn-primary rounded-circle position-absolute bottom-0 end-0"
+                  style="width: 32px; height: 32px; padding: 0; display: flex; align-items: center; justify-content: center;">
+                  <i class='bx bx-camera'></i>
+                </label>
+                <input id="fileInput" type="file" class="d-none" accept="image/*" @change="handleFileChange" />
+              </div>
+            </div>
+
+            <div class="row g-3">
+
+              <div class="col-12">
+                <label class="form-label">Họ và tên <span class="text-danger">*</span></label>
+                <input v-model="formData.hoTenNv" type="text" class="form-control"
+                  :class="{ 'is-invalid': errors.hoTenNv }" required placeholder="Nhập họ tên nhân sự">
+                <div v-if="errors.hoTenNv" class="invalid-feedback">{{ errors.hoTenNv }}</div>
               </div>
 
-              <div class="row g-3">
-
-                <div class="col-12">
-                  <label class="form-label">Họ và tên <span class="text-danger">*</span></label>
-                  <input v-model="formData.hoTenNv" type="text" class="form-control"
-                    :class="{ 'is-invalid': errors.hoTenNv }" required placeholder="Nhập họ tên nhân sự">
-                  <div v-if="errors.hoTenNv" class="invalid-feedback">{{ errors.hoTenNv }}</div>
-                </div>
-
-                <div class="col-md-6">
-                  <label class="form-label">Tên đăng nhập <span class="text-danger">*</span></label>
-                  <input v-model="formData.tenDangNhap" type="text" class="form-control"
-                    :class="{ 'is-invalid': errors.tenDangNhap }" required :disabled="isEditMode">
-                  <div v-if="errors.tenDangNhap" class="invalid-feedback">{{ errors.tenDangNhap }}</div>
-                </div>
-
-                <div class="col-md-6">
-                  <label class="form-label">Mật khẩu</label>
-                  <input v-model="formData.matKhau" type="password" class="form-control"
-                    :class="{ 'is-invalid': errors.matKhau }"
-                    :placeholder="isEditMode ? 'Để trống nếu không đổi' : 'Nhập mật khẩu'">
-                  <div v-if="errors.matKhau" class="invalid-feedback">{{ errors.matKhau }}</div>
-                </div>
-
-                <div class="col-md-6">
-                  <label class="form-label">Email</label>
-                  <input v-model="formData.email" type="email" class="form-control" placeholder="example@mail.com">
-                </div>
-
-                <div class="col-md-6">
-                  <label class="form-label">Năm sinh</label>
-                  <input v-model="formData.namSinh" type="number" class="form-control"
-                    :class="{ 'is-invalid': errors.namSinh }" placeholder="VD: 2000">
-                  <div v-if="errors.namSinh" class="invalid-feedback">{{ errors.namSinh }}</div>
-                </div>
-
-                <div class="col-md-6">
-                  <label class="form-label">Giới tính</label>
-                  <select v-model="formData.gioiTinh" class="form-select" :class="{ 'is-invalid': errors.gioiTinh }">
-                    <option disabled :value="null">-- Chọn --</option>
-                    <option value="Nam">Nam</option>
-                    <option value="Nữ">Nữ</option>
-                    <option value="Khác">Khác</option>
-                  </select>
-                  <div v-if="errors.gioiTinh" class="invalid-feedback">{{ errors.gioiTinh }}</div>
-                </div>
-
-                <div class="col-md-6">
-                  <label class="form-label">Chức vụ</label>
-                  <select v-model="formData.maChucVu" class="form-select" :class="{ 'is-invalid': errors.maChucVu }">
-                    <option :value="null" disabled>-- Chọn chức vụ --</option>
-                    <option v-for="role in RoleList" :key="role.maChucVu" :value="role.maChucVu">
-                      {{ role.tenChucVu }}
-                    </option>
-                  </select>
-                  <div v-if="errors.maChucVu" class="invalid-feedback">{{ errors.maChucVu }}</div>
-                </div>
-
-                <div class="col-md-12">
-                  <label class="form-label">Trạng thái</label>
-                  <select v-model="formData.trangThai" class="form-select">
-                    <option value="Hoạt động">Hoạt động</option>
-                    <option value="Bị khoá">Bị khoá</option>
-                  </select>
-                </div>
-
-                <div class="col-12">
-                  <label class="form-label">Địa chỉ thường trú</label>
-                  <textarea v-model="formData.diaChi" class="form-control" rows="2"
-                    placeholder="Số nhà, đường, phường/xã..."></textarea>
-                </div>
-
+              <div class="col-md-6">
+                <label class="form-label">Tên đăng nhập <span class="text-danger">*</span></label>
+                <input v-model="formData.tenDangNhap" type="text" class="form-control"
+                  :class="{ 'is-invalid': errors.tenDangNhap }" required :disabled="isEditMode">
+                <div v-if="errors.tenDangNhap" class="invalid-feedback">{{ errors.tenDangNhap }}</div>
               </div>
 
-              <div class="mt-4 text-end border-top pt-3">
-                <button type="button" class="btn btn-label-secondary me-2" @click="closeModal">Hủy</button>
-                <button type="submit" class="btn btn-primary px-4" :disabled="isSubmitting">
-                  {{ isSubmitting ? 'Đang lưu...' : 'Lưu lại' }}
-                </button>
+              <div class="col-md-6">
+                <label class="form-label">Mật khẩu</label>
+                <input v-model="formData.matKhau" type="password" class="form-control"
+                  :class="{ 'is-invalid': errors.matKhau }"
+                  :placeholder="isEditMode ? 'Để trống nếu không đổi' : 'Nhập mật khẩu'">
+                <div v-if="errors.matKhau" class="invalid-feedback">{{ errors.matKhau }}</div>
               </div>
 
-            </form>
-          </div>
+              <div class="col-md-6">
+                <label class="form-label">Email</label>
+                <input v-model="formData.email" type="email" class="form-control" placeholder="example@mail.com">
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label">Năm sinh</label>
+                <input v-model="formData.namSinh" type="number" class="form-control"
+                  :class="{ 'is-invalid': errors.namSinh }" placeholder="VD: 2000">
+                <div v-if="errors.namSinh" class="invalid-feedback">{{ errors.namSinh }}</div>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label">Giới tính</label>
+                <select v-model="formData.gioiTinh" class="form-select" :class="{ 'is-invalid': errors.gioiTinh }">
+                  <option disabled :value="null">-- Chọn --</option>
+                  <option value="Nam">Nam</option>
+                  <option value="Nữ">Nữ</option>
+                  <option value="Khác">Khác</option>
+                </select>
+                <div v-if="errors.gioiTinh" class="invalid-feedback">{{ errors.gioiTinh }}</div>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label">Chức vụ</label>
+                <select v-model="formData.maChucVu" class="form-select" :class="{ 'is-invalid': errors.maChucVu }">
+                  <option :value="null" disabled>-- Chọn chức vụ --</option>
+                  <option v-for="role in RoleList" :key="role.maChucVu" :value="role.maChucVu">
+                    {{ role.tenChucVu }}
+                  </option>
+                </select>
+                <div v-if="errors.maChucVu" class="invalid-feedback">{{ errors.maChucVu }}</div>
+              </div>
+
+              <div class="col-md-12">
+                <label class="form-label">Trạng thái</label>
+                <select v-model="formData.trangThai" class="form-select">
+                  <option value="Hoạt động">Hoạt động</option>
+                  <option value="Bị khoá">Bị khoá</option>
+                </select>
+              </div>
+
+              <div class="col-12">
+                <label class="form-label">Địa chỉ thường trú</label>
+                <textarea v-model="formData.diaChi" class="form-control" rows="2"
+                  placeholder="Số nhà, đường, phường/xã..."></textarea>
+              </div>
+
+            </div>
+
+            <div class="mt-4 text-end border-top pt-3">
+              <button type="button" class="btn btn-label-secondary me-2" @click="closeModal">Hủy</button>
+              <button type="submit" class="btn btn-primary px-4" :disabled="isSubmitting">
+                {{ isSubmitting ? 'Đang lưu...' : 'Lưu lại' }}
+              </button>
+            </div>
+
+          </form>
         </div>
       </div>
     </div>
+    </div>
 
-  </div>
+
 </template>
 
 <script setup>
-import { ref, computed, reactive, onMounted } from 'vue';
+import { ref, computed, reactive, onMounted, watch } from 'vue';
 import axios from 'axios';
 
 // --- CONFIG ---
@@ -281,9 +341,69 @@ onMounted(fetchStaff);
 
 // --- LOGIC ---
 const filteredStaff = computed(() => {
-  if (!searchQuery.value) return staffList.value;
-  const q = searchQuery.value.toLowerCase();
-  return staffList.value.filter(s => s.hoTenNv && s.hoTenNv.toLowerCase().includes(q));
+  let result = staffList.value;
+
+  // 1. Tìm kiếm theo tên (Search Query)
+  if (searchQuery.value) {
+    // .trim() để xóa khoảng trắng thừa ở 2 đầu
+    const q = searchQuery.value.toLowerCase().trim();
+
+    result = result.filter(s => {
+      // Ép kiểu Mã NV về chuỗi để tìm kiếm
+      const maNvStr = s.maNv ? s.maNv.toString() : '';
+
+      // Kiểm tra xem chuỗi tìm kiếm có nằm trong bất kỳ trường nào không
+      const matchName = s.hoTenNv && s.hoTenNv.toLowerCase().includes(q);
+      const matchId = maNvStr.includes(q);
+      const matchEmail = s.email && s.email.toLowerCase().includes(q);
+      const matchUsername = s.tenDangNhap && s.tenDangNhap.toLowerCase().includes(q);
+
+      // Trả về true nếu khớp ít nhất 1 trong 4 điều kiện trên
+      return matchName || matchId || matchEmail || matchUsername;
+    });
+  }
+
+  // 2. Lọc theo chức vụ
+  if (filterRole.value !== '') {
+    result = result.filter(s => s.maChucVu === filterRole.value);
+  }
+
+  // 3. LỌC THEO NGÀY VÀO LÀM (Chính xác ngày)
+  if (filterDate.value) {
+    result = result.filter(s => {
+      if (!s.ngayVaoLam) return false;
+
+      // Xử lý múi giờ an toàn: Chuyển ngày của DB thành định dạng YYYY-MM-DD
+      const staffDate = new Date(s.ngayVaoLam);
+      const year = staffDate.getFullYear();
+      const month = String(staffDate.getMonth() + 1).padStart(2, '0');
+      const day = String(staffDate.getDate()).padStart(2, '0');
+
+      const formattedStaffDate = `${year}-${month}-${day}`;
+
+      // So sánh trực tiếp với giá trị của input type="date"
+      return formattedStaffDate === filterDate.value;
+    });
+  }
+
+  // 4. Sắp xếp danh sách
+  // Tạo bản sao bằng slice() trước khi sort để tránh lỗi mutate array state trong Vue
+  result = result.slice().sort((a, b) => {
+    switch (sortOption.value) {
+      case 'id_asc':
+        return a.maNv - b.maNv;
+      case 'id_desc':
+        return b.maNv - a.maNv;
+      case 'name_asc':
+        return getFirstName(a.hoTenNv).localeCompare(getFirstName(b.hoTenNv), 'vi');
+      case 'name_desc':
+        return getFirstName(b.hoTenNv).localeCompare(getFirstName(a.hoTenNv), 'vi');
+      default:
+        return 0;
+    }
+  });
+
+  return result;
 });
 
 const handleSave = async () => {
@@ -508,6 +628,54 @@ const validateForm = () => {
 
   return isValid;
 };
+
+// --- THÊM STATE CHO LỌC VÀ SẮP XẾP ---
+const filterRole = ref('');
+const filterDate = ref('');
+const sortOption = ref('id_asc'); // Mặc định sắp xếp Mã NV tăng dần
+
+const resetFilters = () => {
+  searchQuery.value = '';
+  filterRole.value = '';
+  filterDate.value = '';
+  sortOption.value = 'id_asc'; // Đưa sắp xếp về mặc định
+};
+
+// --- LOGIC ---
+
+// Hàm phụ hỗ trợ lấy "Tên" cuối cùng trong "Họ và tên" để sắp xếp A-Z chuẩn Việt Nam
+const getFirstName = (fullName) => {
+  if (!fullName) return '';
+  const parts = fullName.trim().split(' ');
+  return parts[parts.length - 1]; // Lấy chữ cuối cùng
+};
+
+// Cập nhật hàm tính toán danh sách đã lọc & sắp xếp
+
+const currentPage = ref(1);
+const itemsPerPage = 10; // 10 nhân viên (hóa đơn) trên 1 trang
+
+// --- THÊM LOGIC PHÂN TRANG (Đặt ngay dưới filteredStaff) ---
+const totalPages = computed(() => {
+  return Math.ceil(filteredStaff.value.length / itemsPerPage);
+});
+
+const paginatedStaff = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage;
+  const end = start + itemsPerPage;
+  return filteredStaff.value.slice(start, end);
+});
+
+const changePage = (page) => {
+  if (page >= 1 && page <= totalPages.value) {
+    currentPage.value = page;
+  }
+};
+
+// Đặt currentPage về 1 mỗi khi người dùng thay đổi bộ lọc hoặc tìm kiếm
+watch([searchQuery, filterRole, filterDate, sortOption], () => {
+  currentPage.value = 1;
+});
 
 
 </script>
@@ -798,8 +966,10 @@ const validateForm = () => {
   border-radius: 0.5rem;
   box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
   animation: slideIn 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
-  max-height: 90vh;  /* Giới hạn chiều cao tối đa là 90% màn hình */
-  overflow-y: auto;  /* Nếu nội dung dài hơn thì hiện thanh cuộn */
+  max-height: 90vh;
+  /* Giới hạn chiều cao tối đa là 90% màn hình */
+  overflow-y: auto;
+  /* Nếu nội dung dài hơn thì hiện thanh cuộn */
 }
 
 .modal-header {

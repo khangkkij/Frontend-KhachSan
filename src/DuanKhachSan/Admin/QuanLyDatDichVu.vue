@@ -1,11 +1,11 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
-import api from '../../Service/api';
-import notify from '../../Service/notify';
+import api from '../Service/api';
+import notify from '../Service/notify';
 
 const rooms = ref([]);
 const orders = ref([]);
-const menuItems = ref([]); // Danh sách dịch vụ gọi từ DB
+const menuItems = ref([]); 
 
 const showModal = ref(false);
 const searchQuery = ref("");
@@ -16,20 +16,18 @@ const selectedRoomId = ref("");
 
 const API_IMG__URL = `${import.meta.env.VITE_API_URL}/anhDichVu/`;
 
-// --- STATE CHO CHỨC NĂNG SỬA HÀNG LOẠT ---
 const isEditingMode = ref(false);
 const editOrders = ref([]);
-const selectedEditOrders = ref([]); // Mảng lưu ID các món được tick
-const batchStatusAction = ref("");  // Lưu trạng thái muốn đổi hàng loạt
+const selectedEditOrders = ref([]); 
+const batchStatusAction = ref("");  
 
-// --- TÌM KIẾM BÊN KANBAN ---
+
 const kanbanSearchQuery = ref("");
 
-// --- BỘ LỌC VÀ PHÂN TRANG CHO BẢNG (TABLE) ---
 const tableSearchQuery = ref("");
 const tableStatusFilter = ref("");
 const tableCurrentPage = ref(1);
-const tableItemsPerPage = ref(5); // Số dòng trên 1 trang (bạn có thể đổi thành 10 tùy ý)
+const tableItemsPerPage = ref(5); 
 
 const callService = async () => {
   try {

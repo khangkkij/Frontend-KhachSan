@@ -110,12 +110,18 @@ watch(
   }
 )
 watch(selectedVariant, (val) => {
-  if (val?.danhSachAnh?.length) {
-    currentImage.value = `${API}/${val.danhSachAnh[0]}`
-  } else {
-    currentImage.value = '' // optional fallback
+  if (val) {
+    // --- DÒNG QUAN TRỌNG NHẤT: Cập nhật ID ---
+    selectedVariantId.value = val.maBienThePhong;
+    
+    // Cập nhật ảnh
+    if (val.danhSachAnh?.length) {
+      currentImage.value = `${API}/${val.danhSachAnh[0]}`;
+    } else {
+      currentImage.value = ''; // optional fallback
+    }
   }
-})
+}, { immediate: true }) // immediate: true để chạy ngay lần đầu tiên khi load trang
 
 const goBooking = () => {
   if (!room.value || !selectedVariant.value) {

@@ -12,6 +12,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@microsoft/signalr": "^10.0.0",
     "apexcharts": "^5.3.6",
     "axios": "^1.13.2",
     "bootstrap": "^5.3.8",

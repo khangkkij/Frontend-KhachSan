@@ -1,8 +1,9 @@
 <script setup>
-import { ref, reactive, onMounted } from 'vue';
+import { ref, reactive, onMounted, onUnmounted } from 'vue';
 import Swal from 'sweetalert2';
 import axios from 'axios';
 import * as bootstrap from 'bootstrap'; 
+import signalrService from '../Service/signalrService'; 
 
 // URL API 
 const API_URL = `${import.meta.env.VITE_API_URL}/api/DichVu`; 
@@ -32,22 +33,34 @@ const selectedService = ref({
     trangThai: true
 });
 
+// --- LOGIC REAL-TIME ---
+const reloadDataFromSignalR = async () => {
+    // Khi có tín hiệu từ SignalR, tự động load lại danh sách
+    await fetchServices();
+};
+
 onMounted(() => {
     fetchServices();
+    // 2. ĐĂNG KÝ LISTENER KHI VÀO TRANG
+    signalrService.registerListener(reloadDataFromSignalR);
 });
 
+onUnmounted(() => {
+    // 3. HỦY LISTENER KHI RỜI TRANG
+    signalrService.removeListener(reloadDataFromSignalR);
+});
+
+// --- XỬ LÝ ẢNH ---
 const getDisplayImage = (imgName) => {
     if (!imgName) return 'https://via.placeholder.com/150';
     if (imgName.startsWith('blob:') || imgName.startsWith('http')) return imgName;
     return API_IMG_URL + imgName;
 };
 
-// --- XỬ LÝ KHI CHỌN FILE TỪ MÁY ---
 const onFileChange = (event) => {
     const file = event.target.files[0];
     if (file) {
         selectedFile.value = file;
-        // Tạo link ảo để xem trước ảnh ngay lập tức
         previewImage.value = URL.createObjectURL(file);
     }
 };
@@ -64,7 +77,7 @@ const fetchServices = async () => {
     }
 };
 
-// 2. Thêm mới (Dùng FormData)
+// 2. Thêm mới
 const handleCreate = async () => {
     if (!newService.tenDichVu || !newService.gia) {
         Swal.fire({ icon: 'error', text: 'Vui lòng nhập tên và giá dịch vụ!' });
@@ -72,7 +85,6 @@ const handleCreate = async () => {
     }
 
     try {
-        // Tạo FormData để gửi file + dữ liệu
         const formData = new FormData();
         formData.append('tenDichVu', newService.tenDichVu);
         formData.append('gia', parseFloat(newService.gia));
@@ -85,13 +97,15 @@ const handleCreate = async () => {
             headers: { 'Content-Type': 'multipart/form-data' }
         });
 
-        await fetchServices(); 
-        
+        // Đóng modal
         const modalEl = document.getElementById('createServiceModal');
         const modalInstance = bootstrap.Modal.getInstance(modalEl);
         if (modalInstance) modalInstance.hide();
 
         Swal.fire({ icon: 'success', title: 'Thêm thành công!', confirmButtonColor: '#c5a47e' });
+        
+        // SignalR sẽ lo việc reloadData qua listener, nhưng gọi fetchServices() ở đây cho chắc cũng tốt
+        await fetchServices(); 
 
     } catch (error) {
         console.error(error);
@@ -99,18 +113,16 @@ const handleCreate = async () => {
     }
 }
 
-// 3. Cập nhật (Dùng FormData)
+// 3. Cập nhật
 const handleUpdate = async () => {
     try {
         const id = selectedService.value.maDichVu;
-        
         const formData = new FormData();
         formData.append('maDichVu', id);
         formData.append('tenDichVu', selectedService.value.tenDichVu);
         formData.append('gia', parseFloat(selectedService.value.gia));
         formData.append('trangThai', selectedService.value.trangThai);
 
-        // Gửi file mới nếu có chọn
         if (selectedFile.value) {
             formData.append('upLoadImage', selectedFile.value);
         }
@@ -119,16 +131,12 @@ const handleUpdate = async () => {
             headers: { 'Content-Type': 'multipart/form-data' }
         });
 
-        const index = services.value.findIndex(s => s.maDichVu === id);
-        // Note: Logic update UI client-side này chỉ đúng nếu BE trả về object đã update. 
-        // Tạm thời reload lại list cho chắc ăn hình ảnh mới cập nhật
-        await fetchServices();
-
         const modalEl = document.getElementById('editServiceModal');
         const modalInstance = bootstrap.Modal.getInstance(modalEl);
         if (modalInstance) modalInstance.hide();
 
         Swal.fire({ icon: 'success', title: 'Cập nhật thành công!', confirmButtonColor: '#c5a47e' });
+        await fetchServices();
 
     } catch (error) {
         console.error(error);
@@ -151,8 +159,8 @@ const handleDelete = (id) => {
         if (result.isConfirmed) {
             try {
                 await axios.delete(`${API_URL}/${id}`);
-                services.value = services.value.filter(s => s.maDichVu !== id);
                 Swal.fire({ icon: 'success', title: 'Đã xóa!', confirmButtonColor: '#c5a47e' });
+                await fetchServices();
             } catch (error) {
                 console.error(error);
                 Swal.fire('Lỗi', 'Không xóa được dịch vụ', 'error');
@@ -165,19 +173,17 @@ const handleDelete = (id) => {
 const formatCurrency = (val) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val);
 
 const getStatusBadge = (status) => {
-    if (status === true) return { class: 'badge bg-label-success', text: 'Đang hoạt động' };
-    return { class: 'badge bg-label-secondary', text: 'Ngưng hoạt động' };
+    return status === true 
+        ? { class: 'badge bg-label-success', text: 'Đang hoạt động' }
+        : { class: 'badge bg-label-secondary', text: 'Ngưng hoạt động' };
 };
 
 // --- MODAL ACTIONS ---
 const openCreateModal = () => {
-    // Reset form
     newService.tenDichVu = '';
     newService.gia = '';
     newService.hinhAnh = '';
     newService.trangThai = true;
-    
-    // Reset file upload
     selectedFile.value = null;
     previewImage.value = null;
 
@@ -186,12 +192,8 @@ const openCreateModal = () => {
 }
 
 const openEditModal = (service) => {
-    // Clone data
     selectedService.value = { ...service };
-    
-    // Reset file upload mới
     selectedFile.value = null;
-    // Set ảnh preview là ảnh hiện tại từ server
     previewImage.value = getDisplayImage(service.hinhAnh);
 
     const modal = new bootstrap.Modal(document.getElementById('editServiceModal'));

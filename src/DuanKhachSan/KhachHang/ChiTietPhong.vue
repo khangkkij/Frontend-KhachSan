@@ -359,8 +359,8 @@ const goBooking = () => {
         </div>
       </div>
     </div>
-    <div v-if="selectedVariant">
-    <DanhGiaPhong :roomId="selectedVariant" />
+    <div v-if="selectedVariantId">
+    <DanhGiaPhong :roomId="selectedVariantId" />
 </div>
     <div class="related-rooms section mt-5">
       <div class="container">

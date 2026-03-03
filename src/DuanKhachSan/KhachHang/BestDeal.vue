@@ -15,11 +15,11 @@
             
             <div v-if="isLoading" class="text-center py-5">
               <div class="spinner-border text-primary" role="status"></div>
-              <p class="mt-2 text-muted">Đang tải các ưu đãi...</p>
+              <p class="mt-2 text-muted">Đang tìm kiếm ưu đãi hời nhất...</p>
             </div>
 
             <div v-else-if="roomList.length === 0" class="text-center py-5">
-              <p class="text-muted">Hiện chưa có ưu đãi nào.</p>
+              <p class="text-muted">Hiện chưa có ưu đãi nào khả dụng.</p>
             </div>
 
             <div v-else class="row">
@@ -31,10 +31,10 @@
                       class="nav-link" 
                       :class="{ active: activeIndex === index }"
                       type="button" 
-                      role="tab"
                       @click="activeIndex = index"
                     >
                       {{ room.tenLoai }}
+                      <span v-if="room.phanTramGiam > 0" class="tab-sale-dot"></span>
                     </button>
                   </li>
                 </ul>
@@ -42,52 +42,62 @@
 
               <div class="tab-content" id="myTabContent">
                 <div class="tab-pane fade show active" role="tabpanel">
-                  <div class="row">
+                  <div class="row align-items-center">
                     
                     <div class="col-lg-3">
-                    <div class="info-card">
-    <ul class="room-details">
-      <li>
-        <span class="label"><i class="fa fa-expand"></i> Diện tích</span>
-        <span class="value">{{ currentRoom.dienTich || 0 }} m²</span>
-      </li>
-      <li>
-        <span class="label"><i class="fa fa-eye"></i> Hướng nhìn</span>
-        <span class="value">{{ currentRoom.huongNhin || 'Thành phố' }}</span>
-      </li>
-      <li>
-        <span class="label"><i class="fa fa-bed"></i> Loại giường</span>
-        <span class="value">{{ currentRoom.loaiGiuong || 'King Size' }}</span>
-      </li>
-      <li>
-        <span class="label"><i class="fa fa-user"></i> Sức chứa</span>
-        <span class="value">{{ currentRoom.soNguoi || 2 }} người</span>
-      </li>
-      <li class="price-row">
-        <span class="label">Giá từ</span>
-        <span class="value price">{{ formatCurrency(currentRoom.giaThamKhao) }}</span>
-      </li>
-    </ul>
-  </div>
+                      <div class="info-card">
+                        <ul class="room-details">
+                          <li>
+                            <span class="label"><i class="fa fa-expand"></i> Diện tích</span>
+                            <span class="value">{{ currentRoom.dienTich || 0 }} m²</span>
+                          </li>
+                          <li>
+                            <span class="label"><i class="fa fa-eye"></i> Hướng nhìn</span>
+                            <span class="value">{{ currentRoom.huongNhin || 'Thành phố' }}</span>
+                          </li>
+                          <li>
+                            <span class="label"><i class="fa fa-bed"></i> Giường</span>
+                            <span class="value">{{ currentRoom.loaiGiuong || 'King Size' }}</span>
+                          </li>
+                          <li class="price-row">
+                            <span class="label">Giá ưu đãi</span>
+                            <div class="text-end">
+                              <div v-if="currentRoom.phanTramGiam > 0" class="old-price">
+                                {{ formatCurrency(currentRoom.giaGoc) }}
+                              </div>
+                              <span class="value price">{{ formatCurrency(currentRoom.giaThamKhao) }}</span>
+                            </div>
+                          </li>
+                        </ul>
+                      </div>
                     </div>
 
                     <div class="col-lg-6">
-                      <img 
-                        :src="getImageUrl(currentRoom.hinhAnh)" 
-                        alt="Room Image" 
-                        class="img-fluid rounded shadow-sm"
-                        style="width: 100%; height: 350px; object-fit: cover;"
-                        @error="handleImageError"
-                      >
+                      <div class="image-container position-relative">
+                        <div v-if="currentRoom.phanTramGiam > 0" class="sale-badge">
+                          GIẢM {{ currentRoom.phanTramGiam }}%
+                        </div>
+                        
+                        <img 
+                          :src="getImageUrl(currentRoom.hinhAnh)" 
+                          alt="Room Image" 
+                          class="img-fluid rounded shadow"
+                          style="width: 100%; height: 400px; object-fit: cover;"
+                          @error="handleImageError"
+                        >
+                      </div>
                     </div>
 
                     <div class="col-lg-3">
-                      <h4>{{ currentRoom.tenBienThe || currentRoom.tenLoai }}</h4>
-                      <p class="description-truncate">{{ currentRoom.moTa }}</p>
+                      <h4 class="mb-3">
+                        {{ currentRoom.tenBienThe || currentRoom.tenLoai }}
+                        <span v-if="currentRoom.phanTramGiam > 0" class="badge bg-danger ms-2 hot-tag">HOT</span>
+                      </h4>
+                      <p class="description-truncate text-muted">{{ currentRoom.moTa }}</p>
                       
                       <div class="icon-button">
                         <router-link :to="`/phong/${currentRoom.maLp}`">
-                          <i class="fa fa-calendar"></i> Đặt lịch xem / Đặt ngay
+                          <i class="fa fa-calendar"></i> Xem chi tiết & Đặt phòng
                         </router-link>
                       </div>
                     </div>
@@ -95,7 +105,7 @@
                   </div>
                 </div>
               </div> 
-              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -107,165 +117,141 @@
 import { ref, computed, onMounted } from 'vue';
 import axios from 'axios';
 
-// --- CONFIG ---
 const API_URL = import.meta.env.VITE_API_URL; 
-// Giả sử API lấy danh sách loại phòng nổi bật:
 const ENDPOINT = `${API_URL}/api/BestDeals`; 
 
-// --- STATE ---
 const roomList = ref([]);
 const isLoading = ref(true);
 const activeIndex = ref(0);
 
-// --- FETCH DATA ---
 const fetchRooms = async () => {
   isLoading.value = true;
   try {
-    // Gọi API thật
-    // Lưu ý: Bạn cần đảm bảo Backend trả về List LoaiPhong hoặc LoaiPhongBienthe
     const response = await axios.get(ENDPOINT);
     
     if (response.data && response.data.length > 0) {
         roomList.value = response.data.map(item => ({
-            // Map dữ liệu từ API C# (PascalCase) sang Javascript (camelCase) cho dễ dùng
+            // Khớp với ViewModel từ C# (HomeController.cs)
             maLp: item.maLp || item.MaLp,
             tenLoai: item.tenLoai || item.TenLoai,
-            
-            // Các thông số chi tiết (Có thể lấy từ bảng LoaiPhongBienthe nếu bạn join bảng)
             dienTich: item.dienTich || item.DienTich || 0,
             huongNhin: item.huongNhin || item.HuongNhin,
             loaiGiuong: item.loaiGiuong || item.LoaiGiuong,
-            giaThamKhao: item.gia || item.Gia || 0,
-            
-            // Hình ảnh & Mô tả
-            hinhAnh: item.hinhAnh || item.HinhAnh || '', // URL ảnh
-            moTa: item.moTa || item.MoTa || 'Đang cập nhật mô tả...'
+            giaThamKhao: item.gia || item.Gia || 0, // Giá sau giảm
+            giaGoc: item.giaGoc || item.GiaGoc || 0, // Giá gốc chưa giảm
+            phanTramGiam: item.phanTramGiam || item.PhanTramGiam || 0, // Tỷ lệ %
+            hinhAnh: item.hinhAnh || item.HinhAnh || '',
+            moTa: item.moTa || item.MoTa || 'Đang cập nhật...'
         }));
     }
   } catch (error) {
     console.error("Lỗi tải Best Deals:", error);
-    // Có thể fallback về mảng rỗng hoặc hiện thông báo
   } finally {
     isLoading.value = false;
   }
 };
 
-onMounted(() => {
-  fetchRooms();
-});
+onMounted(fetchRooms);
 
-// --- COMPUTED ---
-// Lấy phòng đang được Active dựa trên Tab index
-const currentRoom = computed(() => {
-    return roomList.value[activeIndex.value] || {};
-});
+const currentRoom = computed(() => roomList.value[activeIndex.value] || {});
 
-// --- HELPER FUNCTIONS ---
 const formatCurrency = (val) => {
     if (!val) return 'Liên hệ';
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val);
 };
 
 const getImageUrl = (path) => {
-    if (!path) return '/assets/images/deal-01.jpg'; // Ảnh mặc định nếu null
-    if (path.startsWith('http')) return path;
-    // Nếu lưu đường dẫn tương đối, ghép với API URL
-    return `${API_URL}/${path}`; 
+    if (!path) return '/assets/images/deal-01.jpg';
+    return path.startsWith('http') ? path : `${API_URL}/uploads/variants/${path}`; 
 };
 
-const handleImageError = (e) => {
-    e.target.src = '/assets/images/no-image.jpg'; // Ảnh fallback khi lỗi
-};
-
+const handleImageError = (e) => { e.target.src = '/assets/images/no-image.jpg'; };
 </script>
 
 <style scoped>
-.description-truncate {
-    display: -webkit-box;
-    -webkit-line-clamp: 4; /* Giới hạn 4 dòng mô tả */
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    margin-bottom: 20px;
+/* --- 1. Hiệu ứng Sale --- */
+.sale-badge {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    background: #f35525;
+    color: white;
+    padding: 8px 16px;
+    font-weight: 800;
+    border-radius: 4px;
+    z-index: 10;
+    box-shadow: 0 4px 15px rgba(243, 85, 37, 0.4);
+    font-size: 14px;
+    animation: pulse 2s infinite;
 }
 
-.nav-tabs .nav-link {
-    cursor: pointer;
-    font-weight: 600;
-    color: #fff;
-    border: none;
-    border-bottom: 3px solid transparent;
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
 }
 
-.nav-tabs .nav-link:hover {
-    color: #fff;
-    border-bottom: 3px solid #f35525;
-    background: transparent;
+.old-price {
+    text-decoration: line-through;
+    color: #999;
+    font-size: 14px;
+    font-weight: 400;
+    margin-bottom: -4px;
 }
 
-.nav-tabs .nav-link.active {
-    color: #fff; /* Màu cam chủ đạo */
-    border-bottom: 3px solid #f35525;
-    background: transparent;
-    box-shadow: none;
+.hot-tag {
+    font-size: 10px;
+    vertical-align: middle;
+    padding: 4px 8px;
 }
 
-/* --- 2. Style cho Card thông tin --- */
+.tab-sale-dot {
+    height: 8px;
+    width: 8px;
+    background-color: #f35525;
+    border-radius: 50%;
+    display: inline-block;
+    margin-left: 5px;
+}
+
+/* --- 2. Card Info & Price --- */
 .info-card {
   background: #fff;
   padding: 25px;
   border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.05); /* Bóng mờ, rộng và tinh tế hơn */
-  border: 1px solid rgba(0,0,0,0.02);
-}
-
-.room-details {
-  list-style: none;
-  padding: 0;
-  margin: 0;
+  box-shadow: 0 5px 20px rgba(0,0,0,0.05);
 }
 
 .room-details li {
   display: flex;
-  justify-content: space-between; /* Đẩy Label sang trái, Value sang phải */
+  justify-content: space-between;
   align-items: center;
-  padding: 14px 0;
-  border-bottom: 1px dashed #e5e5e5; /* Đường kẻ nét đứt nhìn nhẹ nhàng hơn nét liền */
+  padding: 12px 0;
+  border-bottom: 1px dashed #eee;
 }
 
-.room-details li:last-child {
-  border-bottom: none; /* Bỏ gạch chân dòng cuối */
-  padding-bottom: 0;
-  padding-top: 20px; /* Tách biệt giá tiền ra một chút */
+.price-row {
+    border-bottom: none !important;
+    padding-top: 15px !important;
 }
 
-/* Label (Tên thuộc tính) */
-.room-details .label {
-  color: #7a7a7a; /* Màu xám ghi sang trọng */
-  font-size: 14px;
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  gap: 8px; /* Khoảng cách giữa icon và chữ */
-}
-
-.room-details .label i {
-  color: #f35525; /* Icon màu cam nhấn nhá */
-  width: 20px; /* Cố định chiều rộng icon để thẳng hàng */
-}
-
-/* Value (Giá trị) */
-.room-details .value {
-  color: #222; /* Màu đen đậm cho dễ đọc */
-  font-weight: 700;
-  font-size: 15px;
-  text-align: right;
-}
-
-/* Riêng phần Giá tiền */
-.room-details .price {
+.value.price {
   color: #f35525;
-  font-size: 20px; /* To hơn hẳn */
+  font-size: 1.4rem;
   font-weight: 800;
-  letter-spacing: -0.5px;
+}
+
+/* --- 3. Layout Fixes --- */
+.description-truncate {
+    display: -webkit-box;
+    -webkit-line-clamp: 5;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    line-height: 1.6;
+}
+
+.nav-tabs .nav-link.active {
+    color: #fff !important;
+    border-bottom: 3px solid #f35525 !important;
 }
 </style>

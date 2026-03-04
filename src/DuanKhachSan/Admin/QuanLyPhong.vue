@@ -475,6 +475,10 @@ const openAddRoom = (maBienThePhong) => {
   formPhong.soPhong = ''
   formPhong.trangThai = 0
   formPhong.maBienThePhong = maBienThePhong
+
+  const modalEl = document.getElementById('addRoomModal')
+  const modal = bootstrap.Modal.getOrCreateInstance(modalEl)
+  modal.show()
 }
 const getVariantName = (id) =>
   variants.value.find(v => v.maBienThePhong === id)?.tenBienThe || ''
@@ -516,6 +520,9 @@ const openEditRoom = (variantId, room) => {
     soPhong: room.soPhong,
     trangThai: room.trangThai
   }
+  const modalEl = document.getElementById('editRoomModal')
+  const modal = bootstrap.Modal.getOrCreateInstance(modalEl)
+  modal.show()
 }
 
 // Chuẩn bị xóa phòng
@@ -879,7 +886,7 @@ const formatPrice = (val) => val?.toLocaleString('vi-VN')
                     >
                       <i class="bx bx-show"></i>
                     </button>
-                    <button class="btn-room-edit" @click="openEditRoom(v.maBienThePhong, r)" data-bs-toggle="modal" data-bs-target="#editRoomModal">
+                    <button class="btn-room-edit" @click="openEditRoom(v.maBienThePhong, r)">
                       <i class='bx bx-edit-alt'></i>
                     </button>
                     <button
@@ -894,13 +901,11 @@ const formatPrice = (val) => val?.toLocaleString('vi-VN')
                 </div>
               </div>
               <button
-                  class="btn btn-success btn-add-room mt-2"
-                  @click="openAddRoom(v.maBienThePhong)"
-                  data-bs-toggle="modal"
-                  data-bs-target="#addRoomModal"
-                >
+                class="btn btn-success btn-add-room mt-2"
+                @click="openAddRoom(v.maBienThePhong)"
+              >
                   <i class='bx bx-plus'></i> Thêm phòng
-                </button>
+              </button>
             </div>
           </div>
         </div>

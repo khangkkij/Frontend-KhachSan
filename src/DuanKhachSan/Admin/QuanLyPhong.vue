@@ -111,7 +111,14 @@ function editPriceRange(index) {
   editingIndex.value = index
   isEditingPrice.value = true
 
-  new bootstrap.Modal(document.getElementById('priceRangeModal')).show()
+  const variantEl = document.getElementById('variantModal')
+  const variantModal = bootstrap.Modal.getInstance(variantEl)
+  variantModal?.hide()
+
+  const priceEl = document.getElementById('priceModal')
+  const priceModal = bootstrap.Modal.getOrCreateInstance(priceEl)
+
+  priceModal.show()
 }
 const formPhong = reactive({
   soPhong: '',
@@ -129,16 +136,29 @@ const roomEditing = ref({
   trangThai: 0
 })
 const roomDetail = ref(null)
+const showPriceModal = ref(false)
 const openPriceModal = () => {
-  const modal = new bootstrap.Modal(
-    document.getElementById('priceRangeModal')
-  )
-  modal.show()
-}
+  const variantEl = document.getElementById('variantModal')
+  const variantModal = bootstrap.Modal.getInstance(variantEl)
+  variantModal?.hide()
 
+  const priceEl = document.getElementById('priceModal')
+  const priceModal = bootstrap.Modal.getOrCreateInstance(priceEl)
+
+  priceModal.show()
+}
 const closePriceModal = () => {
-  const modalEl = document.getElementById('priceRangeModal')
-  bootstrap.Modal.getInstance(modalEl)?.hide()
+  const priceEl = document.getElementById('priceModal')
+  bootstrap.Modal.getInstance(priceEl)?.hide()
+
+  document.querySelectorAll('.modal-backdrop')
+    .forEach(el => el.remove())
+
+  document.body.classList.remove('modal-open')
+  document.body.style.removeProperty('padding-right')
+
+  const variantEl = document.getElementById('variantModal')
+  bootstrap.Modal.getOrCreateInstance(variantEl).show()
 }
 const openRoomDetail = async (maPhong) => {
   const res = await axios.get(
@@ -241,6 +261,7 @@ const submitVariant = async () => {
     alert('Vui lòng kiểm tra lại thông tin!')
     return
   }
+
   const fd = new FormData()
 
   fd.append('MaLp', form.maLp)
@@ -252,9 +273,11 @@ const submitVariant = async () => {
   fd.append('DienTich', form.dienTich)
   fd.append('GiaNiemYet', form.giaNiemYet)
   fd.append('GiaCuoiTuan', form.giaCuoiTuan)
+
   removedImages.value.forEach(url =>
     fd.append('RemovedImages', url)
   )
+
   form.priceRanges.forEach((p, index) => {
     fd.append(`PriceRanges[${index}].MaThietLapGia`, p.maThietLapGia || 0)
     fd.append(`PriceRanges[${index}].LoaiGia`, p.loaiGia)
@@ -264,10 +287,7 @@ const submitVariant = async () => {
     fd.append(`PriceRanges[${index}].Gia`, p.gia)
     fd.append(`PriceRanges[${index}].MacDinh`, p.macDinh ?? false)
   })
-  for (let pair of fd.entries()) {
-    console.log(pair[0] + ':', pair[1])
-  }
-  
+
   form.tienIchIds.forEach(id => fd.append('TienIchIds', id))
   form.images.forEach(file => fd.append('Images', file))
 
@@ -278,21 +298,24 @@ const submitVariant = async () => {
         fd
       )
       alert('Cập nhật loại phòng thành công!')
-      closeCreateModal()
     } else {
       await axios.post(
         `${API}/api/admin/QuanLyPhongBienThe`,
         fd
       )
       alert('Tạo loại phòng thành công!')
-      closeCreateModal()
     }
+
+    closeCreateModal()
+
+    // 🔥 reload lại danh sách theo filter + page hiện tại
+    await fetchData()
+
   } catch (err) {
     console.log("FULL ERROR:", err)
     console.log("DATA:", err.response?.data)
     alert(JSON.stringify(err.response?.data))
   }
-  await loadVariants()
 }
 const submitPhong = async () => {
   try {
@@ -334,7 +357,6 @@ const submitEditRoom = async () => {
     }
     alert('Cập nhật phòng thành công!')
     closeEditRoomModal()
-    await loadVariants()
   } catch (err) {
     console.error(err)
     alert(err.response?.data || 'Lỗi khi thêm phòng')
@@ -351,7 +373,6 @@ const loadVariants = async () => {
 }))
 }
 onMounted(async () => {
-  await loadVariants()
   fetchData()
 })
 
@@ -375,11 +396,13 @@ const openCreateModal = () => {
     hinhAnhs: []
   })
   previewImages.value = []
+  const modalEl = document.getElementById('variantModal')
+  const modal = bootstrap.Modal.getOrCreateInstance(modalEl)
+  modal.show()
 }
 const closeCreateModal = () => {
   const modalEl = document.getElementById('variantModal')
-  const modal = bootstrap.Modal.getInstance(modalEl)
-  modal?.hide()
+  bootstrap.Modal.getInstance(modalEl)?.hide()
 }
 const closeAddRoomModal = () => {
   const modalEl = document.getElementById('addRoomModal')
@@ -431,6 +454,11 @@ const openEditModal = async (v) => {
     }))
 
     selectedVariant.value = v
+  // 🔥 MỞ MODAL BẰNG JS (QUAN TRỌNG)
+    const modalEl = document.getElementById('variantModal')
+    const modal = bootstrap.Modal.getOrCreateInstance(modalEl)
+    modal.show()
+
   } catch (err) {
     console.error(err)
     alert('Không tải được dữ liệu loại phòng')
@@ -627,8 +655,6 @@ const formatPrice = (val) => val?.toLocaleString('vi-VN')
       <button
         class="btn btn-success fw-bold"
         @click="openCreateModal"
-        data-bs-toggle="modal"
-        data-bs-target="#variantModal"
       >
         <i class='bx bx-plus me-1'></i> Thêm loại phòng
       </button>
@@ -751,7 +777,7 @@ const formatPrice = (val) => val?.toLocaleString('vi-VN')
           <div class="card-header-dark">
             <span class="badge-type">{{ v.tenLoai }}</span>
             <div class="card-actions">
-              <button @click="openEditModal(v)" data-bs-toggle="modal" data-bs-target="#variantModal"><i class='bx bx-pencil'></i></button>
+              <button @click="openEditModal(v)"><i class='bx bx-pencil'></i></button>
               <button
                 @click="prepareDelete(v.maBienThePhong)"
                 data-bs-toggle="modal"
@@ -1112,8 +1138,6 @@ const formatPrice = (val) => val?.toLocaleString('vi-VN')
             </div>
           </div>
         </div>
-
-
         <!-- HÌNH ẢNH -->
         <div class="mt-4">
           <label class="form-label small fw-bold">Hình ảnh phòng</label>
@@ -1211,13 +1235,13 @@ const formatPrice = (val) => val?.toLocaleString('vi-VN')
         </div>
       </div>
     </div>
-<div class="modal fade" id="priceRangeModal" tabindex="-1">
+<div class="modal fade" id="priceModal" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content shadow-lg border-0 rounded-4">
+    <div class="modal-content">
 
       <div class="modal-header">
         <h5 class="modal-title">Thêm khoảng giá</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" @click="closePriceModal"></button>
       </div>
 
       <div class="modal-body">
@@ -1225,7 +1249,7 @@ const formatPrice = (val) => val?.toLocaleString('vi-VN')
         <div class="mb-3">
           <label>Loại giá</label>
           <input 
-            type="text" 
+            type="text"
             class="form-control" 
             v-model="tempPrice.loaiGia"
             readonly
@@ -1268,7 +1292,7 @@ const formatPrice = (val) => val?.toLocaleString('vi-VN')
         </div>
         <div class="mt-3">
           <label>Giá</label>
-          <input type="text"
+          <input type="number"
                 class="form-control"
                 :class="{ 'is-invalid': priceErrors.gia }"
                 v-model="tempPrice.gia">
@@ -1279,7 +1303,7 @@ const formatPrice = (val) => val?.toLocaleString('vi-VN')
       </div>
 
       <div class="modal-footer">
-        <button class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+        <button class="btn btn-secondary" @click="closePriceModal">Hủy</button>
         <button class="btn btn-primary" @click="addPriceRange">
           {{ isEditingPrice ? 'Cập nhật' : 'Tiếp tục' }}
         </button>
@@ -1715,12 +1739,6 @@ html, body {
 .modal-content {
   max-height: 90vh;
   overflow-y: auto;
-}
-#priceRangeModal {
-  z-index: 5000;
-}
-#variantModal{
-  z-index:2000;
 }
 /* .room-preview-icon {
   width: 80px;

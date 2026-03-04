@@ -207,8 +207,11 @@
         <div class="row">
           <div class="col-lg-10 offset-lg-1">
             <div class="video-frame">
-              <img src="/assets/images/video-frame.jpg" alt="">
-              <a href="https://youtube.com" target="_blank"><i class="fa fa-play"></i></a>
+              <iframe width="100%" height="500" src="https://www.youtube.com/embed/uURFoAu-ODo?si=rQOOyrPT0V76JI9j"
+                title="YouTube video player" frameborder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                referrerpolicy="strict-origin-when-cross-origin" allowfullscreen
+                style="border-radius: 20px; box-shadow: 0px 0px 15px rgba(0,0,0,0.15);"></iframe>
             </div>
           </div>
         </div>
@@ -248,38 +251,75 @@
 
     <BestDeal />
 
-    <div class="properties section">
-      <div class="container">
-        <div class="row">
-          <div class="col-lg-4 offset-lg-4">
-            <div class="section-heading text-center">
-              <h6>| Danh sách phòng</h6>
-              <h2>Chúng tôi cung cấp những căn phòng tốt nhất</h2>
-            </div>
-          </div>
-        </div>
-        <div class="row">
-          <div class="col-lg-4 col-md-6" v-for="room in rooms.slice(0, 3)" :key="room.maBienThePhong">
-            <div class="item">
-              <router-link :to="`/phong/${room.maBienThePhong}`"><img :src="room.anhDaiDien"
-                  :alt="room.tenBienThe"></router-link>
-              <span class="category">{{ room.TenLoai }}</span>
-              <h6>{{ room.giaGoc }} VNĐ</h6>
-              <h4><router-link :to="`/phong/${room.maBienThePhong}`">{{ room.tenBienThe }}</router-link></h4>
-              <ul>
-                <li>Số người: <span>{{ room.soNguoiToiDa }}</span></li>
-                <li>Phòng ngủ: <span>{{ room.soPhongCon }}</span></li>
-                <li>Diện tích: <span>{{ room.dienTich }}m2</span></li>
-                <li>Tầng: <span>{{ room.floor }}</span></li>
-              </ul>
-              <div class="main-button">
-                <router-link :to="`/phong/${room.maBienThePhong}`">Đặt phòng ngay</router-link>
-              </div>
-            </div>
-          </div>
+    <div class="properties section bg-light py-5">
+  <div class="container">
+    <div class="row mb-5">
+      <div class="col-lg-6 offset-lg-3 text-center">
+        <div class="section-heading">
+          <h6 class="text-primary text-uppercase ls-2">| Danh sách phòng</h6>
+          <h2 class="fw-bold mt-2">Trải nghiệm nghỉ dưỡng đẳng cấp</h2>
+          <p class="text-muted">Khám phá những căn phòng tốt nhất được chúng tôi tuyển chọn kỹ lưỡng dành cho bạn.</p>
         </div>
       </div>
     </div>
+
+    <div class="row g-4">
+      <div class="col-lg-4 col-md-6" v-for="room in rooms.slice(0, 3)" :key="room.maBienThePhong">
+        <div class="property-card h-100 bg-white rounded-4 shadow-sm overflow-hidden position-relative transition-all">
+          
+          <div class="card-image-wrapper position-relative overflow-hidden">
+             <router-link :to="`/phong/${room.maBienThePhong}`">
+              <img :src="getImageUrl(room.anhDaiDien)" 
+                   :alt="room.tenBienThe"
+                   class="w-100 object-fit-cover transition-zoom"
+                   style="height: 250px;">
+             </router-link>
+             <span class="badge bg-primary position-absolute top-0 start-0 m-3 py-2 px-3 rounded-pill text-uppercase fw-bold" 
+                   style="font-size: 12px; letter-spacing: 1px;">
+                {{ room.tenLoai || 'Phòng' }}
+             </span>
+          </div>
+
+          <div class="card-body p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+               <h5 class="text-primary fw-bolder mb-0" style="font-size: 1.4rem;">
+                 {{ formatCurrency(room.giaGoc || room.gia) }} <small class="text-muted fw-normal" style="font-size: 14px;">/ đêm</small>
+               </h5>
+            </div>
+
+            <h4 class="card-title mb-3 fw-bold" style="font-size: 1.25rem;">
+              <router-link :to="`/phong/${room.maBienThePhong}`" class="text-dark text-decoration-none stretched-link">
+                {{ room.tenBienThe || 'Tên phòng đang cập nhật' }}
+              </router-link>
+            </h4>
+
+            <div class="d-flex justify-content-between text-muted mb-4 py-3 border-top border-bottom bg-light bg-opacity-50 rounded-3 px-3">
+               <div class="d-flex align-items-center" title="Số người tối đa">
+                  <i class="fa fa-user-friends me-2 text-primary"></i>
+                  <span class="fw-medium">{{ room.soNguoiToiDa || 2 }}</span>
+               </div>
+               <div class="d-flex align-items-center" title="Diện tích">
+                  <i class="fa fa-ruler-combined me-2 text-primary"></i>
+                  <span class="fw-medium">{{ room.dienTich || 0 }}m²</span>
+               </div>
+               <div class="d-flex align-items-center" title="Tầng">
+                  <i class="fa fa-layer-group me-2 text-primary"></i>
+                  <span class="fw-medium">Tầng {{ room.floor || 1 }}</span>
+               </div>
+            </div>
+
+            <div class="d-grid">
+              <router-link :to="`/phong/${room.maBienThePhong}`" class="btn btn-primary py-2 rounded-pill fw-bold">
+                Đặt phòng ngay <i class="fa fa-arrow-right ms-2"></i>
+              </router-link>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
     <div class="contact section">
       <div class="container">
@@ -460,11 +500,24 @@ const rooms = ref([]);
 
 const loadData = async () => {
   try {
-    const response = await axios.get(`${API_URL}/DanhSachPhong`); // Giả sử có API trả về danh sách phòng
+    // Đổi DanhSachPhong thành Home để khớp với HomeController.cs
+    const response = await axios.get(`${API_URL}/Home`);
+
+    // RẤT QUAN TRỌNG: Log ra để xem tên thuộc tính là gì (viết hoa hay viết thường)
+    console.log("Dữ liệu từ API:", response.data);
+
     rooms.value = response.data;
   } catch (error) {
     console.error("Lỗi khi tải dữ liệu phòng:", error);
   }
+};
+const formatCurrency = (val) => {
+  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val);
+};
+
+const getImageUrl = (path) => {
+  if (!path) return '/assets/images/property-01.jpg';
+  return path.startsWith('http') ? path : `${import.meta.env.VITE_API_URL}/uploads/variants/${path}`;
 };
 
 
@@ -503,54 +556,54 @@ onMounted(() => {
 // Hàm xử lý submit form
 // Hàm xử lý submit form
 const submitForm = async () => {
-    // 1. Validate cơ bản (tránh gửi rỗng)
-    if (!formData.value.name || !formData.value.email || !formData.value.message) {
-        alert("Vui lòng điền tên, email và nội dung tin nhắn!");
-        return;
-    }
+  // 1. Validate cơ bản (tránh gửi rỗng)
+  if (!formData.value.name || !formData.value.email || !formData.value.message) {
+    alert("Vui lòng điền tên, email và nội dung tin nhắn!");
+    return;
+  }
 
-    // Bật trạng thái loading (để disable nút bấm)
-    isLoading.value = true;
+  // Bật trạng thái loading (để disable nút bấm)
+  isLoading.value = true;
 
-    // 2. Map dữ liệu cho khớp với C# (ContactDto)
-    // C# bên kia đang chờ: HoTen, Email, TieuDe, NoiDung
-    const payload = {
-        HoTen: formData.value.name,
-        Email: formData.value.email,
-        TieuDe: formData.value.subject || 'Không có tiêu đề',
-        NoiDung: formData.value.message
+  // 2. Map dữ liệu cho khớp với C# (ContactDto)
+  // C# bên kia đang chờ: HoTen, Email, TieuDe, NoiDung
+  const payload = {
+    HoTen: formData.value.name,
+    Email: formData.value.email,
+    TieuDe: formData.value.subject || 'Không có tiêu đề',
+    NoiDung: formData.value.message
+  };
+
+  try {
+    // 3. Gọi API và HỨNG RESPONSE
+    const response = await axios.post(`${API_URL}/LienHe`, payload);
+
+    // 4. Xử lý khi thành công
+    // response.data chính là cái { message: "..." } mà C# trả về
+    console.log("Server phản hồi:", response.data);
+
+    alert(response.data.message || "Gửi tin nhắn thành công!");
+
+    // Reset form cho sạch sẽ
+    formData.value = {
+      name: '',
+      email: '',
+      subject: '',
+      message: ''
     };
 
-    try {
-        // 3. Gọi API và HỨNG RESPONSE
-        const response = await axios.post(`${API_URL}/LienHe`, payload);
+  } catch (error) {
+    // 5. Xử lý khi lỗi
+    console.error("Lỗi khi gửi form liên hệ:", error);
 
-        // 4. Xử lý khi thành công
-        // response.data chính là cái { message: "..." } mà C# trả về
-        console.log("Server phản hồi:", response.data);
-        
-        alert(response.data.message || "Gửi tin nhắn thành công!");
+    // Lấy thông báo lỗi cụ thể từ Server (nếu có)
+    const serverMessage = error.response?.data?.message || "Đã có lỗi xảy ra. Vui lòng thử lại sau.";
+    alert(serverMessage);
 
-        // Reset form cho sạch sẽ
-        formData.value = {
-            name: '',
-            email: '',
-            subject: '',
-            message: ''
-        };
-
-    } catch (error) {
-        // 5. Xử lý khi lỗi
-        console.error("Lỗi khi gửi form liên hệ:", error);
-        
-        // Lấy thông báo lỗi cụ thể từ Server (nếu có)
-        const serverMessage = error.response?.data?.message || "Đã có lỗi xảy ra. Vui lòng thử lại sau.";
-        alert(serverMessage);
-
-    } finally {
-        // 6. Luôn chạy: Tắt loading để nút bấm sáng lại
-        isLoading.value = false;
-    }
+  } finally {
+    // 6. Luôn chạy: Tắt loading để nút bấm sáng lại
+    isLoading.value = false;
+  }
 };
 </script>
 
@@ -621,19 +674,125 @@ const submitForm = async () => {
 /* CSS ĐỂ ĐẨY FORM LÊN ĐÈ VÀO BANNER */
 .search-container {
   position: relative;
-  margin-top: -80px; /* Kéo lên trên */
-  z-index: 10;       /* Đè lên các phần tử khác */
+  margin-top: -80px;
+  /* Kéo lên trên */
+  z-index: 10;
+  /* Đè lên các phần tử khác */
 }
 
 .filter-wrapper {
   /* Giữ nguyên style bạn đã có */
   background: #fff;
   border-radius: 1rem;
-  box-shadow: 0px 10px 30px rgba(0,0,0,0.1) !important;
+  box-shadow: 0px 10px 30px rgba(0, 0, 0, 0.1) !important;
 }
 
 /* Các style khác giữ nguyên */
-.form-control, .form-select { border-radius: 8px; }
-.form-control:focus { border-color: #f35525; box-shadow: 0 0 0 0.2rem rgba(243, 85, 37, 0.1); }
-.custom-switch .form-check-input:checked { background-color: #f35525; border-color: #f35525; }
+.form-control,
+.form-select {
+  border-radius: 8px;
+}
+
+.form-control:focus {
+  border-color: #f35525;
+  box-shadow: 0 0 0 0.2rem rgba(243, 85, 37, 0.1);
+}
+
+.custom-switch .form-check-input:checked {
+  background-color: #f35525;
+  border-color: #f35525;
+}
+
+.video-frame {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  /* Tỷ lệ 16:9 cho video */
+  padding-top: 56.25%;
+}
+
+.video-frame iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+.position-relative {
+  position: relative;
+}
+
+.sale-tag {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background-color: #f35525;
+  color: white;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-weight: bold;
+  font-size: 14px;
+  z-index: 5;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.item h6 {
+  margin-top: 10px;
+}
+
+/* Màu chủ đạo (dựa trên màu cam web cũ của bạn) */
+:root {
+    --primary-color: #f35525;
+}
+
+/* Hiệu ứng chung cho card */
+.property-card {
+    transition: all 0.3s ease-in-out;
+    border: 1px solid rgba(0,0,0,0.05);
+}
+
+/* Khi di chuột vào card: Nổi lên và đổ bóng sâu hơn */
+.property-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 1rem 3rem rgba(0,0,0,0.15) !important;
+}
+
+/* Wrapper để chứa ảnh và ẩn phần zoom thừa ra */
+.card-image-wrapper {
+    border-top-left-radius: calc(1rem - 1px);
+    border-top-right-radius: calc(1rem - 1px);
+}
+
+/* Hiệu ứng zoom ảnh */
+.transition-zoom {
+    transition: transform 0.5s ease;
+}
+
+/* Khi hover vào wrapper, ảnh bên trong zoom lên */
+.card-image-wrapper:hover .transition-zoom {
+    transform: scale(1.1);
+}
+
+/* Ghi đè màu text-primary của Bootstrap bằng màu cam của bạn */
+.text-primary {
+    color: #f35525 !important;
+}
+.bg-primary {
+     background-color: #f35525 !important;
+}
+.btn-primary {
+    background-color: #f35525;
+    border-color: #f35525;
+}
+.btn-primary:hover {
+    background-color: #d9461a;
+    border-color: #d9461a;
+}
+
+/* Giãn cách chữ cái cho tiêu đề nhỏ */
+.ls-2 { letter-spacing: 2px; }
 </style>

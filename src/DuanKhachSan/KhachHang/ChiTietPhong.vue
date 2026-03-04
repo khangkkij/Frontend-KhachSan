@@ -132,7 +132,7 @@ const goBooking = () => {
     name: room.value.tenLoai,
     variantName: selectedVariant.value.tenBienThe,
     maBienThePhong: selectedVariant.value.maBienThePhong,
-    image: imageName ? `${API}/images/${imageName}` : '',
+    image: imageName ? `${API}/${imageName}` : '',
     pricePerNight: getDiscountedPrice(selectedVariant.value),
     discountPercent: selectedVariant.value.phanTramGiam || 0
   };
@@ -359,8 +359,8 @@ const goBooking = () => {
         </div>
       </div>
     </div>
-    <div v-if="selectedVariant">
-    <DanhGiaPhong :roomId="selectedVariant" />
+    <div v-if="selectedVariantId">
+    <DanhGiaPhong :roomId="selectedVariantId" />
 </div>
     <div class="related-rooms section mt-5">
       <div class="container">
